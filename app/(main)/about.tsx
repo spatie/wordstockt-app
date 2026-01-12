@@ -36,7 +36,10 @@ function LinkButton({
 }) {
   return (
     <Pressable
-      style={({ pressed }) => [styles.linkButton, pressed && styles.linkButtonPressed]}
+      style={({ pressed }) => [
+        styles.linkButton,
+        pressed && styles.linkButtonPressed,
+      ]}
       onPress={() => Linking.openURL(url)}
     >
       <Text style={styles.linkIcon}>{icon}</Text>
