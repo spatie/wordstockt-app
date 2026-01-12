@@ -29,6 +29,9 @@ export function HeaderMenu() {
       case 'rules':
         router.push(ROUTES.RULES);
         break;
+      case 'about':
+        router.push(ROUTES.ABOUT);
+        break;
       case 'logout':
         showConfirm(
           'Logout',
@@ -63,18 +66,6 @@ export function HeaderMenu() {
           ],
         },
         {
-          id: 'info-section',
-          title: '',
-          displayInline: true,
-          subactions: [
-            {
-              id: 'rules',
-              title: 'Rules',
-              image: 'book',
-            },
-          ],
-        },
-        {
           id: 'account-section',
           title: '',
           displayInline: true,
@@ -88,6 +79,23 @@ export function HeaderMenu() {
               id: 'change-password',
               title: 'Change Password',
               image: 'key',
+            },
+          ],
+        },
+        {
+          id: 'info-section',
+          title: '',
+          displayInline: true,
+          subactions: [
+            {
+              id: 'rules',
+              title: 'Rules',
+              image: 'book',
+            },
+            {
+              id: 'about',
+              title: 'About',
+              image: 'info.circle',
             },
           ],
         },

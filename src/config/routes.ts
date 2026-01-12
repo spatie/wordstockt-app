@@ -10,6 +10,7 @@ export const ROUTES = {
   LEADERBOARD: '/(main)/leaderboard',
   FRIENDS: '/(main)/friends',
   RULES: '/(main)/rules',
+  ABOUT: '/(main)/about',
   CHANGE_PASSWORD: '/(main)/change-password',
 
   // Game routes
