@@ -78,9 +78,8 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  const [splashAnimationComplete, setSplashAnimationComplete] = useState(
-    hasSplashCompleted
-  );
+  const [splashAnimationComplete, setSplashAnimationComplete] =
+    useState(hasSplashCompleted);
   const isLoading = useAuthStore((s) => s.isLoading);
   const isNavigationHydrated = useNavigationStore((s) => s.isHydrated);
 

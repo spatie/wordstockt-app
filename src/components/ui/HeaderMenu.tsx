@@ -50,21 +50,37 @@ export function HeaderMenu() {
     leaderboard: { id: 'leaderboard', title: 'Leaderboard', image: 'trophy' },
     friends: { id: 'friends', title: 'Friends', image: 'person.2' },
     profile: { id: 'profile', title: 'Profile', image: 'person.circle' },
-    changePassword: { id: 'change-password', title: 'Change Password', image: 'key' },
+    changePassword: {
+      id: 'change-password',
+      title: 'Change Password',
+      image: 'key',
+    },
     rules: { id: 'rules', title: 'Rules', image: 'book' },
     about: { id: 'about', title: 'About', image: 'info.circle' },
   };
 
-  const section = (id: string, androidTitle: string, items: MenuAction[]): MenuAction => ({
+  const section = (
+    id: string,
+    androidTitle: string,
+    items: MenuAction[]
+  ): MenuAction => ({
     id,
     title: isIOS ? '' : androidTitle,
     displayInline: true,
-    subactions: items.map((item) => (isIOS ? item : { id: item.id, title: item.title })),
+    subactions: items.map((item) =>
+      isIOS ? item : { id: item.id, title: item.title }
+    ),
   });
 
   const actions: MenuAction[] = [
-    section('social-section', 'Social', [menuItems.leaderboard, menuItems.friends]),
-    section('account-section', 'Account', [menuItems.profile, menuItems.changePassword]),
+    section('social-section', 'Social', [
+      menuItems.leaderboard,
+      menuItems.friends,
+    ]),
+    section('account-section', 'Account', [
+      menuItems.profile,
+      menuItems.changePassword,
+    ]),
     section('info-section', 'Help', [menuItems.rules, menuItems.about]),
     {
       id: 'logout',

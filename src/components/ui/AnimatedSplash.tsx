@@ -55,7 +55,10 @@ export function AnimatedSplash({
 
     logoOpacity.value = withDelay(
       HOLD_DELAY + POP_DURATION,
-      withTiming(0, { duration: FADE_DURATION, easing: Easing.out(Easing.ease) })
+      withTiming(0, {
+        duration: FADE_DURATION,
+        easing: Easing.out(Easing.ease),
+      })
     );
 
     containerOpacity.value = withDelay(

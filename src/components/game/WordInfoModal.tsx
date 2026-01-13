@@ -175,11 +175,7 @@ function WordContent({ word }: { word: WordInfo }) {
           </FadeSlideIn>
           {senses.map((sense, index) => (
             <FadeSlideIn key={index} delay={getDelay()}>
-              <SenseItem
-                sense={sense}
-                index={index}
-                showNumber={showNumbers}
-              />
+              <SenseItem sense={sense} index={index} showNumber={showNumbers} />
             </FadeSlideIn>
           ))}
         </View>
