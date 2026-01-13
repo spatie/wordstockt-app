@@ -64,6 +64,8 @@ const createMockGame = (overrides: Partial<Game> = {}): Game => ({
   lastMove: null,
   turnExpiresAt: null,
   pendingInvitation: null,
+  isPublic: false,
+  canJoin: false,
   ...overrides,
 });
 

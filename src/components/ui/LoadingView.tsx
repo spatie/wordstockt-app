@@ -1,11 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
+import { colors } from '../../config/theme';
+
+const SPINNER_DELAY_MS = 600;
 
 export function LoadingView() {
+  const [showSpinner, setShowSpinner] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSpinner(true), SPINNER_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" />
+      {showSpinner && <ActivityIndicator size="large" color={colors.primary} />}
     </View>
   );
 }
@@ -13,6 +24,7 @@ export function LoadingView() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },

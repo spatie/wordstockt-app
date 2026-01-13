@@ -2,14 +2,13 @@ import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   Text,
   TouchableOpacity,
   ActivityIndicator,
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Link, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
@@ -88,9 +87,11 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
+      <KeyboardAwareScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        extraScrollHeight={20}
       >
         <View style={styles.content}>
           <Animated.View entering={FadeIn.duration(400)}>
@@ -185,7 +186,7 @@ export default function LoginScreen() {
             </View>
           </Animated.View>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }
@@ -216,8 +217,8 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginLeft: SPACING.sm,
   },
-  keyboardView: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
   },
   content: {
     flex: 1,

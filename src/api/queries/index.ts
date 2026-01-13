@@ -41,3 +41,6 @@ export { useInvitePlayer } from './useInvites';
 
 // Validation queries
 export { useValidation } from './useValidation';
+
+// Word info queries
+export { useWordInfo } from './useWordInfo';

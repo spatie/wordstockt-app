@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { SegmentedButtons } from 'react-native-paper';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { SegmentedButtons, Switch, IconButton } from 'react-native-paper';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { BaseModal } from '../ui/BaseModal';
 import { Button } from '../ui/Button';
 import { BoardMaker } from './BoardMaker';
 import { usePreferencesStore } from '../../stores/preferencesStore';
 import { colors } from '../../config/theme';
-import { SPACING } from '../../config/constants';
+import { SPACING, RADIUS } from '../../config/constants';
 import type { SquareType } from '../../types/game';
 
 type Language = 'nl' | 'en';
@@ -16,6 +17,7 @@ export interface CreateGameParams {
   language: Language;
   board_type: BoardType;
   board_template?: SquareType[][];
+  is_public?: boolean;
 }
 
 interface CreateGameModalProps {
@@ -42,6 +44,8 @@ export function CreateGameModal({
   const [customTemplate, setCustomTemplate] = useState<SquareType[][] | null>(
     null
   );
+  const [isPublic, setIsPublic] = useState(false);
+  const [showPublicInfo, setShowPublicInfo] = useState(false);
 
   // Sync language with preference when modal opens
   useEffect(() => {
@@ -82,6 +86,7 @@ export function CreateGameModal({
       board_type: boardType,
       board_template:
         boardType === 'custom' ? (customTemplate ?? undefined) : undefined,
+      is_public: isPublic,
     });
   };
 
@@ -90,6 +95,8 @@ export function CreateGameModal({
     setBoardType('standard');
     setShowBoardMaker(false);
     setCustomTemplate(null);
+    setIsPublic(false);
+    setShowPublicInfo(false);
     onClose();
   };
 
@@ -149,6 +156,39 @@ export function CreateGameModal({
         </View>
       )}
 
+      <View style={styles.switchRow}>
+        <Pressable
+          style={styles.switchLabelRow}
+          onPress={() => setIsPublic(!isPublic)}
+        >
+          <Text style={styles.switchLabel}>Public Game</Text>
+          <IconButton
+            icon="help-circle-outline"
+            size={18}
+            iconColor={colors.textSecondary}
+            onPress={() => setShowPublicInfo(!showPublicInfo)}
+            style={styles.infoIcon}
+          />
+        </Pressable>
+        <Switch
+          value={isPublic}
+          onValueChange={setIsPublic}
+          color={colors.primary}
+        />
+      </View>
+
+      {showPublicInfo && (
+        <Animated.View
+          entering={FadeIn.duration(200)}
+          exiting={FadeOut.duration(150)}
+          style={styles.infoBox}
+        >
+          <Text style={styles.infoText}>
+            Public games can be found and joined by any player. Create a public game to play with someone new!
+          </Text>
+        </Animated.View>
+      )}
+
       <Button
         label="Create Game"
         onPress={handleConfirm}
@@ -186,5 +226,34 @@ const styles = StyleSheet.create({
   customBoardText: {
     fontSize: 14,
     color: colors.textSecondary,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.xxl,
+  },
+  switchLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  switchLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  infoIcon: {
+    margin: 0,
+    marginLeft: -4,
+  },
+  infoBox: {
+    backgroundColor: colors.background,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.xl,
+  },
+  infoText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
   },
 });

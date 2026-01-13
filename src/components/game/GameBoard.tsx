@@ -30,6 +30,7 @@ interface GameBoardProps {
   onCellPress: (x: number, y: number) => void;
   onPendingTileDrag: (fromX: number, fromY: number, target: DropTarget) => void;
   onBlankTileTap?: (x: number, y: number) => void;
+  onPlacedTileTap?: (x: number, y: number) => void;
   isMyTurn: boolean;
   potentialScore?: number | null;
 }
@@ -48,6 +49,7 @@ export function GameBoard({
   onCellPress,
   onPendingTileDrag,
   onBlankTileTap,
+  onPlacedTileTap,
   potentialScore,
 }: GameBoardProps) {
   const boardRef = useRef<View>(null);
@@ -145,6 +147,7 @@ export function GameBoard({
         onPress={() => onCellPress(x, y)}
         onPendingTileDrag={onPendingTileDrag}
         onBlankTileTap={onBlankTileTap}
+        onPlacedTileTap={onPlacedTileTap}
         disabled={!isGameActive}
         isLastMove={isLastMoveTile(x, y, lastMoveTiles)}
         cellSize={cellSize}
@@ -156,6 +159,7 @@ export function GameBoard({
       onCellPress,
       onPendingTileDrag,
       onBlankTileTap,
+      onPlacedTileTap,
       isGameActive,
       lastMoveTiles,
       cellSize,

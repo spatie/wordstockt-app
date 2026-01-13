@@ -1,6 +1,6 @@
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
-import { MenuView } from '@react-native-menu/menu';
+import { Text, StyleSheet, Platform } from 'react-native';
+import { MenuView, MenuAction } from '@react-native-menu/menu';
 import { useRouter } from 'expo-router';
 import { useLogout } from '../../api/queries/useAuth';
 import { showConfirm } from '../../utils/alerts';
@@ -44,70 +44,40 @@ export function HeaderMenu() {
     }
   };
 
+  const isIOS = Platform.OS === 'ios';
+
+  const menuItems = {
+    leaderboard: { id: 'leaderboard', title: 'Leaderboard', image: 'trophy' },
+    friends: { id: 'friends', title: 'Friends', image: 'person.2' },
+    profile: { id: 'profile', title: 'Profile', image: 'person.circle' },
+    changePassword: { id: 'change-password', title: 'Change Password', image: 'key' },
+    rules: { id: 'rules', title: 'Rules', image: 'book' },
+    about: { id: 'about', title: 'About', image: 'info.circle' },
+  };
+
+  const section = (id: string, androidTitle: string, items: MenuAction[]): MenuAction => ({
+    id,
+    title: isIOS ? '' : androidTitle,
+    displayInline: true,
+    subactions: items.map((item) => (isIOS ? item : { id: item.id, title: item.title })),
+  });
+
+  const actions: MenuAction[] = [
+    section('social-section', 'Social', [menuItems.leaderboard, menuItems.friends]),
+    section('account-section', 'Account', [menuItems.profile, menuItems.changePassword]),
+    section('info-section', 'Help', [menuItems.rules, menuItems.about]),
+    {
+      id: 'logout',
+      title: 'Logout',
+      attributes: { destructive: true },
+      ...(isIOS && { image: 'rectangle.portrait.and.arrow.right' }),
+    },
+  ];
+
   return (
     <MenuView
       onPressAction={({ nativeEvent }) => handleMenuAction(nativeEvent.event)}
-      actions={[
-        {
-          id: 'social-section',
-          title: '',
-          displayInline: true,
-          subactions: [
-            {
-              id: 'leaderboard',
-              title: 'Leaderboard',
-              image: 'trophy',
-            },
-            {
-              id: 'friends',
-              title: 'Friends',
-              image: 'person.2',
-            },
-          ],
-        },
-        {
-          id: 'account-section',
-          title: '',
-          displayInline: true,
-          subactions: [
-            {
-              id: 'profile',
-              title: 'Profile',
-              image: 'person.circle',
-            },
-            {
-              id: 'change-password',
-              title: 'Change Password',
-              image: 'key',
-            },
-          ],
-        },
-        {
-          id: 'info-section',
-          title: '',
-          displayInline: true,
-          subactions: [
-            {
-              id: 'rules',
-              title: 'Rules',
-              image: 'book',
-            },
-            {
-              id: 'about',
-              title: 'About',
-              image: 'info.circle',
-            },
-          ],
-        },
-        {
-          id: 'logout',
-          title: 'Logout',
-          attributes: {
-            destructive: true,
-          },
-          image: 'rectangle.portrait.and.arrow.right',
-        },
-      ]}
+      actions={actions}
       shouldOpenOnLongPress={false}
       style={styles.iconButton}
     >

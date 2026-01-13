@@ -9,7 +9,9 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useGame } from '../../../src/api/queries/useGame';
 import { useValidation } from '../../../src/api/queries/useValidation';
+import { useWordInfo } from '../../../src/api/queries/useWordInfo';
 import { useRevokeInvitation } from '../../../src/api/queries/useInvitations';
+import { useJoinGame } from '../../../src/api/queries/useGames';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { useGameStore } from '../../../src/stores/gameStore';
 import { useNavigationStore } from '../../../src/stores/navigationStore';
@@ -27,8 +29,10 @@ import {
 } from '../../../src/components/game/SwapModeOverlay';
 import { InvitePlayerModal } from '../../../src/components/game/InvitePlayerModal';
 import { BlankTileModal } from '../../../src/components/game/BlankTileModal';
+import { WordInfoModal } from '../../../src/components/game/WordInfoModal';
 import { LoadingView } from '../../../src/components/ui/LoadingView';
 import { FeedbackModal } from '../../../src/components/ui/FeedbackModal';
+import { Button } from '../../../src/components/ui/Button';
 import { useSnackbar } from '../../../src/components/ui/SnackbarProvider';
 import { showConfirm } from '../../../src/utils/alerts';
 import { colors } from '../../../src/config/theme';
@@ -83,6 +87,10 @@ function GameScreenContent() {
   const [lastMoveWarningShown, setLastMoveWarningShown] = useState(false);
   const [gameEndModalDismissed, setGameEndModalDismissed] = useState(false);
   const [isSwapExiting, setIsSwapExiting] = useState(false);
+  const [wordInfoPosition, setWordInfoPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const wasFinishedOnLoadRef = useRef<boolean | null>(null);
 
   // Animation values for button crossfade
@@ -92,6 +100,7 @@ function GameScreenContent() {
   const { data: apiGame, isLoading, error, refetch } = useGame(gameUlid);
   const setValidationResult = useGameStore((s) => s.setValidationResult);
   const revokeInvitation = useRevokeInvitation();
+  const joinGame = useJoinGame();
 
   // Redirect to game list if game can't be loaded
   useEffect(() => {
@@ -182,6 +191,15 @@ function GameScreenContent() {
     );
   };
 
+  const handleJoinGame = async () => {
+    try {
+      await joinGame.mutateAsync(gameUlid);
+      refetch();
+    } catch {
+      // Error handled by mutation
+    }
+  };
+
   const confirmPlay = () => {
     const words = validationResult?.words;
     const score = validationResult?.potential_score;
@@ -269,6 +287,28 @@ function GameScreenContent() {
     tiles: pendingTiles,
   });
 
+  // Fetch word info when a placed tile is tapped
+  const { data: wordInfo, isLoading: isWordInfoLoading } = useWordInfo(
+    {
+      gameUlid,
+      x: wordInfoPosition?.x ?? 0,
+      y: wordInfoPosition?.y ?? 0,
+    },
+    wordInfoPosition !== null
+  );
+
+  // Handler for placed tile taps - don't show for pending tiles
+  const handlePlacedTileTap = useCallback(
+    (x: number, y: number) => {
+      // Don't show for pending tiles (tiles being placed this turn)
+      const isPendingTile = pendingTiles.some((t) => t.x === x && t.y === y);
+      if (!isPendingTile) {
+        setWordInfoPosition({ x, y });
+      }
+    },
+    [pendingTiles]
+  );
+
   // Update store with validation result
   // Only update when we have actual data (not during loading)
   // Clear validation only when all tiles are removed
@@ -303,6 +343,7 @@ function GameScreenContent() {
   // Get current player's free swap status
   const currentPlayer = gameData.players.find((p) => p.ulid === userUlid);
   const hasFreeSwap = currentPlayer?.hasFreeSwap ?? false;
+  const canJoin = gameData.canJoin;
 
   // Track if game was already finished when first loaded
   if (wasFinishedOnLoadRef.current === null) {
@@ -334,6 +375,7 @@ function GameScreenContent() {
             onCellPress={handleCellPress}
             onPendingTileDrag={handlePendingTileDrag}
             onBlankTileTap={handleBlankTileTap}
+            onPlacedTileTap={handlePlacedTileTap}
             isMyTurn={isMyTurn}
             potentialScore={validationResult?.potential_score}
           />
@@ -347,53 +389,70 @@ function GameScreenContent() {
           hasFreeSwap={hasFreeSwap}
         />
       </View>
-      <TileRack
-        tiles={gameData.myRack}
-        disabled={!isGameActive}
-        onTileDrop={handleRackTileDrop}
-      />
-      {/* Button area with crossfade animation */}
-      <View style={styles.buttonArea}>
-        {/* Action buttons - always rendered, animated opacity */}
-        <Animated.View
-          style={[styles.buttonContainer, { opacity: actionButtonsOpacity }]}
-          pointerEvents={isSwapMode ? 'none' : 'auto'}
-        >
-          <ActionButtons
-            onRecall={handleRecall}
-            onMix={handleMix}
-            onPass={confirmPass}
-            onPlay={confirmPlay}
-            onSwap={canSwap ? enterSwapMode : undefined}
-            onResign={confirmResign}
-            canPlay={canPlay}
-            isLoading={isSubmitting}
-            disabled={!isGameActive}
-            isMyTurn={isMyTurn}
-            hasPendingTiles={pendingTiles.length > 0}
+      {canJoin ? (
+        <View style={styles.joinContainer}>
+          <Text style={styles.joinText}>
+            Join this game to start playing!
+          </Text>
+          <Button
+            label="Join Game"
+            onPress={handleJoinGame}
+            loading={joinGame.isPending}
+            fullWidth
+            rounded
           />
-        </Animated.View>
-        {/* Swap buttons - only rendered during swap mode, animated opacity */}
-        {(isSwapMode || isSwapExiting) && (
-          <Animated.View
-            style={[
-              styles.buttonContainer,
-              styles.swapButtonContainer,
-              { opacity: swapButtonsOpacity },
-            ]}
-            pointerEvents={isSwapMode && !isSwapExiting ? 'auto' : 'none'}
-          >
-            <SwapModeButtons
-              selectedCount={selectedSwapIndices.length}
-              swapCompleted={swapCompleted}
-              onSwap={handleSwap}
-              onCancel={startSwapExit}
-              onDismiss={startSwapExit}
-              isLoading={isSwapping}
-            />
-          </Animated.View>
-        )}
-      </View>
+        </View>
+      ) : (
+        <>
+          <TileRack
+            tiles={gameData.myRack}
+            disabled={!isGameActive}
+            onTileDrop={handleRackTileDrop}
+          />
+          {/* Button area with crossfade animation */}
+          <View style={styles.buttonArea}>
+            {/* Action buttons - always rendered, animated opacity */}
+            <Animated.View
+              style={[styles.buttonContainer, { opacity: actionButtonsOpacity }]}
+              pointerEvents={isSwapMode ? 'none' : 'auto'}
+            >
+              <ActionButtons
+                onRecall={handleRecall}
+                onMix={handleMix}
+                onPass={confirmPass}
+                onPlay={confirmPlay}
+                onSwap={canSwap ? enterSwapMode : undefined}
+                onResign={confirmResign}
+                canPlay={canPlay}
+                isLoading={isSubmitting}
+                disabled={!isGameActive}
+                isMyTurn={isMyTurn}
+                hasPendingTiles={pendingTiles.length > 0}
+              />
+            </Animated.View>
+            {/* Swap buttons - only rendered during swap mode, animated opacity */}
+            {(isSwapMode || isSwapExiting) && (
+              <Animated.View
+                style={[
+                  styles.buttonContainer,
+                  styles.swapButtonContainer,
+                  { opacity: swapButtonsOpacity },
+                ]}
+                pointerEvents={isSwapMode && !isSwapExiting ? 'auto' : 'none'}
+              >
+                <SwapModeButtons
+                  selectedCount={selectedSwapIndices.length}
+                  swapCompleted={swapCompleted}
+                  onSwap={handleSwap}
+                  onCancel={startSwapExit}
+                  onDismiss={startSwapExit}
+                  isLoading={isSwapping}
+                />
+              </Animated.View>
+            )}
+          </View>
+        </>
+      )}
       <FeedbackModal
         visible={errorMessage !== null}
         type="error"
@@ -428,6 +487,12 @@ function GameScreenContent() {
         visible={blankTileSelection !== null}
         onSelectLetter={handleBlankTileLetterSelect}
         onDismiss={handleBlankTileDismiss}
+      />
+      <WordInfoModal
+        visible={wordInfoPosition !== null}
+        onClose={() => setWordInfoPosition(null)}
+        words={wordInfo}
+        isLoading={isWordInfoLoading}
       />
     </View>
   );
@@ -488,5 +553,15 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
+  },
+  joinContainer: {
+    padding: SPACING.xl,
+    alignItems: 'center',
+    gap: SPACING.lg,
+  },
+  joinText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
 });

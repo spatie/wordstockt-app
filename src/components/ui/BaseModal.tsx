@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal,
   View,
@@ -46,34 +46,82 @@ export function BaseModal({
   centered = true,
   testID,
 }: BaseModalProps) {
-  // Animate blur on web
+  const [modalVisible, setModalVisible] = useState(visible);
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
   const blurAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (visible && backdropBlur && Platform.OS === 'web') {
-      blurAnim.setValue(0);
-      Animated.timing(blurAnim, {
-        toValue: 8,
-        duration: 200,
-        useNativeDriver: false,
-      }).start();
+    if (visible) {
+      setModalVisible(true);
+      scaleAnim.setValue(0.85);
+      opacityAnim.setValue(0);
+
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 65,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      if (backdropBlur && Platform.OS === 'web') {
+        blurAnim.setValue(0);
+        Animated.timing(blurAnim, {
+          toValue: 8,
+          duration: 200,
+          useNativeDriver: false,
+        }).start();
+      }
+    } else if (modalVisible) {
+      Animated.parallel([
+        Animated.timing(scaleAnim, {
+          toValue: 0.9,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 0,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setModalVisible(false);
+      });
     }
-  }, [visible, backdropBlur, blurAnim]);
+  }, [visible, backdropBlur, blurAnim, scaleAnim, opacityAnim, modalVisible]);
+
+  // iOS: lighter bg when blur is enabled since BlurView provides real blur
+  // Android: use full opacity since BlurView doesn't support blur
+  const getBackgroundOpacity = () => {
+    if (!backdropBlur) return overlayOpacity;
+    if (Platform.OS === 'ios') return overlayOpacity * 0.5;
+    return overlayOpacity; // Android: no blur support, use full opacity
+  };
 
   const overlayStyle = [
     styles.overlay,
     {
-      backgroundColor: backdropBlur
-        ? `rgba(0, 0, 0, ${overlayOpacity * 0.5})`
-        : `rgba(0, 0, 0, ${overlayOpacity})`,
+      backgroundColor: `rgba(0, 0, 0, ${getBackgroundOpacity()})`,
       justifyContent: centered ? 'center' : 'flex-start',
     },
   ];
 
+  const animatedContentStyle = {
+    transform: [{ scale: scaleAnim }],
+    opacity: opacityAnim,
+  };
+
   const modalContent = (
-    <Pressable style={[styles.content, contentStyle]} onPress={() => {}}>
-      {children}
-    </Pressable>
+    <Animated.View style={[styles.content, contentStyle, animatedContentStyle]}>
+      <Pressable onPress={() => {}}>{children}</Pressable>
+    </Animated.View>
   );
 
   // Web: create animated blur style
@@ -95,37 +143,39 @@ export function BaseModal({
 
   return (
     <Modal
-      visible={visible}
+      visible={modalVisible}
       transparent
-      animationType="fade"
+      animationType="none"
       onRequestClose={onClose}
       testID={testID}
     >
-      {/* Native: use BlurView for blur effect */}
-      {backdropBlur && Platform.OS !== 'web' ? (
-        <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
+      <Animated.View style={{ flex: 1, opacity: opacityAnim }}>
+        {/* Native: use BlurView for blur effect */}
+        {backdropBlur && Platform.OS !== 'web' ? (
+          <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
+            <Pressable
+              style={overlayStyle as StyleProp<ViewStyle>}
+              onPress={onClose}
+            >
+              {modalContent}
+            </Pressable>
+          </BlurView>
+        ) : backdropBlur && Platform.OS === 'web' ? (
+          <AnimatedPressable
+            style={[overlayStyle as StyleProp<ViewStyle>, webBlurStyle]}
+            onPress={onClose}
+          >
+            {modalContent}
+          </AnimatedPressable>
+        ) : (
           <Pressable
             style={overlayStyle as StyleProp<ViewStyle>}
             onPress={onClose}
           >
             {modalContent}
           </Pressable>
-        </BlurView>
-      ) : backdropBlur && Platform.OS === 'web' ? (
-        <AnimatedPressable
-          style={[overlayStyle as StyleProp<ViewStyle>, webBlurStyle]}
-          onPress={onClose}
-        >
-          {modalContent}
-        </AnimatedPressable>
-      ) : (
-        <Pressable
-          style={overlayStyle as StyleProp<ViewStyle>}
-          onPress={onClose}
-        >
-          {modalContent}
-        </Pressable>
-      )}
+        )}
+      </Animated.View>
     </Modal>
   );
 }

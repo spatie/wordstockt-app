@@ -90,6 +90,8 @@ export const GameSchema = z
     last_move: MoveSchema.nullable(),
     turn_expires_at: z.string().nullable().optional(),
     pending_invitation: PendingInvitationSchema.nullable().optional(),
+    is_public: z.boolean(),
+    can_join: z.boolean(),
   })
   .passthrough();
 
@@ -174,6 +176,8 @@ export function transformGame(data: GameResponse): Game {
           },
         }
       : null,
+    isPublic: data.is_public,
+    canJoin: data.can_join,
   };
 }
 
@@ -276,6 +280,31 @@ export function transformPendingGame(data: PendingGameResponse): PendingGame {
   return {
     ulid: data.ulid,
     language: data.language,
+    creator: data.creator,
+    createdAt: data.created_at,
+  };
+}
+
+// Schema for public games (joinable games in public list)
+export const PublicGameSchema = z
+  .object({
+    ulid: z.string(),
+    language: z.string(),
+    board_template: z.array(z.array(SquareTypeSchema)),
+    creator: z.string(),
+    created_at: z.string(),
+  })
+  .passthrough();
+
+export type PublicGameResponse = z.infer<typeof PublicGameSchema>;
+
+export function transformPublicGame(
+  data: PublicGameResponse
+): import('../types').PublicGame {
+  return {
+    ulid: data.ulid,
+    language: data.language,
+    boardTemplate: data.board_template,
     creator: data.creator,
     createdAt: data.created_at,
   };

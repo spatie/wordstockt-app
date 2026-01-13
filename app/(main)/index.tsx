@@ -20,6 +20,7 @@ import {
   useGames,
   useCreateGame,
   useDeleteGame,
+  usePublicGames,
 } from '../../src/api/queries/useGames';
 import {
   useInvitations,
@@ -35,6 +36,7 @@ import {
   GameCard,
   CreateGameModal,
   InvitationCard,
+  PublicGameCard,
   type CreateGameParams,
 } from '../../src/components/game-list';
 import { TabBar } from '../../src/components/ui/TabBar';
@@ -83,6 +85,10 @@ export default function HomeScreen() {
     isLoading: invitationsLoading,
     refetch: refetchInvitations,
   } = useInvitations();
+  const {
+    data: publicGames,
+    refetch: refetchPublicGames,
+  } = usePublicGames();
   const createGame = useCreateGame();
   const deleteGame = useDeleteGame();
   const acceptInvitation = useAcceptInvitation();
@@ -129,7 +135,7 @@ export default function HomeScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([refetch(), refetchInvitations()]);
+    await Promise.all([refetch(), refetchInvitations(), refetchPublicGames()]);
     setRefreshing(false);
   };
 
@@ -315,6 +321,30 @@ export default function HomeScreen() {
                   <GameCard
                     game={game}
                     userUlid={user?.ulid}
+                    onPress={() => navigateToGame(game.ulid)}
+                  />
+                </Animated.View>
+              );
+            })}
+          </>
+        )}
+        {publicGames && publicGames.length > 0 && (
+          <>
+            <Animated.View
+              entering={FadeIn.duration(200).delay(cardIndex * 50)}
+            >
+              <SectionHeader title="PUBLIC GAMES" />
+            </Animated.View>
+            {publicGames.map((game) => {
+              const delay = cardIndex * 50;
+              cardIndex++;
+              return (
+                <Animated.View
+                  key={game.ulid}
+                  entering={FadeInDown.duration(300).delay(delay)}
+                >
+                  <PublicGameCard
+                    game={game}
                     onPress={() => navigateToGame(game.ulid)}
                   />
                 </Animated.View>

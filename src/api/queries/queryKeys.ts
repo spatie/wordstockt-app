@@ -10,6 +10,7 @@ export const gameKeys = {
   lists: () => [...gameKeys.all, 'list'] as const,
   list: (filter: string) => [...gameKeys.lists(), filter] as const,
   pending: () => [...gameKeys.all, 'pending'] as const,
+  public: () => [...gameKeys.all, 'public'] as const,
   details: () => [...gameKeys.all, 'detail'] as const,
   detail: (ulid: string) => [...gameKeys.details(), ulid] as const,
 };
@@ -38,4 +39,9 @@ export const authKeys = {
 export const validationKeys = {
   validate: (gameUlid: string, tilePositions: string) =>
     ['validation', gameUlid, tilePositions] as const,
+};
+
+export const wordInfoKeys = {
+  info: (gameUlid: string, x: number, y: number) =>
+    ['wordInfo', gameUlid, x, y] as const,
 };

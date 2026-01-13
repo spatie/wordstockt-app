@@ -163,4 +163,6 @@ export const mockGame: Game = {
   lastMove: null,
   turnExpiresAt: null,
   pendingInvitation: null,
+  isPublic: false,
+  canJoin: false,
 };

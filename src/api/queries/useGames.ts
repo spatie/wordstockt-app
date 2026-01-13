@@ -6,10 +6,12 @@ import {
   transformGameListItem,
   PendingGameSchema,
   transformPendingGame,
+  PublicGameSchema,
+  transformPublicGame,
   type PendingGame,
 } from '../../schemas/game.schema';
 import { safeParse } from '../../schemas/safeParse';
-import type { GameListItem } from '../../types';
+import type { GameListItem, PublicGame } from '../../types';
 import { gameKeys } from './queryKeys';
 
 // Re-export for backwards compatibility
@@ -51,11 +53,32 @@ export function usePendingGames() {
   });
 }
 
+const PublicGamesResponseSchema = z.object({
+  data: z.array(PublicGameSchema),
+});
+
+export function usePublicGames() {
+  return useQuery({
+    queryKey: gameKeys.public(),
+    queryFn: async (): Promise<PublicGame[]> => {
+      const { data } = await apiClient.get('/games/public');
+      const validated = safeParse(
+        PublicGamesResponseSchema,
+        data,
+        'usePublicGames'
+      );
+      return validated.data.map(transformPublicGame);
+    },
+    staleTime: 30_000,
+  });
+}
+
 interface CreateGameParams {
   language?: 'nl' | 'en';
   opponent_username?: string;
   board_type?: 'standard' | 'no_bonuses' | 'custom';
   board_template?: (string | null)[][];
+  is_public?: boolean;
 }
 
 export function useCreateGame() {
@@ -83,6 +106,7 @@ export function useJoinGame() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: gameKeys.lists() });
       queryClient.invalidateQueries({ queryKey: gameKeys.pending() });
+      queryClient.invalidateQueries({ queryKey: gameKeys.public() });
     },
   });
 }

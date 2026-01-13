@@ -56,6 +56,8 @@ export interface Game {
   lastMove: Move | null;
   turnExpiresAt: string | null;
   pendingInvitation: PendingInvitation | null;
+  isPublic: boolean;
+  canJoin: boolean;
 }
 
 export interface GameListPendingInvitation {
@@ -86,4 +88,12 @@ export interface GameListItem {
   lastMoveDescription: string | null;
   turnExpiresAt: string | null;
   pendingInvitation: GameListPendingInvitation | null;
+}
+
+export interface PublicGame {
+  ulid: string;
+  language: string;
+  boardTemplate: SquareType[][];
+  creator: string;
+  createdAt: string;
 }

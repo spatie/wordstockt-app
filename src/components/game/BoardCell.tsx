@@ -31,6 +31,7 @@ interface BoardCellProps {
   onPress: () => void;
   onPendingTileDrag: (fromX: number, fromY: number, target: DropTarget) => void;
   onBlankTileTap?: (x: number, y: number) => void;
+  onPlacedTileTap?: (x: number, y: number) => void;
   disabled: boolean;
   isLastMove?: boolean;
   cellSize: number;
@@ -44,6 +45,7 @@ export function BoardCell({
   onPress,
   onPendingTileDrag,
   onBlankTileTap,
+  onPlacedTileTap,
   disabled,
   isLastMove = false,
   cellSize,
@@ -301,13 +303,21 @@ export function BoardCell({
   }
 
   // Default: TouchableOpacity for empty cells and placed tiles
+  const handleCellPress = () => {
+    if (placedTile && onPlacedTileTap) {
+      onPlacedTileTap(x, y);
+      return;
+    }
+    onPress();
+  };
+
   return (
     <View style={styles.cellWrapper}>
       <TouchableOpacity
         style={[styles.cell, { backgroundColor }]}
-        onPress={onPress}
-        disabled={disabled || placedTile != null}
-        activeOpacity={1}
+        onPress={handleCellPress}
+        disabled={disabled}
+        activeOpacity={placedTile ? 0.7 : 1}
       >
         <CellContent
           x={x}
