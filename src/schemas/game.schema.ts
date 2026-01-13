@@ -203,6 +203,7 @@ export const GameListItemSchema = z
     last_move_description: z.string().nullable().optional(),
     turn_expires_at: z.string().nullable().optional(),
     pending_invitation: PendingInvitationSchema.nullable().optional(),
+    is_public: z.boolean().optional().default(false),
   })
   .passthrough();
 
@@ -241,6 +242,7 @@ export function transformGameListItem(
           },
         }
       : null,
+    isPublic: data.is_public,
   };
 }
 

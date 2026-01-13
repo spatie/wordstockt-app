@@ -31,7 +31,6 @@ export function FriendCard({ friend, onPress }: FriendCardProps) {
         <Text style={styles.username}>{friend.username}</Text>
         <Text style={styles.rating}>ELO: {friend.eloRating}</Text>
       </View>
-      <Text style={styles.arrow}>{'>'}</Text>
     </Card>
   );
 }
@@ -54,9 +53,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     marginTop: 2,
-  },
-  arrow: {
-    fontSize: 18,
-    color: colors.textSecondary,
   },
 });

@@ -69,7 +69,7 @@ export function useAcceptInvitation() {
       const { data } = await apiClient.post(
         `/invitations/${invitationUlid}/accept`
       );
-      return data;
+      return data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invitationKeys.lists() });

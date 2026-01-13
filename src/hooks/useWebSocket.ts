@@ -175,6 +175,28 @@ export function useWebSocket(gameUlid: string | null) {
               queryKey: gameKeys.lists(),
             });
           }
+
+          // Handle invitation accepted - game is now active
+          if (message.event === 'game.invitation.accepted') {
+            console.log('[WS] Invitation accepted, refreshing game');
+            queryClientRef.current.invalidateQueries({
+              queryKey: gameKeys.detail(gameUlidRef.current!),
+            });
+            queryClientRef.current.invalidateQueries({
+              queryKey: gameKeys.lists(),
+            });
+          }
+
+          // Handle invitation declined - pending invitation removed
+          if (message.event === 'game.invitation.declined') {
+            console.log('[WS] Invitation declined, refreshing game');
+            queryClientRef.current.invalidateQueries({
+              queryKey: gameKeys.detail(gameUlidRef.current!),
+            });
+            queryClientRef.current.invalidateQueries({
+              queryKey: gameKeys.lists(),
+            });
+          }
         } catch (e) {
           console.log('[WS] Failed to parse message:', e);
         }

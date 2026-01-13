@@ -60,12 +60,13 @@ export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
     }
     if (isAwaitingOpponent) {
       return {
-        name: 'Invite a player',
+        name: game.isPublic ? 'Public game' : 'Invite a player',
         avatar: null,
         avatarColor: null,
         ulid: undefined,
-        subtitle: 'Tap to find an opponent',
-        showInviteIcon: true,
+        subtitle: game.isPublic ? 'Waiting for someone to join...' : 'Tap to find an opponent',
+        showInviteIcon: !game.isPublic,
+        showPublicIcon: game.isPublic,
       };
     }
     return {
@@ -82,7 +83,11 @@ export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
   return (
     <Card onPress={onPress} showAccent>
       <View style={styles.cardTop}>
-        {displayInfo.showInviteIcon ? (
+        {displayInfo.showPublicIcon ? (
+          <View style={styles.publicIconContainer}>
+            <Ionicons name="globe-outline" size={18} color={colors.primary} />
+          </View>
+        ) : displayInfo.showInviteIcon ? (
           <View style={styles.inviteIconContainer}>
             <Ionicons name="person-add" size={18} color={colors.primary} />
           </View>
@@ -211,6 +216,14 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.primary,
     borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  publicIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primary + '20',
     justifyContent: 'center',
     alignItems: 'center',
   },

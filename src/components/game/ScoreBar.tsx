@@ -193,9 +193,12 @@ export function ScoreBar({
       {/* Right player section */}
       <View style={[styles.playerSection, styles.playerSectionRight]}>
         {canInvite ? (
-          <TouchableOpacity style={styles.inviteButton} onPress={onInvite}>
-            <Text style={styles.inviteText}>+</Text>
-          </TouchableOpacity>
+          <>
+            <Text style={styles.invitePrompt}>Invite opponent</Text>
+            <TouchableOpacity style={styles.inviteButton} onPress={onInvite}>
+              <Text style={styles.inviteText}>+</Text>
+            </TouchableOpacity>
+          </>
         ) : hasPendingInvitation ? (
           <View style={styles.pendingInviteSection}>
             <View style={[styles.playerInfo, styles.playerInfoRight]}>
@@ -380,6 +383,11 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 10,
     fontWeight: 'bold',
+  },
+  invitePrompt: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    marginRight: 8,
   },
   inviteButton: {
     width: AVATAR_SIZE,

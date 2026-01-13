@@ -87,10 +87,9 @@ export function useCreateGame() {
   return useMutation({
     mutationFn: async (params: CreateGameParams = {}) => {
       const { data } = await apiClient.post('/games', params);
+      // Refetch games list and wait for it to complete
+      await queryClient.refetchQueries({ queryKey: gameKeys.lists() });
       return data.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: gameKeys.lists() });
     },
   });
 }
@@ -118,11 +117,57 @@ export function useDeleteGame() {
     mutationFn: async (gameUlid: string) => {
       await apiClient.delete(`/games/${gameUlid}`);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: gameKeys.lists() });
+    onMutate: async (gameUlid: string) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: gameKeys.lists() });
+      await queryClient.cancelQueries({ queryKey: gameKeys.pending() });
+      await queryClient.cancelQueries({ queryKey: gameKeys.public() });
+
+      // Snapshot previous values
+      const previousGames = queryClient.getQueryData<GameListItem[]>(gameKeys.lists());
+      const previousPending = queryClient.getQueryData<PendingGame[]>(gameKeys.pending());
+      const previousPublic = queryClient.getQueryData<PublicGame[]>(gameKeys.public());
+
+      // Optimistically remove the game from all lists
+      if (previousGames) {
+        queryClient.setQueryData<GameListItem[]>(
+          gameKeys.lists(),
+          previousGames.filter((g) => g.ulid !== gameUlid)
+        );
+      }
+      if (previousPending) {
+        queryClient.setQueryData<PendingGame[]>(
+          gameKeys.pending(),
+          previousPending.filter((g) => g.ulid !== gameUlid)
+        );
+      }
+      if (previousPublic) {
+        queryClient.setQueryData<PublicGame[]>(
+          gameKeys.public(),
+          previousPublic.filter((g) => g.ulid !== gameUlid)
+        );
+      }
+
+      return { previousGames, previousPending, previousPublic };
     },
-    onError: (error) => {
+    onError: (error, _gameUlid, context) => {
+      // Rollback on error
+      if (context?.previousGames) {
+        queryClient.setQueryData(gameKeys.lists(), context.previousGames);
+      }
+      if (context?.previousPending) {
+        queryClient.setQueryData(gameKeys.pending(), context.previousPending);
+      }
+      if (context?.previousPublic) {
+        queryClient.setQueryData(gameKeys.public(), context.previousPublic);
+      }
       console.error('Failed to delete game:', error);
+    },
+    onSettled: () => {
+      // Refetch to ensure consistency with server
+      queryClient.invalidateQueries({ queryKey: gameKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: gameKeys.pending() });
+      queryClient.invalidateQueries({ queryKey: gameKeys.public() });
     },
   });
 }

@@ -33,7 +33,6 @@ import { WordInfoModal } from '../../../src/components/game/WordInfoModal';
 import { LoadingView } from '../../../src/components/ui/LoadingView';
 import { FeedbackModal } from '../../../src/components/ui/FeedbackModal';
 import { Button } from '../../../src/components/ui/Button';
-import { useSnackbar } from '../../../src/components/ui/SnackbarProvider';
 import { showConfirm } from '../../../src/utils/alerts';
 import { colors } from '../../../src/config/theme';
 import { SPACING, RADIUS } from '../../../src/config/constants';
@@ -57,7 +56,6 @@ function GameScreenContent() {
   const setCurrentlyViewedGameUlid = useNavigationStore(
     (s) => s.setCurrentlyViewedGameUlid
   );
-  const { showSnackbar } = useSnackbar();
   const setCurrentGame = useGameStore((s) => s.setCurrentGame);
 
   // Set current game context for per-game state (pending tiles, etc.)
@@ -191,13 +189,26 @@ function GameScreenContent() {
     );
   };
 
+  const [isJoining, setIsJoining] = useState(false);
+
   const handleJoinGame = async () => {
+    setIsJoining(true);
     try {
       await joinGame.mutateAsync(gameUlid);
-      refetch();
+      await refetch();
     } catch {
       // Error handled by mutation
+      setIsJoining(false);
     }
+  };
+
+  const confirmJoin = () => {
+    showConfirm(
+      'Join Game',
+      'Are you sure you want to join this game?',
+      handleJoinGame,
+      'Join'
+    );
   };
 
   const confirmPlay = () => {
@@ -396,8 +407,8 @@ function GameScreenContent() {
           </Text>
           <Button
             label="Join Game"
-            onPress={handleJoinGame}
-            loading={joinGame.isPending}
+            onPress={confirmJoin}
+            loading={isJoining}
             fullWidth
             rounded
           />
@@ -481,7 +492,7 @@ function GameScreenContent() {
         visible={inviteModalVisible}
         onClose={() => setInviteModalVisible(false)}
         gameUlid={gameUlid}
-        onSuccess={() => showSnackbar('Invitation sent!', 'success')}
+        onSuccess={() => {}}
       />
       <BlankTileModal
         visible={blankTileSelection !== null}

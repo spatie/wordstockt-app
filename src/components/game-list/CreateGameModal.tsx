@@ -61,11 +61,7 @@ export function CreateGameModal({
   };
 
   const handleBoardTypeChange = (value: string) => {
-    const type = value as BoardType;
-    setBoardType(type);
-    if (type === 'custom' && !customTemplate) {
-      setShowBoardMaker(true);
-    }
+    setBoardType(value as BoardType);
   };
 
   const handleBoardMakerAccept = (template: SquareType[][]) => {
@@ -119,7 +115,7 @@ export function CreateGameModal({
 
   return (
     <BaseModal visible={visible} onClose={handleClose} backdropBlur>
-      <Text style={styles.title}>New Game</Text>
+      <Text style={styles.title}>Start new game</Text>
 
       <Text style={styles.label}>Language</Text>
       <SegmentedButtons
@@ -144,16 +140,22 @@ export function CreateGameModal({
         style={styles.segmentedButtons}
       />
 
-      {boardType === 'custom' && customTemplate && (
-        <View style={styles.customBoardRow}>
-          <Text style={styles.customBoardText}>Custom board configured</Text>
+      {boardType === 'custom' && (
+        <Animated.View
+          entering={FadeIn.duration(200)}
+          exiting={FadeOut.duration(100)}
+          style={styles.customBoardRow}
+        >
+          <Text style={styles.customBoardText}>
+            {customTemplate ? 'Custom board configured' : 'No board configured'}
+          </Text>
           <Button
-            label="Edit"
+            label={customTemplate ? 'Edit' : 'Configure'}
             onPress={() => setShowBoardMaker(true)}
             variant="secondary"
             size="sm"
           />
-        </View>
+        </Animated.View>
       )}
 
       <View style={styles.switchRow}>
@@ -180,7 +182,7 @@ export function CreateGameModal({
       {showPublicInfo && (
         <Animated.View
           entering={FadeIn.duration(200)}
-          exiting={FadeOut.duration(150)}
+          exiting={FadeOut.duration(100)}
           style={styles.infoBox}
         >
           <Text style={styles.infoText}>
@@ -189,14 +191,16 @@ export function CreateGameModal({
         </Animated.View>
       )}
 
-      <Button
-        label="Create Game"
-        onPress={handleConfirm}
-        loading={isPending}
-        fullWidth
-        rounded
-        disabled={isCreateDisabled}
-      />
+      <View style={styles.buttonContainer}>
+        <Button
+          label="Create Game"
+          onPress={handleConfirm}
+          loading={isPending}
+          fullWidth
+          rounded
+          disabled={isCreateDisabled}
+        />
+      </View>
     </BaseModal>
   );
 }
@@ -231,7 +235,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: SPACING.xxl,
+    marginBottom: SPACING.xs,
   },
   switchLabelRow: {
     flexDirection: 'row',
@@ -249,7 +253,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderRadius: RADIUS.md,
     padding: SPACING.md,
-    marginBottom: SPACING.xl,
+  },
+  buttonContainer: {
+    marginTop: SPACING.xxl,
   },
   infoText: {
     fontSize: 13,

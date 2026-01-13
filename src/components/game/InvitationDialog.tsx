@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { BaseModal } from '../ui/BaseModal';
 import { SmartAvatar } from '../ui/SmartAvatar';
@@ -8,6 +8,7 @@ import {
   useAcceptInvitation,
   useDeclineInvitation,
 } from '../../api/queries/useInvitations';
+import { getApiError } from '../../api/client';
 import { colors } from '../../config/theme';
 import { SPACING } from '../../config/constants';
 import { ROUTES } from '../../config/routes';
@@ -27,25 +28,33 @@ export function InvitationDialog({
   const declineMutation = useDeclineInvitation();
 
   const handleAccept = async () => {
-    if (!invitation) return;
+    if (!invitation || !invitation.ulid) {
+      Alert.alert('Error', 'Invalid invitation');
+      return;
+    }
 
     try {
       const result = await acceptMutation.mutateAsync(invitation.ulid);
       onClose();
       router.push(ROUTES.GAME(result.ulid));
     } catch (error) {
-      // Error handled by mutation
+      const apiError = getApiError(error);
+      Alert.alert('Error', apiError.message);
     }
   };
 
   const handleDecline = async () => {
-    if (!invitation) return;
+    if (!invitation || !invitation.ulid) {
+      Alert.alert('Error', 'Invalid invitation');
+      return;
+    }
 
     try {
       await declineMutation.mutateAsync(invitation.ulid);
       onClose();
     } catch (error) {
-      // Error handled by mutation
+      const apiError = getApiError(error);
+      Alert.alert('Error', apiError.message);
     }
   };
 

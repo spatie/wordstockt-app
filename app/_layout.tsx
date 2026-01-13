@@ -16,6 +16,7 @@ import {
   usePushNotifications,
   useDeepLinks,
   useVerificationReminder,
+  useOTAUpdates,
 } from '../src/hooks';
 import { isGracePeriodExpired } from '../src/utils/emailVerification';
 import { initSentry } from '../src/config/sentry';
@@ -44,6 +45,7 @@ function RootLayoutNav() {
   usePushNotifications();
   useDeepLinks();
   useVerificationReminder();
+  useOTAUpdates();
 
   const inAuthGroup = segments[0] === '(auth)';
   const isOnVerifyScreen = segments[1] === 'verify-email';

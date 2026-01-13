@@ -184,22 +184,31 @@ export function useUserWebSocket() {
             });
 
             // Show invitation dialog
-            const data = message.data as {
+            // Parse data if it's a JSON string (Pusher sends data as string)
+            const rawData =
+              typeof message.data === 'string'
+                ? JSON.parse(message.data)
+                : message.data;
+            const data = rawData as {
+              ulid: string;
               game: { ulid: string; language: string };
               inviter: {
                 ulid: string;
                 username: string;
                 avatar: string | null;
+                avatar_color: string | null;
               };
             };
 
             const invitation: GameInvitation = {
-              ulid: '',
+              ulid: data.ulid,
               status: 'pending',
               game: data.game,
               inviter: {
-                ...data.inviter,
-                avatarColor: null,
+                ulid: data.inviter.ulid,
+                username: data.inviter.username,
+                avatar: data.inviter.avatar,
+                avatarColor: data.inviter.avatar_color,
               },
               invitee: {
                 ulid: userUlidRef.current!,
@@ -218,6 +227,20 @@ export function useUserWebSocket() {
             console.log('[UserWS] Invitation accepted, refreshing games list');
             queryClientRef.current.invalidateQueries({
               queryKey: gameKeys.lists(),
+            });
+            queryClientRef.current.invalidateQueries({
+              queryKey: gameKeys.all,
+            });
+          }
+
+          // Handle invitation declined event (for the inviter)
+          if (message.event === 'game.invitation.declined') {
+            console.log('[UserWS] Invitation declined, refreshing games list');
+            queryClientRef.current.invalidateQueries({
+              queryKey: gameKeys.lists(),
+            });
+            queryClientRef.current.invalidateQueries({
+              queryKey: gameKeys.all,
             });
           }
         } catch (e) {

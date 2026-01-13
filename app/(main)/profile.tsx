@@ -4,14 +4,12 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useUpdateProfile } from '../../src/api/queries/useAuth';
 import { useUserStats } from '../../src/api/queries/useStats';
-import { useSnackbar } from '../../src/components/ui/SnackbarProvider';
 import { getApiError } from '../../src/api/client';
 import { colors } from '../../src/config/theme';
 import {
@@ -21,12 +19,12 @@ import {
 } from '../../src/components/stats';
 import { Avatar } from '../../src/components/ui/Avatar';
 import { AvatarColorPicker } from '../../src/components/ui/AvatarColorPicker';
+import { AnimatedSaveButton } from '../../src/components/ui/AnimatedSaveButton';
 import { isEmailVerified } from '../../src/utils/emailVerification';
 
 export default function ProfileScreen() {
   const user = useAuthStore((s) => s.user);
   const updateProfile = useUpdateProfile();
-  const { showSnackbar } = useSnackbar();
 
   const [username, setUsername] = useState(user?.username ?? '');
   const [avatarColor, setAvatarColor] = useState(user?.avatarColor ?? null);
@@ -49,18 +47,16 @@ export default function ProfileScreen() {
     /^[a-zA-Z0-9_]+$/.test(username);
 
   const handleSave = async () => {
-    if (!hasChanges || !isValidUsername) return;
-
     setError(null);
     try {
       await updateProfile.mutateAsync({
         ...(hasUsernameChanges && { username }),
         ...(hasColorChanges && { avatar_color: avatarColor }),
       });
-      showSnackbar('Profile updated successfully', 'success');
     } catch (err) {
       const apiError = getApiError(err);
       setError(apiError.message);
+      throw err;
     }
   };
 
@@ -114,23 +110,12 @@ export default function ProfileScreen() {
         {/* Save Button */}
         <View style={styles.saveSection}>
           {error && <Text style={styles.error}>{error}</Text>}
-          <TouchableOpacity
-            style={[
-              styles.saveButton,
-              (!hasChanges || !isValidUsername || updateProfile.isPending) &&
-                styles.saveButtonDisabled,
-            ]}
+          <AnimatedSaveButton
             onPress={handleSave}
-            disabled={
-              !hasChanges || !isValidUsername || updateProfile.isPending
-            }
-          >
-            {updateProfile.isPending ? (
-              <ActivityIndicator color="#FFF" size="small" />
-            ) : (
-              <Text style={styles.saveButtonText}>Save Changes</Text>
-            )}
-          </TouchableOpacity>
+            label="Save Changes"
+            successLabel="Profile saved!"
+            disabled={!hasChanges || !isValidUsername}
+          />
         </View>
 
         {/* Statistics Section */}
@@ -306,22 +291,7 @@ const styles = StyleSheet.create({
   error: {
     fontSize: 14,
     color: '#E74C3C',
-    marginTop: 8,
-  },
-  saveButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  saveButtonDisabled: {
-    opacity: 0.5,
-  },
-  saveButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFF',
+    marginBottom: 8,
   },
   loadingContainer: {
     paddingVertical: 40,

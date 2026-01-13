@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { BaseModal } from './BaseModal';
 import { Button } from './Button';
 import { colors } from '../../config/theme';
@@ -30,12 +30,64 @@ const typeConfig: Record<
     defaultButton: 'Awesome!',
   },
   lost: {
-    icon: '\u2639',
-    color: '#7F8C8D',
+    icon: '',
+    color: '#5D6D7E',
     defaultTitle: 'Game Over',
     defaultButton: 'OK',
   },
 };
+
+function FadeSlideIn({
+  children,
+  delay = 0,
+  visible,
+  fullWidth = false,
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  visible: boolean;
+  fullWidth?: boolean;
+}) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(16)).current;
+
+  useEffect(() => {
+    if (visible) {
+      opacity.setValue(0);
+      translateY.setValue(16);
+
+      const timeout = setTimeout(() => {
+        Animated.parallel([
+          Animated.spring(opacity, {
+            toValue: 1,
+            tension: 50,
+            friction: 8,
+            useNativeDriver: true,
+          }),
+          Animated.spring(translateY, {
+            toValue: 0,
+            tension: 50,
+            friction: 8,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }, delay);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [delay, opacity, translateY, visible]);
+
+  return (
+    <Animated.View
+      style={[
+        { opacity, transform: [{ translateY }], alignItems: 'center' },
+        fullWidth && { width: '100%' },
+      ]}
+    >
+      {children}
+    </Animated.View>
+  );
+}
 
 interface FeedbackModalProps {
   visible: boolean;
@@ -63,6 +115,8 @@ export function FeedbackModal({
   }, [visible, message]);
 
   const config = typeConfig[type];
+  const showIcon = type !== 'lost';
+  const baseDelay = showIcon ? 0 : -80;
 
   return (
     <BaseModal
@@ -72,43 +126,54 @@ export function FeedbackModal({
       backdropBlur
       contentStyle={styles.modal}
     >
-      <View style={styles.iconContainer}>
-        <View style={[styles.iconCircle, { backgroundColor: config.color }]}>
-          <Text style={styles.iconText}>{config.icon}</Text>
-        </View>
+      <View style={styles.content}>
+        {showIcon && (
+          <FadeSlideIn delay={baseDelay} visible={visible}>
+            <View style={[styles.iconCircle, { backgroundColor: config.color }]}>
+              <Text style={styles.iconText}>{config.icon}</Text>
+            </View>
+          </FadeSlideIn>
+        )}
+        <FadeSlideIn delay={baseDelay + 80} visible={visible}>
+          <Text style={styles.title}>{title ?? config.defaultTitle}</Text>
+        </FadeSlideIn>
+        <FadeSlideIn delay={baseDelay + 160} visible={visible}>
+          <Text style={styles.message}>{displayMessage}</Text>
+        </FadeSlideIn>
+        <FadeSlideIn delay={baseDelay + 240} visible={visible} fullWidth>
+          <Button
+            label={buttonText ?? config.defaultButton}
+            onPress={onDismiss}
+            color={config.color}
+            fullWidth
+            rounded
+            size="lg"
+          />
+        </FadeSlideIn>
       </View>
-      <Text style={styles.title}>{title ?? config.defaultTitle}</Text>
-      <Text style={styles.message}>{displayMessage}</Text>
-      <Button
-        label={buttonText ?? config.defaultButton}
-        onPress={onDismiss}
-        color={config.color}
-        fullWidth
-        rounded
-        size="lg"
-      />
     </BaseModal>
   );
 }
 
 const styles = StyleSheet.create({
   modal: {
-    alignItems: 'center',
     padding: SPACING.xxxl,
   },
-  iconContainer: {
-    marginBottom: SPACING.xl,
+  content: {
+    alignItems: 'center',
+    width: '100%',
   },
   iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: SPACING.xl,
   },
   iconText: {
     color: '#FFFFFF',
-    fontSize: 32,
+    fontSize: 40,
     fontWeight: 'bold',
   },
   title: {

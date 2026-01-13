@@ -88,6 +88,7 @@ export interface GameListItem {
   lastMoveDescription: string | null;
   turnExpiresAt: string | null;
   pendingInvitation: GameListPendingInvitation | null;
+  isPublic: boolean;
 }
 
 export interface PublicGame {

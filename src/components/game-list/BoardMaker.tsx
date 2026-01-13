@@ -38,6 +38,7 @@ export function BoardMaker({ onAccept, onCancel }: BoardMakerProps) {
 
   const [isAnimating, setIsAnimating] = useState(false);
   const boardOpacity = useRef(new Animated.Value(1)).current;
+  const boardScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     initialize();
@@ -53,23 +54,42 @@ export function BoardMaker({ onAccept, onCancel }: BoardMakerProps) {
   const animateAction = useCallback(
     (action: () => void) => {
       setIsAnimating(true);
-      Animated.sequence([
-        Animated.timing(boardOpacity, {
-          toValue: 0.3,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-        Animated.timing(boardOpacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start(() => setIsAnimating(false));
 
-      // Run action during fade
-      setTimeout(action, 100);
+      // Shrink and fade out
+      Animated.parallel([
+        Animated.timing(boardOpacity, {
+          toValue: 0,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+        Animated.timing(boardScale, {
+          toValue: 0.95,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        // Run action while hidden
+        action();
+
+        // Wait for React to re-render with new state before animating back
+        requestAnimationFrame(() => {
+          Animated.parallel([
+            Animated.timing(boardOpacity, {
+              toValue: 1,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.spring(boardScale, {
+              toValue: 1,
+              tension: 100,
+              friction: 8,
+              useNativeDriver: true,
+            }),
+          ]).start(() => setIsAnimating(false));
+        });
+      });
     },
-    [boardOpacity]
+    [boardOpacity, boardScale]
   );
 
   const handleClear = useCallback(() => {
@@ -108,7 +128,13 @@ export function BoardMaker({ onAccept, onCancel }: BoardMakerProps) {
         Tap cells to cycle through bonus types
       </Text>
 
-      <View style={[styles.board, { width: boardSize, height: boardSize }]}>
+      <Animated.View
+        style={[
+          styles.board,
+          { width: boardSize, height: boardSize },
+          { opacity: boardOpacity, transform: [{ scale: boardScale }] },
+        ]}
+      >
         {template.map((row, y) => (
           <View key={y} style={[styles.row, { gap: cellGap }]}>
             {row.map((cell, x) => (
@@ -118,12 +144,11 @@ export function BoardMaker({ onAccept, onCancel }: BoardMakerProps) {
                 size={cellSize}
                 onPress={() => cycleCell(x, y)}
                 disabled={cell === 'STAR' || isAnimating}
-                animatedOpacity={isAnimating ? boardOpacity : undefined}
               />
             ))}
           </View>
         ))}
-      </View>
+      </Animated.View>
 
       <View style={styles.controls}>
         <View style={styles.symmetryRow}>

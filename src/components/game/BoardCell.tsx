@@ -316,7 +316,7 @@ export function BoardCell({
       <TouchableOpacity
         style={[styles.cell, { backgroundColor }]}
         onPress={handleCellPress}
-        disabled={disabled}
+        disabled={disabled && !placedTile}
         activeOpacity={placedTile ? 0.7 : 1}
       >
         <CellContent

@@ -58,6 +58,8 @@ export const theme = {
     ...MD3DarkTheme.colors,
     primary: colors.primary,
     secondary: colors.secondary,
+    secondaryContainer: colors.primary, // Selected state for SegmentedButtons
+    onSecondaryContainer: colors.textPrimary, // Text on selected SegmentedButtons
     error: '#E91E63',
     surface: colors.backgroundLight,
     background: colors.background,

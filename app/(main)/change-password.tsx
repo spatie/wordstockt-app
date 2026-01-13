@@ -3,8 +3,6 @@ import {
   View,
   StyleSheet,
   Text,
-  TouchableOpacity,
-  ActivityIndicator,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
@@ -12,14 +10,13 @@ import {
 import { useRouter } from 'expo-router';
 import { useChangePassword } from '../../src/api/queries/useAuth';
 import { PasswordInput } from '../../src/components/form/PasswordInput';
-import { useSnackbar } from '../../src/components/ui/SnackbarProvider';
+import { AnimatedSaveButton } from '../../src/components/ui/AnimatedSaveButton';
 import { getApiError } from '../../src/api/client';
 import { colors } from '../../src/config/theme';
 
 export default function ChangePasswordScreen() {
   const router = useRouter();
   const changePassword = useChangePassword();
-  const { showSnackbar } = useSnackbar();
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -36,8 +33,7 @@ export default function ChangePasswordScreen() {
     isCurrentPasswordValid &&
     isNewPasswordValid &&
     doPasswordsMatch &&
-    isNewPasswordDifferent &&
-    !changePassword.isPending;
+    isNewPasswordDifferent;
 
   const showNewPasswordHint = newPassword.length > 0 && !isNewPasswordValid;
   const showConfirmPasswordHint =
@@ -56,11 +52,10 @@ export default function ChangePasswordScreen() {
         password: newPassword,
         password_confirmation: confirmPassword,
       });
-      showSnackbar('Password changed successfully', 'success');
-      router.back();
     } catch (err) {
       const apiError = getApiError(err);
       setError(apiError.message);
+      throw err;
     }
   };
 
@@ -122,17 +117,13 @@ export default function ChangePasswordScreen() {
             </View>
           )}
 
-          <TouchableOpacity
-            style={[styles.saveButton, !canSubmit && styles.saveButtonDisabled]}
+          <AnimatedSaveButton
             onPress={handleChangePassword}
+            onSuccess={() => router.back()}
+            label="Change Password"
+            successLabel="Password changed!"
             disabled={!canSubmit}
-          >
-            {changePassword.isPending ? (
-              <ActivityIndicator color="#FFF" size="small" />
-            ) : (
-              <Text style={styles.saveButtonText}>Change Password</Text>
-            )}
-          </TouchableOpacity>
+          />
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -175,20 +166,5 @@ const styles = StyleSheet.create({
     color: '#EF4444',
     fontSize: 14,
     textAlign: 'center',
-  },
-  saveButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  saveButtonDisabled: {
-    opacity: 0.5,
-  },
-  saveButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFF',
   },
 });

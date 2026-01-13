@@ -27,3 +27,6 @@ export { useDeepLinks } from './useDeepLinks';
 
 // Email verification
 export { useVerificationReminder } from './useVerificationReminder';
+
+// OTA Updates
+export { useOTAUpdates } from './useOTAUpdates';

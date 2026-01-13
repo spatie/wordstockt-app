@@ -45,10 +45,11 @@ import { colors } from '../../src/config/theme';
 import { SPACING, RADIUS } from '../../src/config/constants';
 import { ROUTES } from '../../src/config/routes';
 
-type TabValue = 'active' | 'completed';
+type TabValue = 'active' | 'public' | 'completed';
 
 const GAME_TABS = [
-  { value: 'active' as const, label: 'Active Games' },
+  { value: 'active' as const, label: 'Your Games' },
+  { value: 'public' as const, label: 'Public' },
   { value: 'completed' as const, label: 'Completed' },
 ];
 
@@ -145,7 +146,8 @@ export default function HomeScreen() {
       const result = await acceptInvitation.mutateAsync(invitationUlid);
       router.push(ROUTES.GAME(result.ulid));
     } catch (e) {
-      // Error handled by mutation
+      const error = getApiError(e);
+      Alert.alert('Error', error.message);
     } finally {
       setAcceptingInvitation(null);
     }
@@ -156,7 +158,8 @@ export default function HomeScreen() {
     try {
       await declineInvitation.mutateAsync(invitationUlid);
     } catch (e) {
-      // Error handled by mutation
+      const error = getApiError(e);
+      Alert.alert('Error', error.message);
     } finally {
       setDecliningInvitation(null);
     }
@@ -166,7 +169,9 @@ export default function HomeScreen() {
     try {
       const result = await createGame.mutateAsync(params);
       setShowCreateModal(false);
-      router.push(ROUTES.GAME(result.ulid));
+      if (!params.is_public) {
+        router.push(ROUTES.GAME(result.ulid));
+      }
     } catch (e) {
       // Error handled by mutation
     }
@@ -224,10 +229,11 @@ export default function HomeScreen() {
       <>
         {/* Awaiting Opponent Section - First */}
         {awaitingOpponentGames.length > 0 && (
-          <>
-            <Animated.View entering={FadeIn.duration(200)}>
-              <SectionHeader title="AWAITING OPPONENT" />
-            </Animated.View>
+          <Animated.View
+            entering={FadeIn.duration(200)}
+            exiting={FadeOut.duration(200)}
+          >
+            <SectionHeader title="AWAITING OPPONENT" />
             {awaitingOpponentGames.map((game) => {
               const delay = cardIndex * 50;
               cardIndex++;
@@ -247,7 +253,7 @@ export default function HomeScreen() {
                 </Animated.View>
               );
             })}
-          </>
+          </Animated.View>
         )}
 
         {/* Invitations Section */}
@@ -328,30 +334,6 @@ export default function HomeScreen() {
             })}
           </>
         )}
-        {publicGames && publicGames.length > 0 && (
-          <>
-            <Animated.View
-              entering={FadeIn.duration(200).delay(cardIndex * 50)}
-            >
-              <SectionHeader title="PUBLIC GAMES" />
-            </Animated.View>
-            {publicGames.map((game) => {
-              const delay = cardIndex * 50;
-              cardIndex++;
-              return (
-                <Animated.View
-                  key={game.ulid}
-                  entering={FadeInDown.duration(300).delay(delay)}
-                >
-                  <PublicGameCard
-                    game={game}
-                    onPress={() => navigateToGame(game.ulid)}
-                  />
-                </Animated.View>
-              );
-            })}
-          </>
-        )}
         {activeGames.length === 0 && (
           <Animated.View
             style={styles.emptyContainer}
@@ -359,13 +341,41 @@ export default function HomeScreen() {
           >
             <Text style={styles.emptyText}>No active games</Text>
             <Text style={styles.emptySubtext}>
-              Create a new game to get started!
+              Create a new game or join a public one to get started!
             </Text>
           </Animated.View>
         )}
       </>
     );
   };
+
+  const renderPublicContent = () => (
+    <>
+      {publicGames && publicGames.length > 0 ? (
+        publicGames.map((game, index) => (
+          <Animated.View
+            key={game.ulid}
+            entering={FadeInDown.duration(300).delay(index * 50)}
+          >
+            <PublicGameCard
+              game={game}
+              onPress={() => navigateToGame(game.ulid)}
+            />
+          </Animated.View>
+        ))
+      ) : (
+        <Animated.View
+          style={styles.emptyContainer}
+          entering={FadeIn.duration(300)}
+        >
+          <Text style={styles.emptyText}>No public games</Text>
+          <Text style={styles.emptySubtext}>
+            Create a public game and let others join!
+          </Text>
+        </Animated.View>
+      )}
+    </>
+  );
 
   const renderCompletedContent = () => (
     <>
@@ -405,7 +415,9 @@ export default function HomeScreen() {
           <View style={styles.content}>
             {activeTab === 'active'
               ? renderActiveContent()
-              : renderCompletedContent()}
+              : activeTab === 'public'
+                ? renderPublicContent()
+                : renderCompletedContent()}
           </View>
         )}
         keyExtractor={() => 'content'}

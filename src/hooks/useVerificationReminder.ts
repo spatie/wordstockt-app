@@ -28,7 +28,7 @@ export function useVerificationReminder() {
 
     Alert.alert(
       'Verify Your Email',
-      `Please verify your email address to keep your account.\n\nYou have ${daysRemaining} ${dayText} remaining.`,
+      `We've sent a verification email to ${user.email}. Please click the link in the email to verify your account.\n\nYou have ${daysRemaining} ${dayText} remaining.`,
       [
         {
           text: 'Later',

@@ -131,7 +131,7 @@ export function InvitePlayerModal({
     try {
       const result = await createInviteLink.mutateAsync(gameUlid);
       await Share.share({
-        message: `Join my WordStockt game! ${result.url}`,
+        message: `Join me on WordStockt! ${result.url}`,
         ...(Platform.OS === 'ios' && { url: result.url }),
       });
     } catch {
@@ -311,6 +311,7 @@ export function InvitePlayerModal({
       visible={visible}
       onClose={handleClose}
       overlayOpacity={0.7}
+      backdropBlur
       contentStyle={styles.modal}
     >
       <View style={styles.header}>
@@ -509,6 +510,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.xxl,
   },
 });

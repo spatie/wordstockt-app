@@ -106,7 +106,7 @@ export function useResignGame() {
     },
     onSuccess: (game) => {
       queryClient.setQueryData(gameKeys.detail(game.ulid), game);
-      queryClient.invalidateQueries({ queryKey: gameKeys.lists() });
+      queryClient.refetchQueries({ queryKey: gameKeys.lists() });
     },
   });
 }
