@@ -64,7 +64,9 @@ export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
         avatar: null,
         avatarColor: null,
         ulid: undefined,
-        subtitle: game.isPublic ? 'Waiting for someone to join...' : 'Tap to find an opponent',
+        subtitle: game.isPublic
+          ? 'Waiting for someone to join...'
+          : 'Tap to find an opponent',
         showInviteIcon: !game.isPublic,
         showPublicIcon: game.isPublic,
       };

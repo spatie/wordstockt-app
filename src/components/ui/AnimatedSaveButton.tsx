@@ -154,7 +154,11 @@ export function AnimatedSaveButton({
             {label}
           </Animated.Text>
           <Animated.Text
-            style={[styles.buttonText, styles.successText, successAnimatedStyle]}
+            style={[
+              styles.buttonText,
+              styles.successText,
+              successAnimatedStyle,
+            ]}
           >
             {successLabel}
           </Animated.Text>
