@@ -186,7 +186,8 @@ export function CreateGameModal({
           style={styles.infoBox}
         >
           <Text style={styles.infoText}>
-            Public games can be found and joined by any player. Create a public game to play with someone new!
+            Public games can be found and joined by any player. Create a public
+            game to play with someone new!
           </Text>
         </Animated.View>
       )}

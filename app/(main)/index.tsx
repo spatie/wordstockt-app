@@ -86,10 +86,7 @@ export default function HomeScreen() {
     isLoading: invitationsLoading,
     refetch: refetchInvitations,
   } = useInvitations();
-  const {
-    data: publicGames,
-    refetch: refetchPublicGames,
-  } = usePublicGames();
+  const { data: publicGames, refetch: refetchPublicGames } = usePublicGames();
   const createGame = useCreateGame();
   const deleteGame = useDeleteGame();
   const acceptInvitation = useAcceptInvitation();

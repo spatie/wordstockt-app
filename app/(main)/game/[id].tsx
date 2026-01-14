@@ -402,9 +402,7 @@ function GameScreenContent() {
       </View>
       {canJoin ? (
         <View style={styles.joinContainer}>
-          <Text style={styles.joinText}>
-            Join this game to start playing!
-          </Text>
+          <Text style={styles.joinText}>Join this game to start playing!</Text>
           <Button
             label="Join Game"
             onPress={confirmJoin}
@@ -424,7 +422,10 @@ function GameScreenContent() {
           <View style={styles.buttonArea}>
             {/* Action buttons - always rendered, animated opacity */}
             <Animated.View
-              style={[styles.buttonContainer, { opacity: actionButtonsOpacity }]}
+              style={[
+                styles.buttonContainer,
+                { opacity: actionButtonsOpacity },
+              ]}
               pointerEvents={isSwapMode ? 'none' : 'auto'}
             >
               <ActionButtons

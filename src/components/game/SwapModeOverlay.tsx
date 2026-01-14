@@ -336,7 +336,8 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     // iOS: lighter bg since BlurView provides real blur
     // Android: darker bg since BlurView doesn't support blur
-    backgroundColor: Platform.OS === 'ios' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.85)',
+    backgroundColor:
+      Platform.OS === 'ios' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: SPACING.xxl,
