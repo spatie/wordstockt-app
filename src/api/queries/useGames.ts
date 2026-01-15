@@ -124,9 +124,15 @@ export function useDeleteGame() {
       await queryClient.cancelQueries({ queryKey: gameKeys.public() });
 
       // Snapshot previous values
-      const previousGames = queryClient.getQueryData<GameListItem[]>(gameKeys.lists());
-      const previousPending = queryClient.getQueryData<PendingGame[]>(gameKeys.pending());
-      const previousPublic = queryClient.getQueryData<PublicGame[]>(gameKeys.public());
+      const previousGames = queryClient.getQueryData<GameListItem[]>(
+        gameKeys.lists()
+      );
+      const previousPending = queryClient.getQueryData<PendingGame[]>(
+        gameKeys.pending()
+      );
+      const previousPublic = queryClient.getQueryData<PublicGame[]>(
+        gameKeys.public()
+      );
 
       // Optimistically remove the game from all lists
       if (previousGames) {

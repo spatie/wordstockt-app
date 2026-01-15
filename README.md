@@ -79,18 +79,23 @@ npm run format:check     # Check formatting
 ## Deployment Workflow
 
 ### First time setup
+
 1. `npm run build` - Creates a development build (~15 min)
 2. Download from EAS or install via TestFlight
 3. Install on test devices
 
 ### Pushing updates (JS changes only)
+
 ```bash
 npm run update -- --message "Fixed login bug"
 ```
+
 Takes ~30 seconds. Testers restart the app to get the update.
 
 ### Native changes
+
 If you modify native code, add native dependencies, or change app.json:
+
 ```bash
 npm run build            # Rebuild required
 ```

@@ -129,7 +129,9 @@ export function FeedbackModal({
       <View style={styles.content}>
         {showIcon && (
           <FadeSlideIn delay={baseDelay} visible={visible}>
-            <View style={[styles.iconCircle, { backgroundColor: config.color }]}>
+            <View
+              style={[styles.iconCircle, { backgroundColor: config.color }]}
+            >
               <Text style={styles.iconText}>{config.icon}</Text>
             </View>
           </FadeSlideIn>

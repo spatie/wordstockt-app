@@ -6,13 +6,7 @@ import React, {
   useEffect,
   useRef,
 } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Animated,
-  Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, Animated, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../config/theme';
@@ -142,10 +136,7 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
           pointerEvents="none"
         >
           <View
-            style={[
-              styles.snackbar,
-              { borderLeftColor: config.accentColor },
-            ]}
+            style={[styles.snackbar, { borderLeftColor: config.accentColor }]}
           >
             <Ionicons
               name={config.icon}
