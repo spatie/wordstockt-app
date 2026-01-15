@@ -275,3 +275,20 @@ export function useResendVerification() {
     },
   });
 }
+
+export function useDeleteAccount() {
+  const logout = useAuthStore((s) => s.logout);
+  const setLoggingOut = useAuthStore((s) => s.setLoggingOut);
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      setLoggingOut(true);
+      await apiClient.delete('/auth/user');
+    },
+    onSettled: () => {
+      logout();
+      queryClient.clear();
+    },
+  });
+}

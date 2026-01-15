@@ -6,8 +6,11 @@ import {
   TextInput,
   ActivityIndicator,
   ScrollView,
+  TouchableOpacity,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../src/stores/authStore';
+import { ROUTES } from '../../src/config/routes';
 import { useUpdateProfile } from '../../src/api/queries/useAuth';
 import { useUserStats } from '../../src/api/queries/useStats';
 import { getApiError } from '../../src/api/client';
@@ -23,6 +26,7 @@ import { AnimatedSaveButton } from '../../src/components/ui/AnimatedSaveButton';
 import { isEmailVerified } from '../../src/utils/emailVerification';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const updateProfile = useUpdateProfile();
 
@@ -217,6 +221,16 @@ export default function ProfileScreen() {
             </Text>
           </View>
         )}
+
+        {/* Delete Account Link */}
+        <View style={styles.dangerZone}>
+          <TouchableOpacity
+            onPress={() => router.push(ROUTES.DELETE_ACCOUNT)}
+            style={styles.deleteLink}
+          >
+            <Text style={styles.deleteLinkText}>Delete account</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
@@ -312,5 +326,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textMuted,
     textAlign: 'center',
+  },
+  dangerZone: {
+    marginTop: 48,
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    alignItems: 'center',
+  },
+  deleteLink: {
+    padding: 8,
+  },
+  deleteLinkText: {
+    fontSize: 14,
+    color: colors.textMuted,
   },
 });

@@ -12,6 +12,7 @@ export const ROUTES = {
   RULES: '/(main)/rules',
   ABOUT: '/(main)/about',
   CHANGE_PASSWORD: '/(main)/change-password',
+  DELETE_ACCOUNT: '/(main)/delete-account',
 
   // Game routes
   GAME: (ulid: string) => `/(main)/game/${ulid}` as const,

@@ -37,8 +37,11 @@ yarn-error.*
 google-service-account.json
 
 # EAS credentials (keystores, secrets)
-credentials/
+credentials/android/*.jks
+credentials/android/*.p12
 credentials.json
+# But allow the properties template (contains no secrets, uses env vars)
+!credentials/android/keystore.properties
 
 # typescript
 *.tsbuildinfo
