@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SegmentedButtons, Switch, IconButton } from 'react-native-paper';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { BaseModal } from '../ui/BaseModal';
 import { Button } from '../ui/Button';
 import { BoardMaker } from './BoardMaker';
@@ -25,6 +26,42 @@ interface CreateGameModalProps {
   onClose: () => void;
   onConfirm: (params: CreateGameParams) => void;
   isPending: boolean;
+}
+
+interface BoardOptionProps {
+  selected: boolean;
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  label: string;
+  description: string;
+  onPress: () => void;
+}
+
+function BoardOption({ selected, icon, label, description, onPress }: BoardOptionProps) {
+  return (
+    <Pressable
+      style={[styles.boardOption, selected && styles.boardOptionSelected]}
+      onPress={onPress}
+    >
+      <View style={[styles.boardOptionIcon, selected && styles.boardOptionIconSelected]}>
+        <MaterialCommunityIcons
+          name={icon}
+          size={20}
+          color={selected ? colors.primary : colors.textSecondary}
+        />
+      </View>
+      <View style={styles.boardOptionText}>
+        <Text style={[styles.boardOptionLabel, selected && styles.boardOptionLabelSelected]}>
+          {label}
+        </Text>
+        <Text style={styles.boardOptionDescription}>{description}</Text>
+      </View>
+      <View style={styles.boardOptionRadio}>
+        <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
+          {selected && <View style={styles.radioInner} />}
+        </View>
+      </View>
+    </Pressable>
+  );
 }
 
 export function CreateGameModal({
@@ -129,16 +166,29 @@ export function CreateGameModal({
       />
 
       <Text style={styles.label}>Board</Text>
-      <SegmentedButtons
-        value={boardType}
-        onValueChange={handleBoardTypeChange}
-        buttons={[
-          { value: 'standard', label: 'Standard' },
-          { value: 'no_bonuses', label: 'No Bonus' },
-          { value: 'custom', label: 'Custom' },
-        ]}
-        style={styles.segmentedButtons}
-      />
+      <View style={styles.boardOptions}>
+        <BoardOption
+          selected={boardType === 'standard'}
+          icon="grid"
+          label="Standard"
+          description="Classic bonus squares"
+          onPress={() => handleBoardTypeChange('standard')}
+        />
+        <BoardOption
+          selected={boardType === 'no_bonuses'}
+          icon="grid-off"
+          label="No Bonuses"
+          description="Plain board, no multipliers"
+          onPress={() => handleBoardTypeChange('no_bonuses')}
+        />
+        <BoardOption
+          selected={boardType === 'custom'}
+          icon="pencil-ruler"
+          label="Custom"
+          description="Design your own layout"
+          onPress={() => handleBoardTypeChange('custom')}
+        />
+      </View>
 
       {boardType === 'custom' && (
         <Animated.View
@@ -220,6 +270,72 @@ const styles = StyleSheet.create({
   },
   segmentedButtons: {
     marginBottom: SPACING.xxl,
+  },
+  boardOptions: {
+    gap: SPACING.sm,
+    marginBottom: SPACING.lg,
+  },
+  boardOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: SPACING.md,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: 'transparent',
+  },
+  boardOptionSelected: {
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}10`,
+  },
+  boardOptionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: RADIUS.sm,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: SPACING.md,
+  },
+  boardOptionIconSelected: {
+    backgroundColor: `${colors.primary}20`,
+  },
+  boardOptionText: {
+    flex: 1,
+  },
+  boardOptionLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: colors.textPrimary,
+  },
+  boardOptionLabelSelected: {
+    color: colors.primary,
+  },
+  boardOptionDescription: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  boardOptionRadio: {
+    marginLeft: SPACING.sm,
+  },
+  radioOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioOuterSelected: {
+    borderColor: colors.primary,
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.primary,
   },
   customBoardRow: {
     flexDirection: 'row',

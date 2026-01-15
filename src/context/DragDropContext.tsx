@@ -995,21 +995,14 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   // -------------------------------------------------------------------------
   const handleGestureStart = useCallback(
     (x: number, y: number) => {
-      console.log('[DragDrop] handleGestureStart called', { x, y });
       // Check cooldown on JS thread
       const now = Date.now();
       if (now - lastDragEndTimeRef.current < DRAG_COOLDOWN_MS) {
-        console.log('[DragDrop] Cooldown active, skipping');
         return;
       }
 
       const draggable = findDraggableAtPosition(x, y);
-      console.log(
-        '[DragDrop] findDraggableAtPosition result:',
-        draggable ? 'found' : 'not found'
-      );
       if (draggable) {
-        console.log('[DragDrop] Starting drag for', draggable.tile.letter);
         startDragJS(
           draggable.tile,
           draggable.source,
@@ -1046,12 +1039,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
   // Stable wrapper functions for runOnJS (refs don't work directly)
   const onGestureStart = useCallback((x: number, y: number) => {
-    console.log('[DragDrop] onGestureStart wrapper called');
     handleGestureStartRef.current(x, y);
   }, []);
 
   const onGestureEnd = useCallback(() => {
-    console.log('[DragDrop] onGestureEnd wrapper called');
     handleGestureEndRef.current();
   }, []);
 
@@ -1106,9 +1097,13 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       const touch = event.allTouches[0];
       if (!touch) return;
 
-      // Check if touch is on the rack area
+      // Check if touch is on the rack area (only if layout is measured)
       const touchY = touch.absoluteY;
-      const isOnRack = touchY >= rackTop.value && touchY <= rackBottom.value;
+      const rackLayoutMeasured = rackBottom.value > rackTop.value;
+      const isOnRack =
+        rackLayoutMeasured &&
+        touchY >= rackTop.value &&
+        touchY <= rackBottom.value;
       touchStartedOnRack.value = isOnRack;
 
       // Check if touch starts near left edge (for iOS swipe-back)
@@ -1123,7 +1118,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Activate immediately for rack touches (not in swap mode)
-      if (isOnRack) {
+      // Also activate immediately if rack layout isn't measured yet (Android timing issue)
+      if (isOnRack || !rackLayoutMeasured) {
         stateManager.activate();
       }
     })
@@ -1135,7 +1131,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // If already activated (rack touch), do nothing
+      // If already activated, do nothing
       if (touchStartedOnRack.value) return;
 
       // If touch started near edge, fail to allow iOS swipe-back
@@ -1320,6 +1316,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1A1A1A',
     textAlign: 'center',
+    // Ensure proper centering on Android
+    ...Platform.select({
+      android: {
+        includeFontPadding: false,
+        textAlignVertical: 'center',
+      },
+      default: {},
+    }),
   },
   points: {
     position: 'absolute',
@@ -1328,6 +1332,13 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     color: '#1A1A1A',
+    // Ensure proper centering on Android
+    ...Platform.select({
+      android: {
+        includeFontPadding: false,
+      },
+      default: {},
+    }),
   },
   blankTile: {
     borderWidth: 2,

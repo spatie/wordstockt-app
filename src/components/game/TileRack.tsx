@@ -145,24 +145,10 @@ function AnimatedTileSlot({
     const lastRackDrop = getLastRackDrop();
     const justBecameVisible = prevIsUsed.current && !isUsed;
 
-    console.log('[TileRack] useLayoutEffect', {
-      actualRackIndex,
-      lastRackDrop,
-      justBecameVisible,
-      isUsed,
-      prevIsUsed: prevIsUsed.current,
-    });
-
     // Check if this tile was just dropped/returned (matches our rackIndex)
     // This handles: rack-to-rack drops, board-to-rack drops, and drops in empty area
     if (lastRackDrop?.rackIndex === actualRackIndex) {
       clearLastRackDrop();
-      console.log(
-        '[TileRack] Starting animation from',
-        lastRackDrop.dropX,
-        'to',
-        targetX
-      );
       // Set to drop position, then spring animate to target
       animatedX.value = lastRackDrop.dropX;
       animatedX.value = withSpring(targetX, SPRING_CONFIG);
@@ -276,11 +262,14 @@ export function TileRack({ tiles, disabled, onTileDrop }: TileRackProps) {
   const measureRack = useCallback(() => {
     rackRef.current?.measureInWindow((x, y, width, height) => {
       const startX = x + (width - TOTAL_SLOTS_WIDTH) / 2;
+      // Tiles are vertically centered within the rack container
+      // Calculate the Y offset to get the actual tile position
+      const tileY = y + (height - TILE_SIZE) / 2;
       const layout: RackLayout = {
         x: startX,
-        y,
+        y: tileY,
         width: TOTAL_SLOTS_WIDTH,
-        height,
+        height: TILE_SIZE,
         slotWidth: SLOT_WIDTH + GAP,
         slotCount: SLOT_COUNT,
       };

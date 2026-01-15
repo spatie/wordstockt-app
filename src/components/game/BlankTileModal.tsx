@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { BaseModal } from '../ui/BaseModal';
 import { colors } from '../../config/theme';
 import { SPACING, RADIUS } from '../../config/constants';
@@ -98,5 +98,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#1A1A1A',
+    textAlign: 'center',
+    // Ensure proper centering on Android
+    ...Platform.select({
+      android: {
+        includeFontPadding: false,
+        textAlignVertical: 'center',
+      },
+      default: {},
+    }),
   },
 });

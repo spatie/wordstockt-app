@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { VALIDATION_COLORS, colors } from '../../config/theme';
 import type { TileValidationState } from '../../types';
 
@@ -161,6 +161,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1A1A1A',
     textAlign: 'center',
+    // Ensure proper centering on Android
+    ...Platform.select({
+      android: {
+        includeFontPadding: false,
+        textAlignVertical: 'center',
+      },
+      default: {},
+    }),
   },
   points: {
     position: 'absolute',
@@ -168,6 +176,13 @@ const styles = StyleSheet.create({
     right: '5%',
     fontWeight: '800',
     color: '#1A1A1A',
+    // Ensure proper centering on Android
+    ...Platform.select({
+      android: {
+        includeFontPadding: false,
+      },
+      default: {},
+    }),
   },
   disabledText: {
     color: '#666',

@@ -25,9 +25,16 @@
     }
   },
   "submit": {
+    "development": {
+      "android": {
+        "track": "internal",
+        "serviceAccountKeyPath": "./google-service-account.json"
+      }
+    },
     "production": {
       "android": {
-        "track": "internal"
+        "track": "internal",
+        "serviceAccountKeyPath": "./google-service-account.json"
       },
       "ios": {
         "appleId": "freek@spatie.be"
