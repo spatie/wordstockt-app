@@ -36,13 +36,24 @@ interface BoardOptionProps {
   onPress: () => void;
 }
 
-function BoardOption({ selected, icon, label, description, onPress }: BoardOptionProps) {
+function BoardOption({
+  selected,
+  icon,
+  label,
+  description,
+  onPress,
+}: BoardOptionProps) {
   return (
     <Pressable
       style={[styles.boardOption, selected && styles.boardOptionSelected]}
       onPress={onPress}
     >
-      <View style={[styles.boardOptionIcon, selected && styles.boardOptionIconSelected]}>
+      <View
+        style={[
+          styles.boardOptionIcon,
+          selected && styles.boardOptionIconSelected,
+        ]}
+      >
         <MaterialCommunityIcons
           name={icon}
           size={20}
@@ -50,13 +61,20 @@ function BoardOption({ selected, icon, label, description, onPress }: BoardOptio
         />
       </View>
       <View style={styles.boardOptionText}>
-        <Text style={[styles.boardOptionLabel, selected && styles.boardOptionLabelSelected]}>
+        <Text
+          style={[
+            styles.boardOptionLabel,
+            selected && styles.boardOptionLabelSelected,
+          ]}
+        >
           {label}
         </Text>
         <Text style={styles.boardOptionDescription}>{description}</Text>
       </View>
       <View style={styles.boardOptionRadio}>
-        <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
+        <View
+          style={[styles.radioOuter, selected && styles.radioOuterSelected]}
+        >
           {selected && <View style={styles.radioInner} />}
         </View>
       </View>
