@@ -158,7 +158,10 @@ export function InvitePlayerModal({
         />
         <Text style={styles.userName}>{user.username}</Text>
         <TouchableOpacity
-          style={[styles.inviteButton, isInviting && styles.inviteButtonLoading]}
+          style={[
+            styles.inviteButton,
+            isInviting && styles.inviteButtonLoading,
+          ]}
           onPress={() => handleInviteUser(userUlid)}
           disabled={isInviting || invitingUserUlid !== null}
         >
@@ -216,9 +219,7 @@ export function InvitePlayerModal({
         </TouchableOpacity>
       </View>
 
-      {searchError && (
-        <Text style={styles.searchErrorText}>{searchError}</Text>
-      )}
+      {searchError && <Text style={styles.searchErrorText}>{searchError}</Text>}
 
       {errorMessage && (
         <View style={styles.errorContainer}>
