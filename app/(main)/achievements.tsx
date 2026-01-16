@@ -113,7 +113,9 @@ export default function AchievementsScreen() {
   }
 
   if (error) {
-    return <ErrorView message="Failed to load achievements" onRetry={refetch} />;
+    return (
+      <ErrorView message="Failed to load achievements" onRetry={refetch} />
+    );
   }
 
   const renderSectionHeader = ({
