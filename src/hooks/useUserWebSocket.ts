@@ -162,6 +162,13 @@ export function useUserWebSocket() {
 
           if (message.event === 'pusher_internal:subscription_succeeded') {
             console.log('[UserWS] Subscribed to', message.channel);
+            // Refresh data on (re)connect to catch up on any missed events
+            queryClientRef.current.invalidateQueries({
+              queryKey: gameKeys.lists(),
+            });
+            queryClientRef.current.invalidateQueries({
+              queryKey: invitationKeys.lists(),
+            });
             return;
           }
 
@@ -283,6 +290,13 @@ export function useUserWebSocket() {
       (state: AppStateStatus) => {
         if (state === 'active') {
           connect();
+          // Refresh games list to catch up on any events missed while backgrounded
+          queryClientRef.current.invalidateQueries({
+            queryKey: gameKeys.lists(),
+          });
+          queryClientRef.current.invalidateQueries({
+            queryKey: invitationKeys.lists(),
+          });
         } else if (state === 'background') {
           disconnect();
         }

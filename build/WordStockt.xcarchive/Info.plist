@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ApplicationProperties</key>
+	<dict>
+		<key>ApplicationPath</key>
+		<string>Applications/WordStockt.app</string>
+		<key>Architectures</key>
+		<array>
+			<string>arm64</string>
+		</array>
+		<key>CFBundleIdentifier</key>
+		<string>com.wordstockt.app</string>
+		<key>CFBundleShortVersionString</key>
+		<string>1.0.0</string>
+		<key>CFBundleVersion</key>
+		<string>22</string>
+		<key>SigningIdentity</key>
+		<string>Apple Development: Frederik Van der Herten (855B7LRN3F)</string>
+		<key>Team</key>
+		<string>97KRXCRMAY</string>
+	</dict>
+	<key>ArchiveVersion</key>
+	<integer>2</integer>
+	<key>CreationDate</key>
+	<date>2026-01-16T13:53:25Z</date>
+	<key>Name</key>
+	<string>WordStockt</string>
+	<key>SchemeName</key>
+	<string>WordStockt</string>
+</dict>
+</plist>

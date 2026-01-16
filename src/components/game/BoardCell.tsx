@@ -465,5 +465,13 @@ const styles = StyleSheet.create({
   },
   starText: {
     color: '#FFFFFF',
+    textAlign: 'center',
+    ...Platform.select({
+      android: {
+        includeFontPadding: false,
+        textAlignVertical: 'center',
+      },
+      default: {},
+    }),
   },
 });

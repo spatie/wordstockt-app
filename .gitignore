@@ -50,3 +50,4 @@ credentials.json
 /ios
 /android
 .env
+credentials/android/play-store-key.json

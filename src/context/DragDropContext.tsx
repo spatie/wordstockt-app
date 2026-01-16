@@ -37,6 +37,7 @@ import Animated, {
 import {
   TILE_SIZE,
   GAP,
+  SLOT_COUNT,
   ANIMATION_DURATION,
   SPRING_CONFIG,
 } from '../config/constants';
@@ -434,59 +435,96 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   // -------------------------------------------------------------------------
   // Hit Testing
   // -------------------------------------------------------------------------
-  const findDraggableAtPosition = useCallback(
+
+  // Fast-path hit test for rack tiles - O(1) instead of O(n)
+  const findRackTileAtPosition = useCallback(
     (x: number, y: number): DraggableItem | null => {
       const rackLayout = rackLayoutRef.current;
+      if (!rackLayout) return null;
+
+      // Check if within rack bounds
+      if (
+        y < rackLayout.y ||
+        y > rackLayout.y + rackLayout.height ||
+        x < rackLayout.x ||
+        x > rackLayout.x + rackLayout.width
+      ) {
+        return null;
+      }
+
+      // Calculate visual slot from position
+      const slotWidth = TILE_SIZE + GAP;
+      const relativeX = x - rackLayout.x;
+      const visualSlot = Math.floor(relativeX / slotWidth);
+
+      // Check if within tile (not in gap)
+      const posInSlot = relativeX - visualSlot * slotWidth;
+      if (posInSlot > TILE_SIZE || visualSlot < 0 || visualSlot >= SLOT_COUNT) {
+        return null;
+      }
+
+      // Get actual rack index from permutation
       const state = useGameStore.getState();
       const currentGameUlid = state.currentGameUlid;
       const permutation = (currentGameUlid &&
         state.gameStates[currentGameUlid]?.rackPermutation) || [
         0, 1, 2, 3, 4, 5, 6,
       ];
+      const actualRackIndex = permutation[visualSlot];
+      if (actualRackIndex === undefined) return null;
 
-      // Find all matching items and pick the one closest to touch point
-      let closestItem: DraggableItem | null = null;
-      let closestDistance = Infinity;
+      // Look up the registered draggable
+      const draggable = draggablesRef.current.get(`rack-${actualRackIndex}`);
+      if (!draggable) return null;
 
-      for (const [id, item] of draggablesRef.current) {
-        let hitArea = item.hitArea;
-
-        // For rack items, recalculate hit area from current permutation
-        if (item.source.type === 'rack' && rackLayout) {
-          const visualSlot = permutation.indexOf(item.source.rackIndex);
-          if (visualSlot !== -1) {
-            const slotWidth = TILE_SIZE + GAP;
-            hitArea = {
-              x: rackLayout.x + visualSlot * slotWidth,
-              y: rackLayout.y,
-              width: TILE_SIZE,
-              height: TILE_SIZE,
-            };
-          }
-        }
-
-        // Check if touch point is within hit area
-        if (
-          x >= hitArea.x &&
-          x <= hitArea.x + hitArea.width &&
-          y >= hitArea.y &&
-          y <= hitArea.y + hitArea.height
-        ) {
-          // Calculate distance from touch point to hit area center
-          const centerX = hitArea.x + hitArea.width / 2;
-          const centerY = hitArea.y + hitArea.height / 2;
-          const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
-
-          if (distance < closestDistance) {
-            closestDistance = distance;
-            closestItem = { ...item, hitArea };
-          }
-        }
-      }
-
-      return closestItem;
+      // Return with calculated hit area
+      return {
+        ...draggable,
+        hitArea: {
+          x: rackLayout.x + visualSlot * slotWidth,
+          y: rackLayout.y,
+          width: TILE_SIZE,
+          height: TILE_SIZE,
+        },
+      };
     },
     []
+  );
+
+  // Fast-path hit test for board tiles - O(1) instead of O(n)
+  const findBoardTileAtPosition = useCallback(
+    (x: number, y: number): DraggableItem | null => {
+      const boardLayout = boardLayoutRef.current;
+      if (!boardLayout) return null;
+
+      // Calculate cell from position
+      const cell = getBoardCellFromPosition(x, y, boardLayout);
+      if (!cell) return null;
+
+      // Look up the registered draggable for this cell
+      const draggable = draggablesRef.current.get(`board-${cell.x}-${cell.y}`);
+      if (!draggable) return null;
+
+      // Return with the registered hit area
+      return draggable;
+    },
+    []
+  );
+
+  const findDraggableAtPosition = useCallback(
+    (x: number, y: number): DraggableItem | null => {
+      // Fast-path: try rack first (most common drag source)
+      const rackItem = findRackTileAtPosition(x, y);
+      if (rackItem) return rackItem;
+
+      // Fast-path: try board tiles
+      const boardItem = findBoardTileAtPosition(x, y);
+      if (boardItem) return boardItem;
+
+      // Fallback: iterate through all draggables (rarely needed)
+      return null;
+    },
+    [findRackTileAtPosition, findBoardTileAtPosition]
   );
 
   // -------------------------------------------------------------------------
@@ -1091,6 +1129,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
   // Track if touch started below rack (in button area) - should fail gesture
   const touchStartedBelowRack = useSharedValue(false);
+  // Track if gesture was activated immediately in onTouchesDown
+  const activatedImmediately = useSharedValue(false);
 
   const panGesture = Gesture.Pan()
     .minDistance(DRAG_ACTIVATION_DISTANCE)
@@ -1101,8 +1141,12 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       const touch = event.allTouches[0];
       if (!touch) return;
 
+      // Use relative touch coordinates + container offset for consistent behavior across platforms
+      // On Android, absoluteY and measureInWindow may use different coordinate systems (status bar handling)
+      const touchY = touch.y + containerOffsetY.value;
+      const touchX = touch.x + containerOffsetX.value;
+
       // Check if touch is on the rack area (only if layout is measured)
-      const touchY = touch.absoluteY;
       const rackLayoutMeasured = rackBottomShared.value > rackTopShared.value;
       const isOnRack =
         rackLayoutMeasured &&
@@ -1116,8 +1160,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
       // Check if touch starts near left edge (for iOS swipe-back)
       // But NOT if on the rack - rack touches are always for tile dragging
-      touchStartedNearEdge.value =
-        !isOnRack && touch.absoluteX < EDGE_THRESHOLD;
+      touchStartedNearEdge.value = !isOnRack && touchX < EDGE_THRESHOLD;
 
       // Fail immediately for touches below rack (button area) to allow button presses
       if (isBelowRack) {
@@ -1131,14 +1174,28 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Activate immediately for rack touches (not in swap mode)
-      // Also activate immediately if rack layout isn't measured yet (Android timing issue)
-      if (isOnRack || !rackLayoutMeasured) {
+      // Check if touch is above rack (board area)
+      const isAboveRack = rackLayoutMeasured && touchY < rackTopShared.value;
+
+      // Activate immediately for:
+      // - Rack touches (not in swap mode) - tile dragging
+      // - Board area touches (above rack, not near edge) - pending tile dragging
+      // - Uninitialized state (rack layout not measured) - safe fallback
+      const shouldActivateImmediately =
+        isOnRack ||
+        (isAboveRack && !touchStartedNearEdge.value) ||
+        !rackLayoutMeasured;
+
+      activatedImmediately.value = shouldActivateImmediately;
+      if (shouldActivateImmediately) {
         stateManager.activate();
       }
     })
     .onTouchesMove((event, stateManager) => {
       'worklet';
+      // If already activated in onTouchesDown, do nothing
+      if (activatedImmediately.value) return;
+
       // If touch started below rack (button area), fail to allow button presses
       if (touchStartedBelowRack.value) {
         stateManager.fail();
@@ -1151,9 +1208,6 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // If already activated, do nothing
-      if (touchStartedOnRack.value) return;
-
       // If touch started near edge, fail to allow iOS swipe-back
       if (touchStartedNearEdge.value) {
         stateManager.fail();
@@ -1165,22 +1219,28 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     .onStart((event) => {
       'worklet';
       // Find draggable at position (must call on JS thread, includes cooldown check)
-      runOnJS(onGestureStart)(event.absoluteX, event.absoluteY);
+      // Use relative coordinates + container offset for consistent behavior across platforms
+      const screenX = event.x + containerOffsetX.value;
+      const screenY = event.y + containerOffsetY.value;
+      runOnJS(onGestureStart)(screenX, screenY);
     })
     .onUpdate((event) => {
       'worklet';
       if (!isDraggingShared.value) return;
 
-      // Convert absolute screen coordinates to container-relative coordinates
-      const relativeX = event.absoluteX - containerOffsetX.value;
-      const relativeY = event.absoluteY - containerOffsetY.value;
+      // Use relative coordinates (event.x/y are relative to the gesture handler view)
+      // This is more reliable across platforms than absoluteX/Y - containerOffset
+      const relativeX = event.x;
+      const relativeY = event.y;
 
       // Update position directly on UI thread - no bridge!
       positionX.value = relativeX + TILE_OFFSET;
       positionY.value = relativeY + TILE_OFFSET;
 
-      // Also update ref for endDrag calculations (keep absolute for hit testing)
-      runOnJS(onPositionUpdate)(event.absoluteX, event.absoluteY);
+      // Convert to screen coordinates for hit testing (add container offset)
+      const screenX = event.x + containerOffsetX.value;
+      const screenY = event.y + containerOffsetY.value;
+      runOnJS(onPositionUpdate)(screenX, screenY);
     })
     .onEnd(() => {
       'worklet';
