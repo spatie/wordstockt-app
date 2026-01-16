@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, StyleSheet, Platform } from 'react-native';
 import { MenuView, MenuAction } from '@react-native-menu/menu';
-import { useRouter } from 'expo-router';
+import { useRouter, Href } from 'expo-router';
 import { useLogout } from '../../api/queries/useAuth';
 import { showConfirm } from '../../utils/alerts';
 import { colors } from '../../config/theme';
@@ -22,6 +22,9 @@ export function HeaderMenu() {
         break;
       case 'friends':
         router.push(ROUTES.FRIENDS);
+        break;
+      case 'achievements':
+        router.push(ROUTES.ACHIEVEMENTS as Href);
         break;
       case 'change-password':
         router.push(ROUTES.CHANGE_PASSWORD);
@@ -48,6 +51,7 @@ export function HeaderMenu() {
 
   const menuItems = {
     leaderboard: { id: 'leaderboard', title: 'Leaderboard', image: 'trophy' },
+    achievements: { id: 'achievements', title: 'Achievements', image: 'star' },
     friends: { id: 'friends', title: 'Friends', image: 'person.2' },
     profile: { id: 'profile', title: 'Profile', image: 'person.circle' },
     changePassword: {
@@ -75,6 +79,7 @@ export function HeaderMenu() {
   const actions: MenuAction[] = [
     section('social-section', 'Social', [
       menuItems.leaderboard,
+      menuItems.achievements,
       menuItems.friends,
     ]),
     section('account-section', 'Account', [

@@ -44,3 +44,6 @@ export { useValidation } from './useValidation';
 
 // Word info queries
 export { useWordInfo } from './useWordInfo';
+
+// Achievement queries
+export { useAchievements } from './useAchievements';

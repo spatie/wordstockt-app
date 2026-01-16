@@ -115,9 +115,9 @@ export default function LoginScreen() {
               value={email}
               onChangeText={setEmail}
               placeholder="Email or Username"
-              keyboardType="email-address"
+              keyboardType="default"
               autoCapitalize="none"
-              autoComplete="email"
+              autoComplete="username"
             />
           </Animated.View>
 

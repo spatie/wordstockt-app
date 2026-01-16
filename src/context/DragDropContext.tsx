@@ -305,6 +305,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const isDraggingShared = useSharedValue(false); // For worklet access
   const isSwapModeShared = useSharedValue(false); // For worklet access
 
+  // Shared values for rack layout (accessed in worklet for gesture decisions)
+  const rackTopShared = useSharedValue(0);
+  const rackBottomShared = useSharedValue(0);
+
   // Sync swap mode state to shared value for worklet access
   const isSwapMode = useIsSwapMode();
   useEffect(() => {
@@ -389,9 +393,15 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     boardLayoutRef.current = layout;
   }, []);
 
-  const setRackLayout = useCallback((layout: RackLayout) => {
-    rackLayoutRef.current = layout;
-  }, []);
+  const setRackLayout = useCallback(
+    (layout: RackLayout) => {
+      rackLayoutRef.current = layout;
+      // Sync to shared values for worklet access (gesture decisions)
+      rackTopShared.value = layout.y;
+      rackBottomShared.value = layout.y + layout.height;
+    },
+    [rackTopShared, rackBottomShared]
+  );
 
   const getBoardCell = useCallback((x: number, y: number) => {
     if (!boardLayoutRef.current) return null;
@@ -1058,20 +1068,11 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const containerOffsetX = useSharedValue(0);
   const containerOffsetY = useSharedValue(0);
 
-  // Shared values for rack layout (accessed in worklet for immediate activation)
-  const rackTop = useSharedValue(0);
-  const rackBottom = useSharedValue(0);
-
-  // Sync container offset and rack layout to shared values
+  // Sync container offset to shared values
   useEffect(() => {
     const syncValues = () => {
       containerOffsetX.value = containerOffsetRef.current.x;
       containerOffsetY.value = containerOffsetRef.current.y;
-      if (rackLayoutRef.current) {
-        rackTop.value = rackLayoutRef.current.y;
-        rackBottom.value =
-          rackLayoutRef.current.y + rackLayoutRef.current.height;
-      }
     };
     // Sync immediately and also set up a small interval for the initial layout
     syncValues();
@@ -1079,7 +1080,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     // Clear after a short time - we just need to catch the initial measurement
     setTimeout(() => clearInterval(timer), 500);
     return () => clearInterval(timer);
-  }, [containerOffsetX, containerOffsetY, rackTop, rackBottom]);
+  }, [containerOffsetX, containerOffsetY]);
 
   // Edge threshold for iOS swipe-back gesture (in pixels from left edge)
   const EDGE_THRESHOLD = 20;
@@ -1087,6 +1088,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const touchStartedNearEdge = useSharedValue(false);
   // Track if touch started on rack (to activate immediately)
   const touchStartedOnRack = useSharedValue(false);
+
+  // Track if touch started below rack (in button area) - should fail gesture
+  const touchStartedBelowRack = useSharedValue(false);
 
   const panGesture = Gesture.Pan()
     .minDistance(DRAG_ACTIVATION_DISTANCE)
@@ -1099,17 +1103,27 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
       // Check if touch is on the rack area (only if layout is measured)
       const touchY = touch.absoluteY;
-      const rackLayoutMeasured = rackBottom.value > rackTop.value;
+      const rackLayoutMeasured = rackBottomShared.value > rackTopShared.value;
       const isOnRack =
         rackLayoutMeasured &&
-        touchY >= rackTop.value &&
-        touchY <= rackBottom.value;
+        touchY >= rackTopShared.value &&
+        touchY <= rackBottomShared.value;
       touchStartedOnRack.value = isOnRack;
+
+      // Check if touch is below the rack (button area)
+      const isBelowRack = rackLayoutMeasured && touchY > rackBottomShared.value;
+      touchStartedBelowRack.value = isBelowRack;
 
       // Check if touch starts near left edge (for iOS swipe-back)
       // But NOT if on the rack - rack touches are always for tile dragging
       touchStartedNearEdge.value =
         !isOnRack && touch.absoluteX < EDGE_THRESHOLD;
+
+      // Fail immediately for touches below rack (button area) to allow button presses
+      if (isBelowRack) {
+        stateManager.fail();
+        return;
+      }
 
       // In swap mode, fail immediately for rack touches to allow tap handling
       if (isOnRack && isSwapModeShared.value) {
@@ -1125,6 +1139,12 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     })
     .onTouchesMove((event, stateManager) => {
       'worklet';
+      // If touch started below rack (button area), fail to allow button presses
+      if (touchStartedBelowRack.value) {
+        stateManager.fail();
+        return;
+      }
+
       // If in swap mode and touch started on rack, fail to allow tap handling
       if (isSwapModeShared.value && touchStartedOnRack.value) {
         stateManager.fail();

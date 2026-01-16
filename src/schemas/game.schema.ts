@@ -246,6 +246,17 @@ export function transformGameListItem(
   };
 }
 
+const AchievementSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string(),
+    icon: z.string(),
+    category: z.string(),
+    context: z.record(z.string(), z.unknown()).optional(),
+  })
+  .passthrough();
+
 export const MoveResponseSchema = z
   .object({
     move: z
@@ -256,6 +267,7 @@ export const MoveResponseSchema = z
       })
       .passthrough(),
     data: GameSchema,
+    achievements: z.array(AchievementSchema).optional().default([]),
   })
   .passthrough();
 

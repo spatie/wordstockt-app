@@ -57,6 +57,7 @@ export default function MainLayout() {
         <Stack.Screen name="user/[id]" />
         <Stack.Screen name="change-password" />
         <Stack.Screen name="invite/[code]" />
+        <Stack.Screen name="achievements" />
       </Stack>
     </>
   );

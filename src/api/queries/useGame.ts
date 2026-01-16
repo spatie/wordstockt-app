@@ -8,7 +8,8 @@ import {
 import { safeParse } from '../../schemas/safeParse';
 import { placedTilesToApi } from '../transforms/tileTransforms';
 import { gameKeys } from './queryKeys';
-import type { Game, PlacedTile } from '../../types';
+import { useAchievementStore } from '../../stores/achievementStore';
+import type { Game, PlacedTile, Achievement } from '../../types';
 
 export function useGame(gameUlid: string) {
   return useQuery({
@@ -31,10 +32,12 @@ interface SubmitMoveParams {
 interface MoveResult {
   game: Game;
   move: { ulid: string; score?: number; words?: string[] | null };
+  achievements: Achievement[];
 }
 
 export function useSubmitMove() {
   const queryClient = useQueryClient();
+  const addToQueue = useAchievementStore((s) => s.addToQueue);
 
   return useMutation({
     mutationFn: async ({
@@ -48,11 +51,17 @@ export function useSubmitMove() {
       return {
         game: transformGame(validated.data),
         move: validated.move,
+        achievements: validated.achievements ?? [],
       };
     },
     onSuccess: (result, { gameUlid }) => {
       queryClient.setQueryData(gameKeys.detail(gameUlid), result.game);
       queryClient.invalidateQueries({ queryKey: gameKeys.lists() });
+
+      // Add any unlocked achievements to the queue
+      if (result.achievements.length > 0) {
+        addToQueue(result.achievements);
+      }
     },
   });
 }

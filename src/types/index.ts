@@ -5,3 +5,4 @@ export * from './validation';
 export * from './friend';
 export * from './stats';
 export * from './word';
+export * from './achievement';

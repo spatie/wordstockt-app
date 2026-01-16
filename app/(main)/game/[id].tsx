@@ -15,6 +15,10 @@ import { useJoinGame } from '../../../src/api/queries/useGames';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { useGameStore } from '../../../src/stores/gameStore';
 import { useNavigationStore } from '../../../src/stores/navigationStore';
+import {
+  useAchievementStore,
+  useCurrentAchievement,
+} from '../../../src/stores/achievementStore';
 import { useWebSocket } from '../../../src/hooks/useWebSocket';
 import { useGameInteractions } from '../../../src/hooks/useGameInteractions';
 import { useConflictingTilesRecall } from '../../../src/hooks/useConflictingTilesRecall';
@@ -32,6 +36,7 @@ import { BlankTileModal } from '../../../src/components/game/BlankTileModal';
 import { WordInfoModal } from '../../../src/components/game/WordInfoModal';
 import { LoadingView } from '../../../src/components/ui/LoadingView';
 import { FeedbackModal } from '../../../src/components/ui/FeedbackModal';
+import { AchievementModal } from '../../../src/components/ui/AchievementModal';
 import { Button } from '../../../src/components/ui/Button';
 import { showConfirm } from '../../../src/utils/alerts';
 import { colors } from '../../../src/config/theme';
@@ -85,6 +90,10 @@ function GameScreenContent() {
   const [lastMoveWarningShown, setLastMoveWarningShown] = useState(false);
   const [gameEndModalDismissed, setGameEndModalDismissed] = useState(false);
   const [isSwapExiting, setIsSwapExiting] = useState(false);
+
+  // Achievement state
+  const currentAchievement = useCurrentAchievement();
+  const dismissAchievement = useAchievementStore((s) => s.dismissNext);
   const [wordInfoPosition, setWordInfoPosition] = useState<{
     x: number;
     y: number;
@@ -505,6 +514,15 @@ function GameScreenContent() {
         onClose={() => setWordInfoPosition(null)}
         words={wordInfo}
         isLoading={isWordInfoLoading}
+      />
+      <AchievementModal
+        visible={
+          currentAchievement !== null &&
+          !showGameEndModal &&
+          !showLastMoveWarning
+        }
+        achievement={currentAchievement}
+        onDismiss={dismissAchievement}
       />
     </View>
   );

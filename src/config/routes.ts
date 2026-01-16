@@ -9,6 +9,7 @@ export const ROUTES = {
   PROFILE: '/(main)/profile',
   LEADERBOARD: '/(main)/leaderboard',
   FRIENDS: '/(main)/friends',
+  ACHIEVEMENTS: '/(main)/achievements',
   RULES: '/(main)/rules',
   ABOUT: '/(main)/about',
   CHANGE_PASSWORD: '/(main)/change-password',
