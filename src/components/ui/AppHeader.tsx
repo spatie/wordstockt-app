@@ -8,7 +8,7 @@ import { AnimatedLogoTile } from './AnimatedLogoTile';
 import { BackButton } from './BackButton';
 import { MenuModal } from './MenuModal';
 import { showConfirm } from '../../utils/alerts';
-import { colors } from '../../config/theme';
+import { colors, shadows } from '../../config/theme';
 import { SPACING, DIMENSIONS } from '../../config/constants';
 import { ROUTES } from '../../config/routes';
 
@@ -131,6 +131,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     backgroundColor: colors.background,
+    ...shadows.sm,
   },
   headerSide: {
     width: DIMENSIONS.iconButton,

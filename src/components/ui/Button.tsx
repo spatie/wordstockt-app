@@ -8,7 +8,8 @@ import {
   type ViewStyle,
   type TextStyle,
 } from 'react-native';
-import { colors } from '../../config/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { colors, gradients, shadows } from '../../config/theme';
 import { RADIUS, DIMENSIONS } from '../../config/constants';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline';
@@ -66,8 +67,11 @@ export function Button({
 }: ButtonProps) {
   const sizeStyle = SIZE_STYLES[size];
   const isDisabled = disabled || loading;
+  const isPrimary = variant === 'primary' && !color;
+  const borderRadius = rounded ? RADIUS.round : RADIUS.md;
 
   const getBackgroundColor = () => {
+    if (isPrimary) return 'transparent';
     if (variant === 'outline') return 'transparent';
     if (color) return color;
     if (variant === 'secondary') return colors.buttonSecondary;
@@ -85,6 +89,23 @@ export function Button({
     return 'transparent';
   };
 
+  const buttonContent = loading ? (
+    <ActivityIndicator color={getTextColor()} size="small" />
+  ) : (
+    <Text
+      style={[
+        styles.text,
+        {
+          fontSize: sizeStyle.fontSize,
+          color: getTextColor(),
+        },
+        textStyle,
+      ]}
+    >
+      {label}
+    </Text>
+  );
+
   return (
     <TouchableOpacity
       style={[
@@ -94,11 +115,12 @@ export function Button({
           paddingHorizontal: sizeStyle.paddingHorizontal,
           backgroundColor: getBackgroundColor(),
           borderColor: getBorderColor(),
-          borderRadius: rounded ? RADIUS.round : RADIUS.md,
+          borderRadius,
           opacity: isDisabled ? 0.6 : 1,
         },
         variant === 'outline' && styles.outline,
         fullWidth && styles.fullWidth,
+        isPrimary && shadows.sm,
         style,
       ]}
       onPress={onPress}
@@ -106,22 +128,15 @@ export function Button({
       activeOpacity={0.7}
       testID={testID}
     >
-      {loading ? (
-        <ActivityIndicator color={getTextColor()} size="small" />
-      ) : (
-        <Text
-          style={[
-            styles.text,
-            {
-              fontSize: sizeStyle.fontSize,
-              color: getTextColor(),
-            },
-            textStyle,
-          ]}
-        >
-          {label}
-        </Text>
+      {isPrimary && (
+        <LinearGradient
+          colors={gradients.primary}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[StyleSheet.absoluteFill, { borderRadius }]}
+        />
       )}
+      {buttonContent}
     </TouchableOpacity>
   );
 }
@@ -131,6 +146,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   outline: {
     borderWidth: 1,

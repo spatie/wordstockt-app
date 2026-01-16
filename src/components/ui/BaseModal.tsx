@@ -10,7 +10,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { colors } from '../../config/theme';
+import { colors, shadows } from '../../config/theme';
 import { RADIUS, SPACING } from '../../config/constants';
 
 type OverlayOpacity = 0.5 | 0.7;
@@ -192,5 +192,6 @@ const styles = StyleSheet.create({
     padding: SPACING.xxl,
     width: '100%',
     maxWidth: 400,
+    ...shadows.xl,
   },
 });

@@ -24,7 +24,7 @@ import { TabBar } from '../ui/TabBar';
 
 type TabValue = 'users' | 'share';
 
-interface SelectedUser {
+interface SearchResult {
   ulid: string;
   username: string;
   avatar: string | null;
@@ -50,18 +50,13 @@ export function InvitePlayerModal({
 }: InvitePlayerModalProps) {
   const [activeTab, setActiveTab] = useState<TabValue>('users');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUser, setSelectedUser] = useState<SelectedUser | null>(null);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [invitingUserUlid, setInvitingUserUlid] = useState<string | null>(null);
   const { data: friends, isLoading: isLoadingFriends } = useFriends();
   const invitePlayer = useInvitePlayer();
   const createInviteLink = useCreateInviteLink();
-
-  const handleSelectFriend = (friend: SelectedUser) => {
-    setSelectedUser(friend);
-    setSearchQuery('');
-    setSearchError(null);
-  };
 
   const handleSearch = async () => {
     if (searchQuery.trim().length < 2) {
@@ -71,26 +66,24 @@ export function InvitePlayerModal({
 
     setIsSearching(true);
     setSearchError(null);
+    setSearchResults([]);
 
     try {
       const { data } = await apiClient.get('/users/search', {
         params: { query: searchQuery.trim() },
       });
 
-      const matchedUser = data.data?.find(
-        (user: { username: string }) =>
-          user.username.toLowerCase() === searchQuery.trim().toLowerCase()
-      );
-
-      if (matchedUser) {
-        setSelectedUser({
-          ulid: matchedUser.ulid,
-          username: matchedUser.username,
-          avatar: matchedUser.avatar,
-        });
-        setSearchQuery('');
+      const results = data.data || [];
+      if (results.length > 0) {
+        setSearchResults(
+          results.map((user: SearchResult) => ({
+            ulid: user.ulid,
+            username: user.username,
+            avatar: user.avatar,
+          }))
+        );
       } else {
-        setSearchError('No user found with that name...');
+        setSearchError('No users found');
       }
     } catch {
       setSearchError('Failed to search for user');
@@ -99,29 +92,31 @@ export function InvitePlayerModal({
     }
   };
 
-  const handleInvite = async () => {
-    if (!selectedUser) return;
-
+  const handleInviteUser = async (userUlid: string) => {
+    setInvitingUserUlid(userUlid);
     try {
       await invitePlayer.mutateAsync({
         gameUlid,
-        userUlid: selectedUser.ulid,
+        userUlid,
       });
       setSearchQuery('');
-      setSelectedUser(null);
+      setSearchResults([]);
       setSearchError(null);
       onSuccess();
       onClose();
     } catch {
       // Error is handled by mutation state
+    } finally {
+      setInvitingUserUlid(null);
     }
   };
 
   const handleClose = () => {
     setSearchQuery('');
-    setSelectedUser(null);
+    setSearchResults([]);
     setSearchError(null);
     setActiveTab('users');
+    setInvitingUserUlid(null);
     invitePlayer.reset();
     createInviteLink.reset();
     onClose();
@@ -147,117 +142,83 @@ export function InvitePlayerModal({
     ? getApiError(createInviteLink.error).message
     : null;
 
-  const canInvite = !!selectedUser;
-  const showFriendsList = !selectedUser && friends && friends.length > 0;
+  const renderUserRow = (
+    user: { ulid: string; username: string; avatar: string | null },
+    userUlid: string
+  ) => {
+    const isInviting = invitingUserUlid === userUlid;
+
+    return (
+      <View key={user.ulid} style={styles.userRow}>
+        <SmartAvatar
+          uri={user.avatar}
+          name={user.username}
+          size={40}
+          disabled
+        />
+        <Text style={styles.userName}>{user.username}</Text>
+        <TouchableOpacity
+          style={[styles.inviteButton, isInviting && styles.inviteButtonLoading]}
+          onPress={() => handleInviteUser(userUlid)}
+          disabled={isInviting || invitingUserUlid !== null}
+        >
+          {isInviting ? (
+            <ActivityIndicator size="small" color={colors.textPrimary} />
+          ) : (
+            <Text style={styles.inviteButtonText}>Invite</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   const renderUsersTab = () => (
     <>
-      {selectedUser && (
-        <TouchableOpacity
-          style={styles.selectedUserCard}
-          onPress={() => setSelectedUser(null)}
-        >
-          <SmartAvatar
-            uri={selectedUser.avatar}
-            name={selectedUser.username}
-            size={48}
-            disabled
+      <View style={styles.searchRow}>
+        <View style={styles.searchContainer}>
+          <Ionicons
+            name="search"
+            size={18}
+            color={colors.textMuted}
+            style={styles.searchIcon}
           />
-          <View style={styles.userInfo}>
-            <Text style={styles.username}>{selectedUser.username}</Text>
-          </View>
-          <Text style={styles.clearIcon}>×</Text>
-        </TouchableOpacity>
-      )}
-
-      {!selectedUser && (
-        <>
-          <View style={styles.searchRow}>
-            <View style={styles.searchContainer}>
-              <Text style={styles.searchIcon}>+</Text>
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Type a username"
-                placeholderTextColor={colors.textMuted}
-                value={searchQuery}
-                onChangeText={(text) => {
-                  setSearchQuery(text);
-                  setSearchError(null);
-                }}
-                autoCapitalize="none"
-                autoCorrect={false}
-                onSubmitEditing={handleSearch}
-                returnKeyType="search"
-              />
-            </View>
-            <TouchableOpacity
-              style={[
-                styles.searchButton,
-                (!searchQuery.trim() || isSearching) &&
-                  styles.searchButtonDisabled,
-              ]}
-              onPress={handleSearch}
-              disabled={!searchQuery.trim() || isSearching}
-            >
-              {isSearching ? (
-                <ActivityIndicator size="small" color={colors.textPrimary} />
-              ) : (
-                <Text style={styles.searchButtonText}>Search</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-
-          {searchError && (
-            <Text style={styles.searchErrorText}>{searchError}</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by username"
+            placeholderTextColor={colors.textMuted}
+            value={searchQuery}
+            onChangeText={(text) => {
+              setSearchQuery(text);
+              setSearchError(null);
+              if (text.trim() === '') {
+                setSearchResults([]);
+              }
+            }}
+            autoCapitalize="none"
+            autoCorrect={false}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
+          />
+        </View>
+        <TouchableOpacity
+          style={[
+            styles.searchButton,
+            (!searchQuery.trim() || isSearching) && styles.searchButtonDisabled,
+          ]}
+          onPress={handleSearch}
+          disabled={!searchQuery.trim() || isSearching}
+        >
+          {isSearching ? (
+            <ActivityIndicator size="small" color={colors.textPrimary} />
+          ) : (
+            <Text style={styles.searchButtonText}>Search</Text>
           )}
-        </>
-      )}
+        </TouchableOpacity>
+      </View>
 
-      {showFriendsList && (
-        <View style={styles.friendsSection}>
-          <Text style={styles.sectionTitle}>Friends</Text>
-          <ScrollView
-            style={styles.friendsList}
-            showsVerticalScrollIndicator={false}
-          >
-            {friends.map((friend) => (
-              <TouchableOpacity
-                key={friend.ulid}
-                style={styles.friendItem}
-                onPress={() =>
-                  handleSelectFriend({
-                    ulid: friend.friendUlid,
-                    username: friend.username,
-                    avatar: friend.avatar,
-                  })
-                }
-              >
-                <SmartAvatar
-                  uri={friend.avatar}
-                  name={friend.username}
-                  size={40}
-                  disabled
-                />
-                <Text style={styles.friendName}>{friend.username}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+      {searchError && (
+        <Text style={styles.searchErrorText}>{searchError}</Text>
       )}
-
-      {!selectedUser && isLoadingFriends && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color={colors.primary} />
-        </View>
-      )}
-
-      {!selectedUser &&
-        !isLoadingFriends &&
-        (!friends || friends.length === 0) && (
-          <Text style={styles.hintText}>
-            No friends yet. Type a username above.
-          </Text>
-        )}
 
       {errorMessage && (
         <View style={styles.errorContainer}>
@@ -265,15 +226,52 @@ export function InvitePlayerModal({
         </View>
       )}
 
-      <Button
-        label="Send Invitation"
-        onPress={handleInvite}
-        disabled={!canInvite}
-        loading={invitePlayer.isPending}
-        fullWidth
-        rounded
-        size="lg"
-      />
+      {searchResults.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Search Results</Text>
+          <ScrollView
+            style={styles.userList}
+            showsVerticalScrollIndicator={false}
+          >
+            {searchResults.map((user) => renderUserRow(user, user.ulid))}
+          </ScrollView>
+        </View>
+      )}
+
+      {searchResults.length === 0 && friends && friends.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Friends</Text>
+          <ScrollView
+            style={styles.userList}
+            showsVerticalScrollIndicator={false}
+          >
+            {friends.map((friend) =>
+              renderUserRow(
+                {
+                  ulid: friend.ulid,
+                  username: friend.username,
+                  avatar: friend.avatar,
+                },
+                friend.friendUlid
+              )
+            )}
+          </ScrollView>
+        </View>
+      )}
+
+      {searchResults.length === 0 && isLoadingFriends && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color={colors.primary} />
+        </View>
+      )}
+
+      {searchResults.length === 0 &&
+        !isLoadingFriends &&
+        (!friends || friends.length === 0) && (
+          <Text style={styles.hintText}>
+            Search for a username above to invite them.
+          </Text>
+        )}
     </>
   );
 
@@ -369,7 +367,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.md,
   },
   searchContainer: {
     flex: 1,
@@ -381,10 +379,7 @@ const styles = StyleSheet.create({
     height: 48,
   },
   searchIcon: {
-    fontSize: 20,
-    color: colors.primary,
     marginRight: SPACING.sm,
-    fontWeight: '600',
   },
   searchInput: {
     flex: 1,
@@ -413,32 +408,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: SPACING.md,
   },
-  selectedUserCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary + '20',
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    padding: SPACING.md,
-    marginBottom: SPACING.lg,
-  },
-  clearIcon: {
-    fontSize: 24,
-    color: colors.textSecondary,
-    paddingHorizontal: SPACING.sm,
-  },
-  userInfo: {
-    marginLeft: SPACING.md,
-    flex: 1,
-  },
-  username: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  friendsSection: {
-    marginBottom: SPACING.lg,
+  section: {
+    marginBottom: SPACING.md,
   },
   sectionTitle: {
     fontSize: 12,
@@ -448,10 +419,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: SPACING.sm,
   },
-  friendsList: {
-    maxHeight: 160,
+  userList: {
+    maxHeight: 200,
   },
-  friendItem: {
+  userRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.background,
@@ -459,11 +430,28 @@ const styles = StyleSheet.create({
     padding: SPACING.sm,
     marginBottom: SPACING.xs,
   },
-  friendName: {
+  userName: {
+    flex: 1,
     fontSize: 15,
     fontWeight: '500',
     color: colors.textPrimary,
     marginLeft: SPACING.md,
+  },
+  inviteButton: {
+    backgroundColor: colors.primary,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    minWidth: 70,
+    alignItems: 'center',
+  },
+  inviteButtonLoading: {
+    opacity: 0.7,
+  },
+  inviteButtonText: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '600',
   },
   loadingContainer: {
     padding: SPACING.lg,
@@ -473,13 +461,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginBottom: SPACING.lg,
+    marginVertical: SPACING.lg,
   },
   errorContainer: {
     backgroundColor: 'rgba(239, 68, 68, 0.1)',
     borderRadius: RADIUS.md,
     padding: SPACING.md,
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
   },
   errorText: {
     color: '#EF4444',

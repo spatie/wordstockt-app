@@ -95,3 +95,50 @@ export const HIGHLIGHT_COLORS = {
   valid: 'rgba(46, 125, 50, 0.35)', // Dark green overlay
   invalid: 'rgba(198, 40, 40, 0.35)', // Dark red overlay
 } as const;
+
+// Shadow system - consistent elevation levels
+export const shadows = {
+  none: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+  },
+  sm: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  md: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  lg: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  xl: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+} as const;
+
+// Gradient presets for use with expo-linear-gradient
+export const gradients = {
+  primary: ['#5EAAF0', '#4088D0'] as const,
+  primaryDark: ['#4A90D9', '#3D5A80'] as const,
+  success: ['#34D399', '#10B981'] as const,
+  danger: ['#F87171', '#EF4444'] as const,
+} as const;

@@ -6,7 +6,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { colors } from '../../config/theme';
+import { colors, shadows } from '../../config/theme';
 import { RADIUS, SPACING } from '../../config/constants';
 
 type SpacingKey = keyof typeof SPACING;
@@ -20,6 +20,7 @@ interface CardProps {
   marginBottom?: SpacingKey;
   accentColor?: string;
   showAccent?: boolean;
+  elevated?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 }
@@ -32,6 +33,7 @@ export function Card({
   marginBottom = 'md',
   accentColor = colors.primary,
   showAccent = false,
+  elevated = true,
   style,
   testID,
 }: CardProps) {
@@ -40,6 +42,7 @@ export function Card({
     borderRadius: RADIUS[borderRadius],
     padding: SPACING[padding],
     marginBottom: SPACING[marginBottom],
+    ...(elevated && shadows.md),
     ...(showAccent && {
       borderLeftWidth: 4,
       borderLeftColor: accentColor,

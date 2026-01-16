@@ -1174,17 +1174,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Check if touch is above rack (board area)
-      const isAboveRack = rackLayoutMeasured && touchY < rackTopShared.value;
-
-      // Activate immediately for:
-      // - Rack touches (not in swap mode) - tile dragging
-      // - Board area touches (above rack, not near edge) - pending tile dragging
-      // - Uninitialized state (rack layout not measured) - safe fallback
-      const shouldActivateImmediately =
-        isOnRack ||
-        (isAboveRack && !touchStartedNearEdge.value) ||
-        !rackLayoutMeasured;
+      // Activate immediately only for rack touches (not in swap mode)
+      // Board area touches (score bar, game board) should only activate on move
+      // This allows taps on score bar avatars to work
+      const shouldActivateImmediately = isOnRack;
 
       activatedImmediately.value = shouldActivateImmediately;
       if (shouldActivateImmediately) {

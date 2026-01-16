@@ -1,14 +1,18 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import {
   View,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   Animated,
   Platform,
 } from 'react-native';
 import { Text } from 'react-native-paper';
+import { useRouter } from 'expo-router';
 import { colors } from '../../config/theme';
 import { DIMENSIONS } from '../../config/constants';
+import { ROUTES } from '../../config/routes';
+import { useAuthStore } from '../../stores/authStore';
+import { Avatar } from '../ui/Avatar';
 import { SmartAvatar } from '../ui/SmartAvatar';
 import { TurnTimer } from './TurnTimer';
 import { AnimatedScore } from './AnimatedScore';
@@ -80,6 +84,8 @@ function PlayerAvatar({
   player: Player | undefined;
   isActive: boolean;
 }) {
+  const router = useRouter();
+  const currentUserUlid = useAuthStore((s) => s.user?.ulid);
   const activeOpacity = useRef(new Animated.Value(isActive ? 1 : 0)).current;
 
   useEffect(() => {
@@ -90,22 +96,33 @@ function PlayerAvatar({
     }).start();
   }, [isActive, activeOpacity]);
 
+  const handlePress = useCallback(() => {
+    if (!player?.ulid) return;
+
+    if (player.ulid === currentUserUlid) {
+      router.push(ROUTES.PROFILE);
+    } else {
+      router.push(ROUTES.USER_PROFILE(player.ulid));
+    }
+  }, [player?.ulid, currentUserUlid, router]);
+
   return (
-    <View style={styles.avatarContainer}>
+    <Pressable
+      style={styles.avatarContainer}
+      onPress={handlePress}
+      disabled={!player?.ulid}
+    >
       <Animated.View
+        pointerEvents="none"
         style={[styles.activeIndicator, { opacity: activeOpacity }]}
       />
-      <View style={styles.avatarWrapper}>
-        <SmartAvatar
-          userUlid={player?.ulid}
-          uri={player?.avatar}
-          name={player?.username || '?'}
-          size={AVATAR_SIZE}
-          disabled={!player?.ulid}
-          backgroundColor={player?.avatarColor ?? undefined}
-        />
-      </View>
-    </View>
+      <Avatar
+        uri={player?.avatar}
+        name={player?.username || '?'}
+        size={AVATAR_SIZE}
+        backgroundColor={player?.avatarColor ?? undefined}
+      />
+    </Pressable>
   );
 }
 
@@ -193,12 +210,19 @@ export function ScoreBar({
       {/* Right player section */}
       <View style={[styles.playerSection, styles.playerSectionRight]}>
         {canInvite ? (
-          <>
+          <View style={styles.inviteContainer}>
             <Text style={styles.invitePrompt}>Invite opponent</Text>
-            <TouchableOpacity style={styles.inviteButton} onPress={onInvite}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.inviteButton,
+                pressed && { opacity: 0.5 },
+              ]}
+              onPressOut={onInvite}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
               <Text style={styles.inviteText}>+</Text>
-            </TouchableOpacity>
-          </>
+            </Pressable>
+          </View>
         ) : hasPendingInvitation ? (
           <View style={styles.pendingInviteSection}>
             <View style={[styles.playerInfo, styles.playerInfoRight]}>
@@ -207,10 +231,14 @@ export function ScoreBar({
               </Text>
               <Text style={styles.pendingLabel}>Invited</Text>
             </View>
-            <TouchableOpacity
-              style={styles.pendingAvatarContainer}
-              onPress={() => onRevokeInvitation?.(game.pendingInvitation!.ulid)}
-              activeOpacity={0.7}
+            <Pressable
+              style={({ pressed }) => [
+                styles.pendingAvatarContainer,
+                pressed && { opacity: 0.7 },
+              ]}
+              onPressOut={() =>
+                onRevokeInvitation?.(game.pendingInvitation!.ulid)
+              }
             >
               <SmartAvatar
                 userUlid={game.pendingInvitation!.invitee.ulid}
@@ -225,7 +253,7 @@ export function ScoreBar({
               <View style={styles.revokeOverlay}>
                 <Text style={styles.revokeIcon}>×</Text>
               </View>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         ) : (
           <>
@@ -299,13 +327,6 @@ const styles = StyleSheet.create({
     borderRadius: AVATAR_CONTAINER_SIZE / 2,
     borderWidth: 2.5,
     borderColor: colors.warning,
-  },
-  avatarWrapper: {
-    width: AVATAR_SIZE + 2,
-    height: AVATAR_SIZE + 2,
-    borderRadius: (AVATAR_SIZE + 2) / 2,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   playerName: {
     color: colors.textSecondary,
@@ -383,6 +404,10 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 10,
     fontWeight: 'bold',
+  },
+  inviteContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   invitePrompt: {
     color: colors.textSecondary,
