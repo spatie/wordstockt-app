@@ -1,11 +1,5 @@
 import React, { useEffect, useRef, useCallback } from 'react';
-import {
-  View,
-  StyleSheet,
-  Pressable,
-  Animated,
-  Platform,
-} from 'react-native';
+import { View, StyleSheet, Pressable, Animated, Platform } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { colors } from '../../config/theme';
