@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { Tile } from './Tile';
 import { useDragDrop } from '../../context/DragDropContext';
 import { usePointerDrag } from '../../hooks/usePointerDrag';
@@ -35,6 +36,7 @@ export function DraggableTile({
     dragSource,
     registerDraggable,
     unregisterDraggable,
+    draggingRackIndexShared,
   } = useDragDrop();
 
   const registrationId = `rack-${rackIndex}`;
@@ -43,6 +45,21 @@ export function DraggableTile({
     isDragging &&
     dragSource?.type === 'rack' &&
     dragSource.rackIndex === rackIndex;
+
+  // Immediate hiding based on shared value (prevents visual glitch during fast drags)
+  // Only apply minimal opacity change to prevent brief double-tile visual glitch
+  const immediateHideStyle = useAnimatedStyle(() => {
+    'worklet';
+    const draggingIndex = draggingRackIndexShared.value;
+    
+    // Only hide this specific tile when it's actively being dragged
+    if (draggingIndex === rackIndex && draggingIndex >= 0 && draggingIndex < 7) {
+      return { opacity: 0 };
+    }
+    
+    // Default: fully visible
+    return { opacity: 1 };
+  }, [rackIndex]);
 
   // Callback for when drag ends (called from DragDropContext on native)
   // Returns true if placement succeeded, false if it failed (e.g., cell occupied)
@@ -124,18 +141,19 @@ export function DraggableTile({
     disabled: disabled || isUsed,
   });
 
-  // Show empty slot when tile is used (placed on board)
+  // Show empty slot when tile is used (placed on board) or being dragged
   if (isUsed || isThisDragging) {
     return <View style={styles.emptySlot} />;
   }
 
+
   // Web: use pointer events
   if (Platform.OS === 'web') {
     return (
-      <View
+      <Animated.View
         onPointerDown={handlePointerDown}
         // @ts-expect-error cursor is web-only CSS property
-        style={[styles.container, !disabled && { cursor: 'grab' }]}
+        style={[styles.container, !disabled && { cursor: 'grab' }, immediateHideStyle]}
       >
         <Tile
           letter={tile.letter}
@@ -145,13 +163,13 @@ export function DraggableTile({
           size="board"
           cellSize={TILE_SIZE * 1.3}
         />
-      </View>
+      </Animated.View>
     );
   }
 
   // Native: just render, hit-testing is handled by global PanGestureHandler
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, immediateHideStyle]}>
       <Tile
         letter={tile.letter}
         points={tile.points}
@@ -160,7 +178,7 @@ export function DraggableTile({
         size="board"
         cellSize={TILE_SIZE * 1.3}
       />
-    </View>
+    </Animated.View>
   );
 }
 

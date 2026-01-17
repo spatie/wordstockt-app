@@ -386,6 +386,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: colors.textPrimary,
+    textAlignVertical: 'center',
   },
   searchButton: {
     backgroundColor: colors.primary,

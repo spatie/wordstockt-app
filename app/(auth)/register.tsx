@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   ScrollView,
   Image,
+  Linking,
 } from 'react-native';
 import { Link } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -145,6 +146,17 @@ export default function RegisterScreen() {
               </View>
             )}
 
+            {/* Privacy Policy Notice */}
+            <Text style={styles.privacyNotice}>
+              By creating an account, you agree to our{' '}
+              <Text
+                style={styles.privacyLink}
+                onPress={() => Linking.openURL('https://wordstockt.com/privacy')}
+              >
+                Privacy Policy
+              </Text>
+            </Text>
+
             {/* Register Button */}
             <TouchableOpacity
               style={[
@@ -265,6 +277,16 @@ const styles = StyleSheet.create({
     color: '#EF4444',
     fontSize: 14,
     textAlign: 'center',
+  },
+  privacyNotice: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: SPACING.sm,
+  },
+  privacyLink: {
+    color: colors.primary,
+    textDecorationLine: 'underline',
   },
   registerButton: {
     width: '100%',

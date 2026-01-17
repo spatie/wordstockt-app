@@ -80,7 +80,7 @@ export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
       avatar: game.opponent?.avatar,
       avatarColor: game.opponent?.avatarColor,
       ulid: game.opponent?.ulid,
-      subtitle: formatLastMove(game.lastMoveDescription, game.status, game.isMyTurn),
+      subtitle: isCompleted ? null : formatLastMove(game.lastMoveDescription, game.status, game.isMyTurn),
     };
   };
 
@@ -121,12 +121,14 @@ export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
               </View>
             )}
           </View>
-          <Text style={[
-            styles.lastMove,
-            !game.isMyTurn && styles.lastMoveOpponentTurn
-          ]} numberOfLines={1}>
-            {displayInfo.subtitle}
-          </Text>
+          {displayInfo.subtitle && (
+            <Text style={[
+              styles.lastMove,
+              !game.isMyTurn && styles.lastMoveOpponentTurn
+            ]} numberOfLines={1}>
+              {displayInfo.subtitle}
+            </Text>
+          )}
         </View>
         {!isAwaitingOpponent && (
           <View style={styles.scoreContainer}>

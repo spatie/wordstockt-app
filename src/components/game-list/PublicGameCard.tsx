@@ -41,11 +41,11 @@ export function PublicGameCard({ game, onPress }: PublicGameCardProps) {
           <Text style={styles.timeText}>{timeAgo(game.createdAt)}</Text>
         </View>
         <Button
-          label="See Game →"
+          label="View"
           onPress={onPress}
           size="sm"
           rounded
-          style={styles.seeButton}
+          style={styles.viewButton}
         />
       </View>
     </Card>
@@ -107,7 +107,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textSecondary,
   },
-  seeButton: {
+  viewButton: {
     paddingHorizontal: SPACING.xl,
+    backgroundColor: colors.backgroundLight,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 });

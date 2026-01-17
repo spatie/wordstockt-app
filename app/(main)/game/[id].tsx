@@ -379,6 +379,11 @@ function GameScreenContent() {
   const gameJustEnded = isGameFinished && !wasFinishedOnLoadRef.current;
   const showGameEndModal = gameJustEnded && !gameEndModalDismissed;
 
+  // Calculate final scores for game end modal
+  const myScore = currentPlayer?.score ?? 0;
+  const opponent = gameData.players.find((p) => p.ulid !== userUlid);
+  const opponentScore = opponent?.score ?? 0;
+
   return (
     <View style={styles.container}>
       {/* Board area - wrapped so overlay can cover just this section */}

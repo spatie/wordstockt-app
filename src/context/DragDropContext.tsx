@@ -110,6 +110,9 @@ interface DragDropContextType {
   // Layout setters
   setBoardLayout: (layout: BoardLayout) => void;
   setRackLayout: (layout: RackLayout) => void;
+  
+  // Tile data sync (for external components to update shared values)
+  updateRackTiles: (tiles: Array<Tile | null>) => void;
 
   // Draggable registration (for hit testing)
   registerDraggable: (
@@ -148,6 +151,9 @@ interface DragDropContextType {
 
   // Utility
   getBoardCell: (x: number, y: number) => { x: number; y: number } | null;
+  
+  // Shared values for immediate UI updates (worklet access)
+  draggingRackIndexShared: SharedValue<number>;
 }
 
 // ============================================================================
@@ -165,7 +171,7 @@ const DRAG_COOLDOWN_MS = 100;
 // ============================================================================
 
 interface FloatingTileProps {
-  tile: Tile | null;
+  dragTileShared: SharedValue<[string, number, boolean] | null>;
   positionX: SharedValue<number>;
   positionY: SharedValue<number>;
   scale: SharedValue<number>;
@@ -173,7 +179,7 @@ interface FloatingTileProps {
 }
 
 function FloatingTile({
-  tile,
+  dragTileShared,
   positionX,
   positionY,
   scale,
@@ -188,10 +194,13 @@ function FloatingTile({
     opacity: opacity.value,
   }));
 
-  if (!tile) return null;
 
-  const isBlank = tile.isBlank;
-  const displayLetter = tile.letter === '*' ? '' : tile.letter;
+  // Extract tile data from shared value for rendering
+  const tileData = dragTileShared.value;
+  if (!tileData) return null;
+
+  const [letter, points, isBlank] = tileData;
+  const displayLetter = letter === '*' ? '' : letter;
   const TILE_INNER_SIZE = TILE_SIZE * 0.92;
 
   return (
@@ -200,12 +209,12 @@ function FloatingTile({
       pointerEvents="none"
     >
       <View style={[styles.tileContent, isBlank && styles.blankTile]}>
-        {tile.letter !== '*' && (
+        {letter !== '*' && (
           <>
             <Animated.Text style={styles.letterText}>
               {displayLetter}
             </Animated.Text>
-            <Animated.Text style={styles.points}>{tile.points}</Animated.Text>
+            <Animated.Text style={styles.points}>{points}</Animated.Text>
           </>
         )}
       </View>
@@ -305,16 +314,96 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const recallProgress = useSharedValue(0);
   const isDraggingShared = useSharedValue(false); // For worklet access
   const isSwapModeShared = useSharedValue(false); // For worklet access
+  
+  // Shared values for drag state (to avoid JS thread during active drag)
+  const dragTileShared = useSharedValue<[string, number, boolean] | null>(null); // [letter, points, isBlank]
+  const dragSourceShared = useSharedValue<{ type: 'rack' | 'board'; rackIndex?: number; x?: number; y?: number } | null>(null);
+  const lastDragEndTimeShared = useSharedValue(0);
+  
+  // Shared value for immediate rack tile hiding (prevents visual glitch)
+  const draggingRackIndexShared = useSharedValue(-1); // -1 means no rack tile is dragging
 
   // Shared values for rack layout (accessed in worklet for gesture decisions)
   const rackTopShared = useSharedValue(0);
   const rackBottomShared = useSharedValue(0);
+  const rackLeftShared = useSharedValue(0);
+  const rackWidthShared = useSharedValue(0);
+  
+  // Shared values for board layout (accessed in worklet for hit testing)
+  const boardLeftShared = useSharedValue(0);
+  const boardTopShared = useSharedValue(0);
+  const boardCellSizeShared = useSharedValue(0);
+  const boardSizeShared = useSharedValue(15); // 15x15 board
+  
+  // Shared values for rack permutation (accessed in worklet for hit testing)
+  const rackPermutationShared = useSharedValue([0, 1, 2, 3, 4, 5, 6]);
+  
+  // Shared values for storing tile data (accessed in worklet for drag operations)
+  // Format: [letter, points, isBlank] for each rack index
+  const rackTilesShared = useSharedValue<Array<[string, number, boolean] | null>>(
+    new Array(7).fill(null)
+  );
+  
+  // Shared values for board tiles (pending tiles only)
+  // Format: Map-like structure using string keys "x,y" -> [letter, points, isBlank, rackIndex]
+  const boardTilesShared = useSharedValue<Record<string, [string, number, boolean, number]>>({});
 
   // Sync swap mode state to shared value for worklet access
   const isSwapMode = useIsSwapMode();
   useEffect(() => {
     isSwapModeShared.value = isSwapMode;
   }, [isSwapMode, isSwapModeShared]);
+
+  // Sync game state to shared values for worklet access
+  useEffect(() => {
+    const state = useGameStore.getState();
+    const currentGameUlid = state.currentGameUlid;
+    if (!currentGameUlid) return;
+    
+    const gameState = state.gameStates[currentGameUlid];
+    if (!gameState) return;
+
+    // Update rack permutation
+    rackPermutationShared.value = gameState.rackPermutation || [0, 1, 2, 3, 4, 5, 6];
+    
+    // Update board tiles (pending tiles only)
+    const newBoardTiles: Record<string, [string, number, boolean, number]> = {};
+    gameState.pendingTiles.forEach((tile) => {
+      const key = `${tile.x},${tile.y}`;
+      newBoardTiles[key] = [tile.letter, tile.points, tile.isBlank, tile.rackIndex];
+    });
+    boardTilesShared.value = newBoardTiles;
+  }, [rackPermutationShared, boardTilesShared]);
+
+  // Subscribe to game store changes to keep shared values in sync
+  useEffect(() => {
+    const unsubscribe = useGameStore.subscribe((state, prevState) => {
+      const currentGameUlid = state.currentGameUlid;
+      if (!currentGameUlid) return;
+      
+      const gameState = state.gameStates[currentGameUlid];
+      const prevGameState = prevState.gameStates[currentGameUlid];
+      if (!gameState) return;
+
+      // Update only if pending tiles changed or rack permutation changed
+      if (gameState.pendingTiles !== prevGameState?.pendingTiles ||
+          gameState.rackPermutation !== prevGameState?.rackPermutation) {
+        
+        // Update rack permutation
+        rackPermutationShared.value = gameState.rackPermutation || [0, 1, 2, 3, 4, 5, 6];
+        
+        // Update board tiles (pending tiles only)
+        const newBoardTiles: Record<string, [string, number, boolean, number]> = {};
+        gameState.pendingTiles.forEach((tile) => {
+          const key = `${tile.x},${tile.y}`;
+          newBoardTiles[key] = [tile.letter, tile.points, tile.isBlank, tile.rackIndex];
+        });
+        boardTilesShared.value = newBoardTiles;
+      }
+    });
+    
+    return unsubscribe;
+  }, [rackPermutationShared, boardTilesShared]);
 
   // -------------------------------------------------------------------------
   // Refs (synchronous access, no re-renders)
@@ -376,7 +465,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       hitArea: { x: number; y: number; width: number; height: number },
       tile: Tile | PendingTile,
       source: DragSource,
-      onDragEnd?: (target: DropTarget, wasDragged: boolean) => void
+      onDragEnd?: (target: DropTarget, wasDragged: boolean) => boolean
     ) => {
       draggablesRef.current.set(id, { id, hitArea, tile, source, onDragEnd });
     },
@@ -392,7 +481,11 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   // -------------------------------------------------------------------------
   const setBoardLayout = useCallback((layout: BoardLayout) => {
     boardLayoutRef.current = layout;
-  }, []);
+    // Sync to shared values for worklet access (hit testing)
+    boardLeftShared.value = layout.x;
+    boardTopShared.value = layout.y;
+    boardCellSizeShared.value = layout.cellSize;
+  }, [boardLeftShared, boardTopShared, boardCellSizeShared]);
 
   const setRackLayout = useCallback(
     (layout: RackLayout) => {
@@ -400,8 +493,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       // Sync to shared values for worklet access (gesture decisions)
       rackTopShared.value = layout.y;
       rackBottomShared.value = layout.y + layout.height;
+      rackLeftShared.value = layout.x;
+      rackWidthShared.value = layout.width;
     },
-    [rackTopShared, rackBottomShared]
+    [rackTopShared, rackBottomShared, rackLeftShared, rackWidthShared]
   );
 
   const getBoardCell = useCallback((x: number, y: number) => {
@@ -416,6 +511,17 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const clearLastRackDrop = useCallback(() => {
     lastRackDropRef.current = null;
   }, []);
+  
+  // Update rack tiles in shared values (called by external components)
+  const updateRackTiles = useCallback((tiles: Array<Tile | null>) => {
+    const newRackTiles = new Array(7).fill(null) as Array<[string, number, boolean] | null>;
+    tiles.forEach((tile, index) => {
+      if (tile) {
+        newRackTiles[index] = [tile.letter, tile.points, tile.isBlank];
+      }
+    });
+    rackTilesShared.value = newRackTiles;
+  }, [rackTilesShared]);
 
   // Measure container offset from screen (for converting absolute coordinates)
   const measureContainerOffset = useCallback(() => {
@@ -433,7 +539,115 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   );
 
   // -------------------------------------------------------------------------
-  // Hit Testing
+  // Hit Testing (Worklet Versions for UI Thread)
+  // -------------------------------------------------------------------------
+  
+  // Worklet version of rack hit testing - runs on UI thread for instant response
+  const findRackTileAtPositionWorklet = useCallback((x: number, y: number) => {
+    'worklet';
+    // Check if within rack bounds
+    if (
+      y < rackTopShared.value ||
+      y > rackBottomShared.value ||
+      x < rackLeftShared.value ||
+      x > rackLeftShared.value + rackWidthShared.value
+    ) {
+      return null;
+    }
+
+    // Calculate visual slot from position
+    const slotWidth = TILE_SIZE + GAP;
+    const relativeX = x - rackLeftShared.value;
+    const visualSlot = Math.floor(relativeX / slotWidth);
+
+    // Check if within tile (not in gap)
+    const posInSlot = relativeX - visualSlot * slotWidth;
+    if (posInSlot > TILE_SIZE || visualSlot < 0 || visualSlot >= SLOT_COUNT) {
+      return null;
+    }
+
+    // Get actual rack index from permutation
+    const permutation = rackPermutationShared.value;
+    const actualRackIndex = permutation[visualSlot];
+    if (actualRackIndex === undefined) {
+      return null;
+    }
+
+    // Get tile data from shared values
+    const tileData = rackTilesShared.value[actualRackIndex];
+    if (!tileData) return null;
+
+    const [letter, points, isBlank] = tileData;
+    
+    return {
+      type: 'rack' as const,
+      rackIndex: actualRackIndex,
+      visualSlot,
+      tile: { letter, points, isBlank },
+      hitArea: {
+        x: rackLeftShared.value + visualSlot * slotWidth,
+        y: rackTopShared.value,
+        width: TILE_SIZE,
+        height: TILE_SIZE,
+      },
+    };
+  }, [rackTopShared, rackBottomShared, rackLeftShared, rackWidthShared, rackPermutationShared, rackTilesShared]);
+
+  // Worklet version of board hit testing - runs on UI thread
+  const findBoardCellAtPositionWorklet = useCallback((x: number, y: number) => {
+    'worklet';
+    const boardLeft = boardLeftShared.value;
+    const boardTop = boardTopShared.value;
+    const cellSize = boardCellSizeShared.value;
+    const boardSize = boardSizeShared.value;
+
+    if (cellSize <= 0) return null;
+
+    // Check if within board bounds
+    const boardWidth = boardSize * cellSize;
+    const boardHeight = boardSize * cellSize;
+    
+    if (
+      x < boardLeft ||
+      x > boardLeft + boardWidth ||
+      y < boardTop ||
+      y > boardTop + boardHeight
+    ) {
+      return null;
+    }
+
+    // Calculate cell coordinates
+    const cellX = Math.floor((x - boardLeft) / cellSize);
+    const cellY = Math.floor((y - boardTop) / cellSize);
+
+    // Ensure within valid range
+    if (cellX < 0 || cellX >= boardSize || cellY < 0 || cellY >= boardSize) {
+      return null;
+    }
+
+    // Check if there's a pending tile at this position
+    const key = `${cellX},${cellY}`;
+    const tileData = boardTilesShared.value[key];
+    if (!tileData) return null;
+
+    const [letter, points, isBlank, rackIndex] = tileData;
+    
+    return {
+      type: 'board' as const,
+      x: cellX,
+      y: cellY,
+      tile: { letter, points, isBlank, rackIndex },
+      hitArea: {
+        x: boardLeft + cellX * cellSize,
+        y: boardTop + cellY * cellSize,
+        width: cellSize,
+        height: cellSize,
+      },
+    };
+  }, [boardLeftShared, boardTopShared, boardCellSizeShared, boardSizeShared, boardTilesShared]);
+
+  // -------------------------------------------------------------------------
+  // Hit Testing (JS Thread Versions - for compatibility)
   // -------------------------------------------------------------------------
 
   // Fast-path hit test for rack tiles - O(1) instead of O(n)
@@ -537,7 +751,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       x: number,
       y: number,
       dragId?: string,
-      onDragEnd?: (target: DropTarget, wasDragged: boolean) => void
+      onDragEnd?: (target: DropTarget, wasDragged: boolean) => boolean
     ) => {
       isDraggingRef.current = true;
       isDraggingShared.value = true; // Sync shared value for worklet access
@@ -597,11 +811,16 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           opacity.value = 0;
           isDraggingRef.current = false;
           isDraggingShared.value = false; // Sync shared value
-          lastDragEndTimeRef.current = Date.now();
+          const now = Date.now();
+          lastDragEndTimeRef.current = now;
+          lastDragEndTimeShared.value = now;
           setDragStatus('idle');
           setDragTile(null);
           setDragSource(null);
           activeDragRef.current = null;
+          dragTileShared.value = null;
+          dragSourceShared.value = null;
+          draggingRackIndexShared.value = -1;
           onComplete?.(target);
           dragCallback?.(target, true);
           return;
@@ -825,12 +1044,17 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       // No pending settle, just reset
       isDraggingRef.current = false;
       isDraggingShared.value = false;
-      lastDragEndTimeRef.current = Date.now();
+      const now = Date.now();
+      lastDragEndTimeRef.current = now;
+      lastDragEndTimeShared.value = now;
       setDragStatus('idle');
       setDragTile(null);
       setDragSource(null);
       setSettlingTarget(null);
       activeDragRef.current = null;
+      dragTileShared.value = null;
+      dragSourceShared.value = null;
+      draggingRackIndexShared.value = -1;
       requestAnimationFrame(() => {
         opacity.value = 0;
         scale.value = 1;
@@ -850,12 +1074,16 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         // Reset ALL drag state after return animation completes
         isDraggingRef.current = false;
         isDraggingShared.value = false;
-        lastDragEndTimeRef.current = Date.now();
+        const now = Date.now();
+        lastDragEndTimeRef.current = now;
+        lastDragEndTimeShared.value = now;
         setDragStatus('idle');
         setDragTile(null);
         setDragSource(null);
         setSettlingTarget(null);
         activeDragRef.current = null;
+        dragTileShared.value = null;
+        dragSourceShared.value = null;
 
         requestAnimationFrame(() => {
           opacity.value = 0;
@@ -868,12 +1096,16 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     // Placement succeeded - reset drag state immediately
     isDraggingRef.current = false;
     isDraggingShared.value = false;
-    lastDragEndTimeRef.current = Date.now();
+    const now = Date.now();
+    lastDragEndTimeRef.current = now;
+    lastDragEndTimeShared.value = now;
     setDragStatus('idle');
     setDragTile(null);
     setDragSource(null);
     setSettlingTarget(null);
     activeDragRef.current = null;
+    dragTileShared.value = null;
+    dragSourceShared.value = null;
 
     // Hide floating tile after a micro-delay to let React render the rack tile first
     // This prevents the brief flash where neither tile is visible
@@ -1072,6 +1304,37 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     endDragJS();
   }, [endDragJS]);
 
+  // Worklet drag start callback - updates JS state asynchronously (non-blocking)
+  const onWorkletDragStart = useCallback(
+    (source: DragSource, tile: Tile | (Tile & { x: number; y: number; rackIndex: number })) => {
+      // Update React state for UI re-renders, but this doesn't block the worklet
+      setDragTile(tile);
+      setDragSource(source);
+      setDragStatus('dragging');
+      
+      // Update refs for JS-side operations
+      currentPositionRef.current = { x: 0, y: 0 }; // Will be updated in onUpdate
+      isDraggingRef.current = true;
+      activeDragRef.current = {
+        id: source.type === 'rack' ? `rack-${source.rackIndex}` : `board-${source.x}-${source.y}`,
+        tile,
+        source,
+        onDragEnd: (target: DropTarget, wasDragged: boolean): boolean => {
+          const callback = draggablesRef.current.get(
+            source.type === 'rack' ? `rack-${source.rackIndex}` : `board-${source.x}-${source.y}`
+          )?.onDragEnd;
+          return callback?.(target, wasDragged) ?? true;
+        },
+      };
+
+      // Prevent rack shuffle during drag
+      if (source.type === 'rack') {
+        useGameStore.getState().setRackDragging(true);
+      }
+    },
+    [setDragTile, setDragSource, setDragStatus]
+  );
+
   // Sync handler refs for worklet access
   useEffect(() => {
     handleGestureStartRef.current = handleGestureStart;
@@ -1091,6 +1354,13 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const onGestureEnd = useCallback(() => {
+    handleGestureEndRef.current();
+  }, []);
+
+  const onGestureEndWithPosition = useCallback((x: number, y: number) => {
+    // Update position ref for drop target calculation
+    currentPositionRef.current = { x, y };
+    // Call the normal end drag logic
     handleGestureEndRef.current();
   }, []);
 
@@ -1211,40 +1481,94 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     })
     .onStart((event) => {
       'worklet';
-      // Find draggable at position (must call on JS thread, includes cooldown check)
+      // Check cooldown on UI thread
+      const now = Date.now();
+      if (now - lastDragEndTimeShared.value < DRAG_COOLDOWN_MS) {
+        return;
+      }
+
       // Use relative coordinates + container offset for consistent behavior across platforms
       const screenX = event.x + containerOffsetX.value;
       const screenY = event.y + containerOffsetY.value;
+      
+      // Try rack hit testing first (most common)
+      const rackHit = findRackTileAtPositionWorklet(screenX, screenY);
+      if (rackHit) {
+        // Start rack drag on UI thread
+        isDraggingShared.value = true;
+        dragTileShared.value = [rackHit.tile.letter, rackHit.tile.points, rackHit.tile.isBlank];
+        dragSourceShared.value = { type: 'rack', rackIndex: rackHit.rackIndex };
+        draggingRackIndexShared.value = rackHit.rackIndex; // Hide rack tile immediately
+        
+        // Position floating tile (container-relative coordinates)
+        positionX.value = event.x + TILE_OFFSET;
+        positionY.value = event.y + TILE_OFFSET;
+        scale.value = 1;
+        opacity.value = 1;
+        
+        // Update JS state asynchronously (non-blocking)
+        runOnJS(onWorkletDragStart)({ type: 'rack', rackIndex: rackHit.rackIndex }, rackHit.tile);
+        return;
+      }
+      
+      // Try board hit testing
+      const boardHit = findBoardCellAtPositionWorklet(screenX, screenY);
+      if (boardHit) {
+        // Start board drag on UI thread
+        isDraggingShared.value = true;
+        dragTileShared.value = [boardHit.tile.letter, boardHit.tile.points, boardHit.tile.isBlank];
+        dragSourceShared.value = { type: 'board', x: boardHit.x, y: boardHit.y };
+        
+        // Position floating tile (container-relative coordinates)
+        positionX.value = event.x + TILE_OFFSET;
+        positionY.value = event.y + TILE_OFFSET;
+        scale.value = 1;
+        opacity.value = 1;
+        
+        // Update JS state asynchronously (non-blocking)
+        runOnJS(onWorkletDragStart)(
+          { type: 'board', x: boardHit.x, y: boardHit.y }, 
+          { ...boardHit.tile, x: boardHit.x, y: boardHit.y }
+        );
+        return;
+      }
+
+      // Fallback to JS hit testing if worklets don't find anything
       runOnJS(onGestureStart)(screenX, screenY);
     })
     .onUpdate((event) => {
       'worklet';
       if (!isDraggingShared.value) return;
 
-      // Use relative coordinates (event.x/y are relative to the gesture handler view)
-      // This is more reliable across platforms than absoluteX/Y - containerOffset
-      const relativeX = event.x;
-      const relativeY = event.y;
-
       // Update position directly on UI thread - no bridge!
-      positionX.value = relativeX + TILE_OFFSET;
-      positionY.value = relativeY + TILE_OFFSET;
+      positionX.value = event.x + TILE_OFFSET;
+      positionY.value = event.y + TILE_OFFSET;
 
-      // Convert to screen coordinates for hit testing (add container offset)
-      const screenX = event.x + containerOffsetX.value;
-      const screenY = event.y + containerOffsetY.value;
-      runOnJS(onPositionUpdate)(screenX, screenY);
+      // No need for runOnJS here - position updates are handled entirely on UI thread
+      // JS thread position tracking is only needed for final drop calculations
     })
-    .onEnd(() => {
+    .onEnd((event) => {
       'worklet';
       if (!isDraggingShared.value) return;
-      runOnJS(onGestureEnd)();
+      
+      // Update shared drag end time for cooldown
+      lastDragEndTimeShared.value = Date.now();
+      
+      // Convert to screen coordinates for drop target calculation
+      const screenX = event.x + containerOffsetX.value;
+      const screenY = event.y + containerOffsetY.value;
+      
+      // Call JS for final drop handling (this is needed for game state updates)
+      runOnJS(onGestureEndWithPosition)(screenX, screenY);
     })
-    .onFinalize(() => {
+    .onFinalize((event) => {
       'worklet';
       // Handle cancelled gestures
       if (isDraggingShared.value) {
-        runOnJS(onGestureEnd)();
+        lastDragEndTimeShared.value = Date.now();
+        const screenX = event.x + containerOffsetX.value;
+        const screenY = event.y + containerOffsetY.value;
+        runOnJS(onGestureEndWithPosition)(screenX, screenY);
       }
     });
 
@@ -1265,6 +1589,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       clearLastRackDrop,
       setBoardLayout,
       setRackLayout,
+      updateRackTiles,
       registerDraggable,
       unregisterDraggable,
       startDragFromRack,
@@ -1273,6 +1598,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       endDrag,
       startRecallAnimation,
       getBoardCell,
+      draggingRackIndexShared,
     }),
     [
       isDragging,
@@ -1286,6 +1612,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       clearLastRackDrop,
       setBoardLayout,
       setRackLayout,
+      updateRackTiles,
       registerDraggable,
       unregisterDraggable,
       startDragFromRack,
@@ -1294,6 +1621,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       endDrag,
       startRecallAnimation,
       getBoardCell,
+      draggingRackIndexShared,
     ]
   );
 
@@ -1303,7 +1631,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const floatingTiles = (
     <View style={styles.floatingContainer} pointerEvents="none">
       <FloatingTile
-        tile={dragTile}
+        dragTileShared={dragTileShared}
         positionX={positionX}
         positionY={positionY}
         scale={scale}

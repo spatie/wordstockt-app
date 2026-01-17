@@ -246,7 +246,7 @@ interface TileRackProps {
 
 export function TileRack({ tiles, disabled, onTileDrop }: TileRackProps) {
   const rackRef = useRef<View>(null);
-  const { setRackLayout, isDragging } = useDragDrop();
+  const { setRackLayout, isDragging, updateRackTiles } = useDragDrop();
   const rackPermutation = useRackPermutation();
   const [rackLayout, setLocalRackLayout] = useState<RackLayout | null>(null);
 
@@ -258,6 +258,11 @@ export function TileRack({ tiles, disabled, onTileDrop }: TileRackProps) {
     });
     return map;
   }, [rackPermutation]);
+
+  // Sync tiles to shared values for worklet-based hit testing
+  useEffect(() => {
+    updateRackTiles(tiles);
+  }, [tiles, updateRackTiles]);
 
   const measureRack = useCallback(() => {
     rackRef.current?.measureInWindow((x, y, width, height) => {
