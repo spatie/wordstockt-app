@@ -110,7 +110,7 @@ interface DragDropContextType {
   // Layout setters
   setBoardLayout: (layout: BoardLayout) => void;
   setRackLayout: (layout: RackLayout) => void;
-  
+
   // Tile data sync (for external components to update shared values)
   updateRackTiles: (tiles: Array<Tile | null>) => void;
 
@@ -151,7 +151,7 @@ interface DragDropContextType {
 
   // Utility
   getBoardCell: (x: number, y: number) => { x: number; y: number } | null;
-  
+
   // Shared values for immediate UI updates (worklet access)
   draggingRackIndexShared: SharedValue<number>;
 }
@@ -193,7 +193,6 @@ function FloatingTile({
     ],
     opacity: opacity.value,
   }));
-
 
   // Extract tile data from shared value for rendering
   const tileData = dragTileShared.value;
@@ -314,12 +313,17 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const recallProgress = useSharedValue(0);
   const isDraggingShared = useSharedValue(false); // For worklet access
   const isSwapModeShared = useSharedValue(false); // For worklet access
-  
+
   // Shared values for drag state (to avoid JS thread during active drag)
   const dragTileShared = useSharedValue<[string, number, boolean] | null>(null); // [letter, points, isBlank]
-  const dragSourceShared = useSharedValue<{ type: 'rack' | 'board'; rackIndex?: number; x?: number; y?: number } | null>(null);
+  const dragSourceShared = useSharedValue<{
+    type: 'rack' | 'board';
+    rackIndex?: number;
+    x?: number;
+    y?: number;
+  } | null>(null);
   const lastDragEndTimeShared = useSharedValue(0);
-  
+
   // Shared value for immediate rack tile hiding (prevents visual glitch)
   const draggingRackIndexShared = useSharedValue(-1); // -1 means no rack tile is dragging
 
@@ -328,25 +332,27 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const rackBottomShared = useSharedValue(0);
   const rackLeftShared = useSharedValue(0);
   const rackWidthShared = useSharedValue(0);
-  
+
   // Shared values for board layout (accessed in worklet for hit testing)
   const boardLeftShared = useSharedValue(0);
   const boardTopShared = useSharedValue(0);
   const boardCellSizeShared = useSharedValue(0);
   const boardSizeShared = useSharedValue(15); // 15x15 board
-  
+
   // Shared values for rack permutation (accessed in worklet for hit testing)
   const rackPermutationShared = useSharedValue([0, 1, 2, 3, 4, 5, 6]);
-  
+
   // Shared values for storing tile data (accessed in worklet for drag operations)
   // Format: [letter, points, isBlank] for each rack index
-  const rackTilesShared = useSharedValue<Array<[string, number, boolean] | null>>(
-    new Array(7).fill(null)
-  );
-  
+  const rackTilesShared = useSharedValue<
+    Array<[string, number, boolean] | null>
+  >(new Array(7).fill(null));
+
   // Shared values for board tiles (pending tiles only)
   // Format: Map-like structure using string keys "x,y" -> [letter, points, isBlank, rackIndex]
-  const boardTilesShared = useSharedValue<Record<string, [string, number, boolean, number]>>({});
+  const boardTilesShared = useSharedValue<
+    Record<string, [string, number, boolean, number]>
+  >({});
 
   // Sync swap mode state to shared value for worklet access
   const isSwapMode = useIsSwapMode();
@@ -359,18 +365,25 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     const state = useGameStore.getState();
     const currentGameUlid = state.currentGameUlid;
     if (!currentGameUlid) return;
-    
+
     const gameState = state.gameStates[currentGameUlid];
     if (!gameState) return;
 
     // Update rack permutation
-    rackPermutationShared.value = gameState.rackPermutation || [0, 1, 2, 3, 4, 5, 6];
-    
+    rackPermutationShared.value = gameState.rackPermutation || [
+      0, 1, 2, 3, 4, 5, 6,
+    ];
+
     // Update board tiles (pending tiles only)
     const newBoardTiles: Record<string, [string, number, boolean, number]> = {};
     gameState.pendingTiles.forEach((tile) => {
       const key = `${tile.x},${tile.y}`;
-      newBoardTiles[key] = [tile.letter, tile.points, tile.isBlank, tile.rackIndex];
+      newBoardTiles[key] = [
+        tile.letter,
+        tile.points,
+        tile.isBlank,
+        tile.rackIndex,
+      ];
     });
     boardTilesShared.value = newBoardTiles;
   }, [rackPermutationShared, boardTilesShared]);
@@ -380,28 +393,37 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = useGameStore.subscribe((state, prevState) => {
       const currentGameUlid = state.currentGameUlid;
       if (!currentGameUlid) return;
-      
+
       const gameState = state.gameStates[currentGameUlid];
       const prevGameState = prevState.gameStates[currentGameUlid];
       if (!gameState) return;
 
       // Update only if pending tiles changed or rack permutation changed
-      if (gameState.pendingTiles !== prevGameState?.pendingTiles ||
-          gameState.rackPermutation !== prevGameState?.rackPermutation) {
-        
+      if (
+        gameState.pendingTiles !== prevGameState?.pendingTiles ||
+        gameState.rackPermutation !== prevGameState?.rackPermutation
+      ) {
         // Update rack permutation
-        rackPermutationShared.value = gameState.rackPermutation || [0, 1, 2, 3, 4, 5, 6];
-        
+        rackPermutationShared.value = gameState.rackPermutation || [
+          0, 1, 2, 3, 4, 5, 6,
+        ];
+
         // Update board tiles (pending tiles only)
-        const newBoardTiles: Record<string, [string, number, boolean, number]> = {};
+        const newBoardTiles: Record<string, [string, number, boolean, number]> =
+          {};
         gameState.pendingTiles.forEach((tile) => {
           const key = `${tile.x},${tile.y}`;
-          newBoardTiles[key] = [tile.letter, tile.points, tile.isBlank, tile.rackIndex];
+          newBoardTiles[key] = [
+            tile.letter,
+            tile.points,
+            tile.isBlank,
+            tile.rackIndex,
+          ];
         });
         boardTilesShared.value = newBoardTiles;
       }
     });
-    
+
     return unsubscribe;
   }, [rackPermutationShared, boardTilesShared]);
 
@@ -479,13 +501,16 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   // -------------------------------------------------------------------------
   // Layout Functions
   // -------------------------------------------------------------------------
-  const setBoardLayout = useCallback((layout: BoardLayout) => {
-    boardLayoutRef.current = layout;
-    // Sync to shared values for worklet access (hit testing)
-    boardLeftShared.value = layout.x;
-    boardTopShared.value = layout.y;
-    boardCellSizeShared.value = layout.cellSize;
-  }, [boardLeftShared, boardTopShared, boardCellSizeShared]);
+  const setBoardLayout = useCallback(
+    (layout: BoardLayout) => {
+      boardLayoutRef.current = layout;
+      // Sync to shared values for worklet access (hit testing)
+      boardLeftShared.value = layout.x;
+      boardTopShared.value = layout.y;
+      boardCellSizeShared.value = layout.cellSize;
+    },
+    [boardLeftShared, boardTopShared, boardCellSizeShared]
+  );
 
   const setRackLayout = useCallback(
     (layout: RackLayout) => {
@@ -511,17 +536,22 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const clearLastRackDrop = useCallback(() => {
     lastRackDropRef.current = null;
   }, []);
-  
+
   // Update rack tiles in shared values (called by external components)
-  const updateRackTiles = useCallback((tiles: Array<Tile | null>) => {
-    const newRackTiles = new Array(7).fill(null) as Array<[string, number, boolean] | null>;
-    tiles.forEach((tile, index) => {
-      if (tile) {
-        newRackTiles[index] = [tile.letter, tile.points, tile.isBlank];
-      }
-    });
-    rackTilesShared.value = newRackTiles;
-  }, [rackTilesShared]);
+  const updateRackTiles = useCallback(
+    (tiles: Array<Tile | null>) => {
+      const newRackTiles = new Array(7).fill(null) as Array<
+        [string, number, boolean] | null
+      >;
+      tiles.forEach((tile, index) => {
+        if (tile) {
+          newRackTiles[index] = [tile.letter, tile.points, tile.isBlank];
+        }
+      });
+      rackTilesShared.value = newRackTiles;
+    },
+    [rackTilesShared]
+  );
 
   // Measure container offset from screen (for converting absolute coordinates)
   const measureContainerOffset = useCallback(() => {
@@ -541,110 +571,129 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   // -------------------------------------------------------------------------
   // Hit Testing (Worklet Versions for UI Thread)
   // -------------------------------------------------------------------------
-  
+
   // Worklet version of rack hit testing - runs on UI thread for instant response
-  const findRackTileAtPositionWorklet = useCallback((x: number, y: number) => {
-    'worklet';
-    // Check if within rack bounds
-    if (
-      y < rackTopShared.value ||
-      y > rackBottomShared.value ||
-      x < rackLeftShared.value ||
-      x > rackLeftShared.value + rackWidthShared.value
-    ) {
-      return null;
-    }
+  const findRackTileAtPositionWorklet = useCallback(
+    (x: number, y: number) => {
+      'worklet';
+      // Check if within rack bounds
+      if (
+        y < rackTopShared.value ||
+        y > rackBottomShared.value ||
+        x < rackLeftShared.value ||
+        x > rackLeftShared.value + rackWidthShared.value
+      ) {
+        return null;
+      }
 
-    // Calculate visual slot from position
-    const slotWidth = TILE_SIZE + GAP;
-    const relativeX = x - rackLeftShared.value;
-    const visualSlot = Math.floor(relativeX / slotWidth);
+      // Calculate visual slot from position
+      const slotWidth = TILE_SIZE + GAP;
+      const relativeX = x - rackLeftShared.value;
+      const visualSlot = Math.floor(relativeX / slotWidth);
 
-    // Check if within tile (not in gap)
-    const posInSlot = relativeX - visualSlot * slotWidth;
-    if (posInSlot > TILE_SIZE || visualSlot < 0 || visualSlot >= SLOT_COUNT) {
-      return null;
-    }
+      // Check if within tile (not in gap)
+      const posInSlot = relativeX - visualSlot * slotWidth;
+      if (posInSlot > TILE_SIZE || visualSlot < 0 || visualSlot >= SLOT_COUNT) {
+        return null;
+      }
 
-    // Get actual rack index from permutation
-    const permutation = rackPermutationShared.value;
-    const actualRackIndex = permutation[visualSlot];
-    if (actualRackIndex === undefined) {
-      return null;
-    }
+      // Get actual rack index from permutation
+      const permutation = rackPermutationShared.value;
+      const actualRackIndex = permutation[visualSlot];
+      if (actualRackIndex === undefined) {
+        return null;
+      }
 
-    // Get tile data from shared values
-    const tileData = rackTilesShared.value[actualRackIndex];
-    if (!tileData) return null;
+      // Get tile data from shared values
+      const tileData = rackTilesShared.value[actualRackIndex];
+      if (!tileData) return null;
 
-    const [letter, points, isBlank] = tileData;
-    
-    return {
-      type: 'rack' as const,
-      rackIndex: actualRackIndex,
-      visualSlot,
-      tile: { letter, points, isBlank },
-      hitArea: {
-        x: rackLeftShared.value + visualSlot * slotWidth,
-        y: rackTopShared.value,
-        width: TILE_SIZE,
-        height: TILE_SIZE,
-      },
-    };
-  }, [rackTopShared, rackBottomShared, rackLeftShared, rackWidthShared, rackPermutationShared, rackTilesShared]);
+      const [letter, points, isBlank] = tileData;
+
+      return {
+        type: 'rack' as const,
+        rackIndex: actualRackIndex,
+        visualSlot,
+        tile: { letter, points, isBlank },
+        hitArea: {
+          x: rackLeftShared.value + visualSlot * slotWidth,
+          y: rackTopShared.value,
+          width: TILE_SIZE,
+          height: TILE_SIZE,
+        },
+      };
+    },
+    [
+      rackTopShared,
+      rackBottomShared,
+      rackLeftShared,
+      rackWidthShared,
+      rackPermutationShared,
+      rackTilesShared,
+    ]
+  );
 
   // Worklet version of board hit testing - runs on UI thread
-  const findBoardCellAtPositionWorklet = useCallback((x: number, y: number) => {
-    'worklet';
-    const boardLeft = boardLeftShared.value;
-    const boardTop = boardTopShared.value;
-    const cellSize = boardCellSizeShared.value;
-    const boardSize = boardSizeShared.value;
+  const findBoardCellAtPositionWorklet = useCallback(
+    (x: number, y: number) => {
+      'worklet';
+      const boardLeft = boardLeftShared.value;
+      const boardTop = boardTopShared.value;
+      const cellSize = boardCellSizeShared.value;
+      const boardSize = boardSizeShared.value;
 
-    if (cellSize <= 0) return null;
+      if (cellSize <= 0) return null;
 
-    // Check if within board bounds
-    const boardWidth = boardSize * cellSize;
-    const boardHeight = boardSize * cellSize;
-    
-    if (
-      x < boardLeft ||
-      x > boardLeft + boardWidth ||
-      y < boardTop ||
-      y > boardTop + boardHeight
-    ) {
-      return null;
-    }
+      // Check if within board bounds
+      const boardWidth = boardSize * cellSize;
+      const boardHeight = boardSize * cellSize;
 
-    // Calculate cell coordinates
-    const cellX = Math.floor((x - boardLeft) / cellSize);
-    const cellY = Math.floor((y - boardTop) / cellSize);
+      if (
+        x < boardLeft ||
+        x > boardLeft + boardWidth ||
+        y < boardTop ||
+        y > boardTop + boardHeight
+      ) {
+        return null;
+      }
 
-    // Ensure within valid range
-    if (cellX < 0 || cellX >= boardSize || cellY < 0 || cellY >= boardSize) {
-      return null;
-    }
+      // Calculate cell coordinates
+      const cellX = Math.floor((x - boardLeft) / cellSize);
+      const cellY = Math.floor((y - boardTop) / cellSize);
 
-    // Check if there's a pending tile at this position
-    const key = `${cellX},${cellY}`;
-    const tileData = boardTilesShared.value[key];
-    if (!tileData) return null;
+      // Ensure within valid range
+      if (cellX < 0 || cellX >= boardSize || cellY < 0 || cellY >= boardSize) {
+        return null;
+      }
 
-    const [letter, points, isBlank, rackIndex] = tileData;
-    
-    return {
-      type: 'board' as const,
-      x: cellX,
-      y: cellY,
-      tile: { letter, points, isBlank, rackIndex },
-      hitArea: {
-        x: boardLeft + cellX * cellSize,
-        y: boardTop + cellY * cellSize,
-        width: cellSize,
-        height: cellSize,
-      },
-    };
-  }, [boardLeftShared, boardTopShared, boardCellSizeShared, boardSizeShared, boardTilesShared]);
+      // Check if there's a pending tile at this position
+      const key = `${cellX},${cellY}`;
+      const tileData = boardTilesShared.value[key];
+      if (!tileData) return null;
+
+      const [letter, points, isBlank, rackIndex] = tileData;
+
+      return {
+        type: 'board' as const,
+        x: cellX,
+        y: cellY,
+        tile: { letter, points, isBlank, rackIndex },
+        hitArea: {
+          x: boardLeft + cellX * cellSize,
+          y: boardTop + cellY * cellSize,
+          width: cellSize,
+          height: cellSize,
+        },
+      };
+    },
+    [
+      boardLeftShared,
+      boardTopShared,
+      boardCellSizeShared,
+      boardSizeShared,
+      boardTilesShared,
+    ]
+  );
 
   // -------------------------------------------------------------------------
   // Hit Testing (JS Thread Versions - for compatibility)
@@ -1306,22 +1355,30 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
   // Worklet drag start callback - updates JS state asynchronously (non-blocking)
   const onWorkletDragStart = useCallback(
-    (source: DragSource, tile: Tile | (Tile & { x: number; y: number; rackIndex: number })) => {
+    (
+      source: DragSource,
+      tile: Tile | (Tile & { x: number; y: number; rackIndex: number })
+    ) => {
       // Update React state for UI re-renders, but this doesn't block the worklet
       setDragTile(tile);
       setDragSource(source);
       setDragStatus('dragging');
-      
+
       // Update refs for JS-side operations
       currentPositionRef.current = { x: 0, y: 0 }; // Will be updated in onUpdate
       isDraggingRef.current = true;
       activeDragRef.current = {
-        id: source.type === 'rack' ? `rack-${source.rackIndex}` : `board-${source.x}-${source.y}`,
+        id:
+          source.type === 'rack'
+            ? `rack-${source.rackIndex}`
+            : `board-${source.x}-${source.y}`,
         tile,
         source,
         onDragEnd: (target: DropTarget, wasDragged: boolean): boolean => {
           const callback = draggablesRef.current.get(
-            source.type === 'rack' ? `rack-${source.rackIndex}` : `board-${source.x}-${source.y}`
+            source.type === 'rack'
+              ? `rack-${source.rackIndex}`
+              : `board-${source.x}-${source.y}`
           )?.onDragEnd;
           return callback?.(target, wasDragged) ?? true;
         },
@@ -1490,44 +1547,59 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       // Use relative coordinates + container offset for consistent behavior across platforms
       const screenX = event.x + containerOffsetX.value;
       const screenY = event.y + containerOffsetY.value;
-      
+
       // Try rack hit testing first (most common)
       const rackHit = findRackTileAtPositionWorklet(screenX, screenY);
       if (rackHit) {
         // Start rack drag on UI thread
         isDraggingShared.value = true;
-        dragTileShared.value = [rackHit.tile.letter, rackHit.tile.points, rackHit.tile.isBlank];
+        dragTileShared.value = [
+          rackHit.tile.letter,
+          rackHit.tile.points,
+          rackHit.tile.isBlank,
+        ];
         dragSourceShared.value = { type: 'rack', rackIndex: rackHit.rackIndex };
         draggingRackIndexShared.value = rackHit.rackIndex; // Hide rack tile immediately
-        
+
         // Position floating tile (container-relative coordinates)
         positionX.value = event.x + TILE_OFFSET;
         positionY.value = event.y + TILE_OFFSET;
         scale.value = 1;
         opacity.value = 1;
-        
+
         // Update JS state asynchronously (non-blocking)
-        runOnJS(onWorkletDragStart)({ type: 'rack', rackIndex: rackHit.rackIndex }, rackHit.tile);
+        runOnJS(onWorkletDragStart)(
+          { type: 'rack', rackIndex: rackHit.rackIndex },
+          rackHit.tile
+        );
         return;
       }
-      
+
       // Try board hit testing
       const boardHit = findBoardCellAtPositionWorklet(screenX, screenY);
       if (boardHit) {
         // Start board drag on UI thread
         isDraggingShared.value = true;
-        dragTileShared.value = [boardHit.tile.letter, boardHit.tile.points, boardHit.tile.isBlank];
-        dragSourceShared.value = { type: 'board', x: boardHit.x, y: boardHit.y };
-        
+        dragTileShared.value = [
+          boardHit.tile.letter,
+          boardHit.tile.points,
+          boardHit.tile.isBlank,
+        ];
+        dragSourceShared.value = {
+          type: 'board',
+          x: boardHit.x,
+          y: boardHit.y,
+        };
+
         // Position floating tile (container-relative coordinates)
         positionX.value = event.x + TILE_OFFSET;
         positionY.value = event.y + TILE_OFFSET;
         scale.value = 1;
         opacity.value = 1;
-        
+
         // Update JS state asynchronously (non-blocking)
         runOnJS(onWorkletDragStart)(
-          { type: 'board', x: boardHit.x, y: boardHit.y }, 
+          { type: 'board', x: boardHit.x, y: boardHit.y },
           { ...boardHit.tile, x: boardHit.x, y: boardHit.y }
         );
         return;
@@ -1550,14 +1622,14 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     .onEnd((event) => {
       'worklet';
       if (!isDraggingShared.value) return;
-      
+
       // Update shared drag end time for cooldown
       lastDragEndTimeShared.value = Date.now();
-      
+
       // Convert to screen coordinates for drop target calculation
       const screenX = event.x + containerOffsetX.value;
       const screenY = event.y + containerOffsetY.value;
-      
+
       // Call JS for final drop handling (this is needed for game state updates)
       runOnJS(onGestureEndWithPosition)(screenX, screenY);
     })

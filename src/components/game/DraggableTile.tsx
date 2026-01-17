@@ -51,12 +51,16 @@ export function DraggableTile({
   const immediateHideStyle = useAnimatedStyle(() => {
     'worklet';
     const draggingIndex = draggingRackIndexShared.value;
-    
+
     // Only hide this specific tile when it's actively being dragged
-    if (draggingIndex === rackIndex && draggingIndex >= 0 && draggingIndex < 7) {
+    if (
+      draggingIndex === rackIndex &&
+      draggingIndex >= 0 &&
+      draggingIndex < 7
+    ) {
       return { opacity: 0 };
     }
-    
+
     // Default: fully visible
     return { opacity: 1 };
   }, [rackIndex]);
@@ -146,14 +150,17 @@ export function DraggableTile({
     return <View style={styles.emptySlot} />;
   }
 
-
   // Web: use pointer events
   if (Platform.OS === 'web') {
     return (
       <Animated.View
         onPointerDown={handlePointerDown}
         // @ts-expect-error cursor is web-only CSS property
-        style={[styles.container, !disabled && { cursor: 'grab' }, immediateHideStyle]}
+        style={[
+          styles.container,
+          !disabled && { cursor: 'grab' },
+          immediateHideStyle,
+        ]}
       >
         <Tile
           letter={tile.letter}

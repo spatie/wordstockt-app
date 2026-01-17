@@ -151,7 +151,9 @@ export default function RegisterScreen() {
               By creating an account, you agree to our{' '}
               <Text
                 style={styles.privacyLink}
-                onPress={() => Linking.openURL('https://wordstockt.com/privacy')}
+                onPress={() =>
+                  Linking.openURL('https://wordstockt.com/privacy')
+                }
               >
                 Privacy Policy
               </Text>
