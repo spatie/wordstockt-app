@@ -1,109 +1,104 @@
 {
-    "expo": {
-        "name": "WordStockt",
-        "slug": "wordstockt",
-        "version": "1.0.0",
-        "orientation": "portrait",
-        "icon": "./assets/icon.png",
-        "userInterfaceStyle": "dark",
-        "backgroundColor": "#0D1B2A",
-        "newArchEnabled": true,
-        "scheme": "wordstockt",
-        "runtimeVersion": {
-            "policy": "appVersion"
-        },
-        "updates": {
-            "url": "https://u.expo.dev/c2ca99cd-02fd-4c0c-a737-0e6ee43c8783"
-        },
-        "splash": {
-            "image": "./assets/splash-icon.png",
-            "resizeMode": "contain",
-            "backgroundColor": "#0D1B2A"
-        },
-        "ios": {
-            "supportsTablet": true,
-            "bundleIdentifier": "com.wordstockt.app",
-            "backgroundColor": "#0D1B2A",
-            "buildNumber": "26",
-            "associatedDomains": [
-                "webcredentials:wordstockt.com",
-                "applinks:wordstockt.com"
-            ],
-            "infoPlist": {
-                "UIBackgroundModes": [
-                    "remote-notification"
-                ],
-                "NSAppTransportSecurity": {
-                    "NSAllowsArbitraryLoads": true,
-                    "NSExceptionDomains": {
-                        "wordstockt.com.test": {
-                            "NSExceptionAllowsInsecureHTTPLoads": true,
-                            "NSIncludesSubdomains": true
-                        }
-                    }
-                },
-                "ITSAppUsesNonExemptEncryption": false
+  "expo": {
+    "name": "WordStockt",
+    "slug": "wordstockt",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0D1B2A",
+    "newArchEnabled": true,
+    "scheme": "wordstockt",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c2ca99cd-02fd-4c0c-a737-0e6ee43c8783"
+    },
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0D1B2A"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.wordstockt.app",
+      "backgroundColor": "#0D1B2A",
+      "buildNumber": "26",
+      "associatedDomains": [
+        "webcredentials:wordstockt.com",
+        "applinks:wordstockt.com"
+      ],
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"],
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSExceptionDomains": {
+            "wordstockt.com.test": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
             }
+          }
         },
-        "android": {
-            "versionCode": 23,
-            "googleServicesFile": "./google-services.json",
-            "adaptiveIcon": {
-                "foregroundImage": "./assets/adaptive-icon.png",
-                "backgroundColor": "#2E7D32"
-            },
-            "backgroundColor": "#0D1B2A",
-            "edgeToEdgeEnabled": true,
-            "package": "com.wordstockt.app",
-            "intentFilters": [
-                {
-                    "action": "VIEW",
-                    "autoVerify": true,
-                    "data": [
-                        {
-                            "scheme": "https",
-                            "host": "wordstockt.com",
-                            "pathPrefix": "/invite"
-                        }
-                    ],
-                    "category": [
-                        "BROWSABLE",
-                        "DEFAULT"
-                    ]
-                }
-            ]
-        },
-        "web": {
-            "favicon": "./assets/favicon.png",
-            "bundler": "metro"
-        },
-        "plugins": [
-            "expo-router",
-            "expo-updates",
-            [
-                "expo-notifications",
-                {
-                    "color": "#2E7D32"
-                }
-            ],
-            [
-                "@sentry/react-native",
-                {
-                    "organization": "spatie2",
-                    "project": "wordstockt-app",
-                    "uploadSourceMaps": false
-                }
-            ]
-        ],
-        "experiments": {
-            "typedRoutes": true
-        },
-        "extra": {
-            "router": [],
-            "eas": {
-                "projectId": "c2ca99cd-02fd-4c0c-a737-0e6ee43c8783"
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "versionCode": 23,
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#2E7D32"
+      },
+      "backgroundColor": "#0D1B2A",
+      "edgeToEdgeEnabled": true,
+      "package": "com.wordstockt.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "wordstockt.com",
+              "pathPrefix": "/invite"
             }
-        },
-        "owner": "freekmurze"
-    }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-updates",
+      [
+        "expo-notifications",
+        {
+          "color": "#2E7D32"
+        }
+      ],
+      [
+        "@sentry/react-native",
+        {
+          "organization": "spatie2",
+          "project": "wordstockt-app",
+          "uploadSourceMaps": false
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": [],
+      "eas": {
+        "projectId": "c2ca99cd-02fd-4c0c-a737-0e6ee43c8783"
+      }
+    },
+    "owner": "freekmurze"
+  }
 }
