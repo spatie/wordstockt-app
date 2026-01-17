@@ -387,6 +387,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textPrimary,
     textAlignVertical: 'center',
+    ...(Platform.OS === 'android' && {
+      includeFontPadding: false,
+      paddingVertical: 0,
+    }),
   },
   searchButton: {
     backgroundColor: colors.primary,

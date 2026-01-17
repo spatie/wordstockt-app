@@ -147,5 +147,6 @@ const styles = StyleSheet.create({
   letter: {
     fontWeight: '700',
     color: '#FFF',
+    textAlign: 'center',
   },
 });

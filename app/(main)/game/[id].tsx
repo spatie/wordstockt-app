@@ -370,11 +370,13 @@ function GameScreenContent() {
     wasFinishedOnLoadRef.current = gameData.status === 'finished';
   }
 
-  // Show warning when it's the last move (determined by backend)
-  const showLastMoveWarning = gameData.isLastMove && !lastMoveWarningShown;
-
   // Game end detection - only show modal if game just ended (not already finished on load)
   const isGameFinished = gameData.status === 'finished';
+
+  // Show warning when it's the last move (determined by backend)
+  // Don't show for already completed games
+  const showLastMoveWarning =
+    gameData.isLastMove && !lastMoveWarningShown && !isGameFinished;
   const didWin = isGameFinished && gameData.winnerUlid === userUlid;
   const gameJustEnded = isGameFinished && !wasFinishedOnLoadRef.current;
   const showGameEndModal = gameJustEnded && !gameEndModalDismissed;

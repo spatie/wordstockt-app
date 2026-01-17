@@ -420,6 +420,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 18,
     fontWeight: '600',
+    textAlign: 'center',
   },
   pendingInviteSection: {
     flexDirection: 'row',
