@@ -17,19 +17,25 @@ interface GameCardProps {
   onDelete?: () => void;
 }
 
-function formatLastMove(description: string | null, status: string, isMyTurn: boolean): string {
+function formatLastMove(
+  description: string | null,
+  status: string,
+  isMyTurn: boolean
+): string {
   if (!description) {
     return status === 'pending'
       ? 'Waiting for opponent...'
       : 'Game in progress';
   }
-  
+
   // For opponent's turn, start with "You" to show what the current player did
   const prefix = !isMyTurn ? 'You ' : '';
-  
+
   // Convert "Played HELLO for 12 points" to "You played "HELLO" +12" (opponent's turn)
   // Convert "jessica played 'WORD' for 6 points" or "Played HELLO for 12 points" to "Played "WORD" +6" (your turn)
-  const playedMatch = description.match(/(?:.*\s+)?played '?([^']+)'? for (\d+) points?/i);
+  const playedMatch = description.match(
+    /(?:.*\s+)?played '?([^']+)'? for (\d+) points?/i
+  );
   if (playedMatch) {
     return `${prefix}played "${playedMatch[1]}" +${playedMatch[2]}`;
   }
@@ -80,19 +86,21 @@ export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
       avatar: game.opponent?.avatar,
       avatarColor: game.opponent?.avatarColor,
       ulid: game.opponent?.ulid,
-      subtitle: formatLastMove(game.lastMoveDescription, game.status, game.isMyTurn),
+      subtitle: formatLastMove(
+        game.lastMoveDescription,
+        game.status,
+        game.isMyTurn
+      ),
     };
   };
 
   const displayInfo = getDisplayInfo();
 
   return (
-    <Card 
-      onPress={onPress} 
+    <Card
+      onPress={onPress}
       showAccent={game.isMyTurn}
-      style={[
-        !game.isMyTurn && styles.opponentTurnCard
-      ]}
+      style={[!game.isMyTurn && styles.opponentTurnCard]}
     >
       <View style={styles.cardTop}>
         {displayInfo.showPublicIcon ? (
@@ -121,10 +129,13 @@ export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
               </View>
             )}
           </View>
-          <Text style={[
-            styles.lastMove,
-            !game.isMyTurn && styles.lastMoveOpponentTurn
-          ]} numberOfLines={1}>
+          <Text
+            style={[
+              styles.lastMove,
+              !game.isMyTurn && styles.lastMoveOpponentTurn,
+            ]}
+            numberOfLines={1}
+          >
             {displayInfo.subtitle}
           </Text>
         </View>
@@ -191,14 +202,11 @@ export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
           </View>
         ) : (
           <Button
-            label={game.isMyTurn ? "Play" : "View"}
+            label={game.isMyTurn ? 'Play' : 'View'}
             onPress={onPress}
             size="sm"
             rounded
-            style={[
-              styles.playButton,
-              !game.isMyTurn && styles.viewButton
-            ]}
+            style={[styles.playButton, !game.isMyTurn && styles.viewButton]}
           />
         )}
       </View>

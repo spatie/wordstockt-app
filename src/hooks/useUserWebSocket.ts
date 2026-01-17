@@ -253,7 +253,9 @@ export function useUserWebSocket() {
 
           // Handle move played event (opponent made a move in one of user's games)
           if (message.event === 'move.played') {
-            console.log('[UserWS] Move played in a game, refreshing games list');
+            console.log(
+              '[UserWS] Move played in a game, refreshing games list'
+            );
             queryClientRef.current.invalidateQueries({
               queryKey: gameKeys.lists(),
             });
