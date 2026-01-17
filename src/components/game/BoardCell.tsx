@@ -405,9 +405,7 @@ function CellContent({
 
   // Show star for STAR multiplier (center cell)
   if (isStar) {
-    return (
-      <Ionicons name="star" size={starFontSize} color="#FFFFFF" />
-    );
+    return <Ionicons name="star" size={starFontSize} color="#FFFFFF" />;
   }
 
   if (squareType) {
