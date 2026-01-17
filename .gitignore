@@ -36,6 +36,10 @@ yarn-error.*
 # Google Play service account
 google-service-account.json
 
+# Firebase service accounts and config
+firebase-service-account.json
+google-services.json
+
 # EAS credentials (keystores, secrets)
 credentials/android/*.jks
 credentials/android/*.p12
@@ -49,5 +53,8 @@ credentials.json
 # generated native folders
 /ios
 /android
+
+# build outputs
+/build
 .env
 credentials/android/play-store-key.json

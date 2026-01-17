@@ -3,11 +3,27 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 import { GameCard } from '../GameCard';
 import type { GameListItem } from '../../../types';
 
+// Mock @expo/vector-icons
+jest.mock('@expo/vector-icons', () => ({
+  Ionicons: ({ name }: { name: string }) => {
+    const { Text } = require('react-native');
+    return <Text testID={`ionicon-${name}`}>{name}</Text>;
+  },
+}));
+
 // Mock Avatar component
 jest.mock('../../ui/Avatar', () => ({
   Avatar: ({ name }: { name: string }) => {
     const { Text } = require('react-native');
     return <Text testID="avatar">{name}</Text>;
+  },
+}));
+
+// Mock SmartAvatar component
+jest.mock('../../ui/SmartAvatar', () => ({
+  SmartAvatar: ({ name }: { name: string }) => {
+    const { Text } = require('react-native');
+    return <Text testID="smart-avatar">{name}</Text>;
   },
 }));
 
@@ -49,6 +65,7 @@ const mockGame: GameListItem = {
   lastMoveDescription: 'Played HELLO for 12 points',
   turnExpiresAt: null,
   pendingInvitation: null,
+  isPublic: false,
 };
 
 describe('GameCard', () => {
@@ -93,7 +110,7 @@ describe('GameCard', () => {
       />
     );
 
-    expect(screen.getByText('Played HELLO for 12 points')).toBeTruthy();
+    expect(screen.getByText('played "HELLO" +12')).toBeTruthy();
   });
 
   it('renders time ago', () => {
@@ -117,13 +134,13 @@ describe('GameCard', () => {
       />
     );
 
-    const playButton = screen.getByText('Play →');
+    const playButton = screen.getByText('Play');
     fireEvent.press(playButton);
 
     expect(mockOnPress).toHaveBeenCalled();
   });
 
-  it('shows Play button for active games', () => {
+  it('shows Play button for active games when it is my turn', () => {
     render(
       <GameCard
         game={mockGame}
@@ -132,7 +149,26 @@ describe('GameCard', () => {
       />
     );
 
-    expect(screen.getByText('Play →')).toBeTruthy();
+    expect(screen.getByText('Play')).toBeTruthy();
+  });
+
+  it('shows View button for active games when it is opponent turn', () => {
+    const opponentTurnGame: GameListItem = {
+      ...mockGame,
+      isMyTurn: false,
+      lastMoveDescription: 'opponent_user played HELLO for 12 points',
+    };
+
+    render(
+      <GameCard
+        game={opponentTurnGame}
+        userUlid="01hxyz000000000player01"
+        onPress={mockOnPress}
+      />
+    );
+
+    expect(screen.getByText('View')).toBeTruthy();
+    expect(screen.getByText('You played "HELLO" +12')).toBeTruthy();
   });
 
   it('shows Won badge for finished games when user won', () => {
@@ -171,12 +207,13 @@ describe('GameCard', () => {
     expect(screen.getByText('Lost')).toBeTruthy();
   });
 
-  it('shows "Waiting..." when no opponent', () => {
+  it('shows invite text when no opponent', () => {
     const pendingGame: GameListItem = {
       ...mockGame,
       opponent: null,
       status: 'pending',
       lastMoveDescription: null,
+      isPublic: false,
     };
 
     render(
@@ -187,9 +224,8 @@ describe('GameCard', () => {
       />
     );
 
-    // Multiple elements may contain "Waiting..." (avatar + card), check at least one exists
-    expect(screen.getAllByText('Waiting...').length).toBeGreaterThan(0);
-    expect(screen.getByText('Waiting for opponent...')).toBeTruthy();
+    expect(screen.getByText('Invite a player')).toBeTruthy();
+    expect(screen.getByText('Tap to find an opponent')).toBeTruthy();
   });
 
   it('shows "Game in progress" when no last move description', () => {

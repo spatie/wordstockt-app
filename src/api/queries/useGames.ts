@@ -29,7 +29,8 @@ export function useGames() {
       const validated = safeParse(GamesResponseSchema, data, 'useGames');
       return validated.data.map(transformGameListItem);
     },
-    staleTime: 30_000,
+    staleTime: 10_000,
+    refetchOnMount: 'always',
   });
 }
 
@@ -49,7 +50,8 @@ export function usePendingGames() {
       );
       return validated.data.map(transformPendingGame);
     },
-    staleTime: 30_000,
+    staleTime: 10_000,
+    refetchOnMount: 'always',
   });
 }
 
@@ -69,7 +71,8 @@ export function usePublicGames() {
       );
       return validated.data.map(transformPublicGame);
     },
-    staleTime: 30_000,
+    staleTime: 10_000,
+    refetchOnMount: 'always',
   });
 }
 

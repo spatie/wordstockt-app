@@ -57,7 +57,8 @@ export function useInvitations() {
       );
       return data.data.map(transformInvitation);
     },
-    staleTime: 30 * 1000,
+    staleTime: 10_000,
+    refetchOnMount: 'always',
   });
 }
 

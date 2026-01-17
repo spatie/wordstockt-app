@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   FlatList,
@@ -14,7 +14,7 @@ import Animated, {
   FadeOut,
   Layout,
 } from 'react-native-reanimated';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
   useGames,
@@ -92,6 +92,15 @@ export default function HomeScreen() {
   const acceptInvitation = useAcceptInvitation();
   const declineInvitation = useDeclineInvitation();
   const clearLastGameUlid = useNavigationStore((s) => s.clearLastGameUlid);
+
+  // Refetch when screen gains focus (e.g., returning from game board)
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+      refetchInvitations();
+      refetchPublicGames();
+    }, [refetch, refetchInvitations, refetchPublicGames])
+  );
 
   // Track which invitation is being acted on
   const [acceptingInvitation, setAcceptingInvitation] = useState<string | null>(

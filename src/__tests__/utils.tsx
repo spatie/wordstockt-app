@@ -85,6 +85,7 @@ export const mockGameListItem = (
   lastMoveDescription: 'Played HELLO for 12 points',
   turnExpiresAt: null,
   pendingInvitation: null,
+  isPublic: false,
   ...overrides,
 });
 

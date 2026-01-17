@@ -17,25 +17,29 @@ interface GameCardProps {
   onDelete?: () => void;
 }
 
-function formatLastMove(description: string | null, status: string): string {
+function formatLastMove(description: string | null, status: string, isMyTurn: boolean): string {
   if (!description) {
     return status === 'pending'
       ? 'Waiting for opponent...'
       : 'Game in progress';
   }
-  // Convert "You played 'WORD' for 6 points" to "Played "WORD" +6"
-  // Convert "jessica played 'WORD' for 6 points" to "Played "WORD" +6"
-  const match = description.match(/played '([^']+)' for (\d+) points?/i);
-  if (match) {
-    return `Played "${match[1]}" +${match[2]}`;
+  
+  // For opponent's turn, start with "You" to show what the current player did
+  const prefix = !isMyTurn ? 'You ' : '';
+  
+  // Convert "Played HELLO for 12 points" to "You played "HELLO" +12" (opponent's turn)
+  // Convert "jessica played 'WORD' for 6 points" or "Played HELLO for 12 points" to "Played "WORD" +6" (your turn)
+  const playedMatch = description.match(/(?:.*\s+)?played '?([^']+)'? for (\d+) points?/i);
+  if (playedMatch) {
+    return `${prefix}played "${playedMatch[1]}" +${playedMatch[2]}`;
   }
-  // Convert "You swapped tiles" / "jessica swapped tiles" to "Swapped tiles"
+  // Convert "You swapped tiles" / "jessica swapped tiles" to appropriate format
   if (description.toLowerCase().includes('swapped')) {
-    return 'Swapped tiles';
+    return `${prefix}swapped tiles`;
   }
-  // Convert "You passed" / "jessica passed" to "Passed"
+  // Convert "You passed" / "jessica passed" to appropriate format
   if (description.toLowerCase().includes('passed')) {
-    return 'Passed';
+    return `${prefix}passed`;
   }
   return description;
 }
@@ -76,14 +80,20 @@ export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
       avatar: game.opponent?.avatar,
       avatarColor: game.opponent?.avatarColor,
       ulid: game.opponent?.ulid,
-      subtitle: formatLastMove(game.lastMoveDescription, game.status),
+      subtitle: formatLastMove(game.lastMoveDescription, game.status, game.isMyTurn),
     };
   };
 
   const displayInfo = getDisplayInfo();
 
   return (
-    <Card onPress={onPress} showAccent>
+    <Card 
+      onPress={onPress} 
+      showAccent={game.isMyTurn}
+      style={[
+        !game.isMyTurn && styles.opponentTurnCard
+      ]}
+    >
       <View style={styles.cardTop}>
         {displayInfo.showPublicIcon ? (
           <View style={styles.publicIconContainer}>
@@ -111,7 +121,10 @@ export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
               </View>
             )}
           </View>
-          <Text style={styles.lastMove} numberOfLines={1}>
+          <Text style={[
+            styles.lastMove,
+            !game.isMyTurn && styles.lastMoveOpponentTurn
+          ]} numberOfLines={1}>
             {displayInfo.subtitle}
           </Text>
         </View>
@@ -169,7 +182,7 @@ export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
               />
             )}
             <Button
-              label={hasPendingInvitation ? 'Open →' : 'Invite →'}
+              label={hasPendingInvitation ? 'Open' : 'Invite'}
               onPress={onPress}
               size="sm"
               rounded
@@ -178,11 +191,14 @@ export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
           </View>
         ) : (
           <Button
-            label="Play →"
+            label={game.isMyTurn ? "Play" : "View"}
             onPress={onPress}
             size="sm"
             rounded
-            style={styles.playButton}
+            style={[
+              styles.playButton,
+              !game.isMyTurn && styles.viewButton
+            ]}
           />
         )}
       </View>
@@ -327,5 +343,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#FFF',
+  },
+  opponentTurnCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.backgroundLight,
+  },
+  viewButton: {
+    backgroundColor: colors.backgroundLight,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  lastMoveOpponentTurn: {
+    color: colors.textSecondary,
   },
 });

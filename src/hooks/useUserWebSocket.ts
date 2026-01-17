@@ -250,6 +250,14 @@ export function useUserWebSocket() {
               queryKey: gameKeys.all,
             });
           }
+
+          // Handle move played event (opponent made a move in one of user's games)
+          if (message.event === 'move.played') {
+            console.log('[UserWS] Move played in a game, refreshing games list');
+            queryClientRef.current.invalidateQueries({
+              queryKey: gameKeys.lists(),
+            });
+          }
         } catch (e) {
           console.log('[UserWS] Failed to parse message:', e);
         }

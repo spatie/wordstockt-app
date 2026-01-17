@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Tile } from './Tile';
 import {
   usePendingTileAt,
@@ -405,9 +406,7 @@ function CellContent({
   // Show star for STAR multiplier (center cell)
   if (isStar) {
     return (
-      <View style={styles.centerStar}>
-        <Text style={[styles.starText, { fontSize: starFontSize }]}>★</Text>
-      </View>
+      <Ionicons name="star" size={starFontSize} color="#FFFFFF" />
     );
   }
 
@@ -456,22 +455,5 @@ const styles = StyleSheet.create({
   multiplierText: {
     fontWeight: '600',
     color: '#FFF',
-  },
-  centerStar: {
-    width: '60%',
-    height: '60%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  starText: {
-    color: '#FFFFFF',
-    textAlign: 'center',
-    ...Platform.select({
-      android: {
-        includeFontPadding: false,
-        textAlignVertical: 'center',
-      },
-      default: {},
-    }),
   },
 });
