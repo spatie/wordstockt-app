@@ -126,7 +126,8 @@ export function DraggableTile({
       // So we pass the tile's center, not its corner
       if (rackLayout) {
         const slotWidth = TILE_SIZE + GAP;
-        const tileCenterX = rackLayout.x + visualSlot * slotWidth + TILE_SIZE / 2;
+        const tileCenterX =
+          rackLayout.x + visualSlot * slotWidth + TILE_SIZE / 2;
         const tileCenterY = rackLayout.y + TILE_SIZE / 2;
         startDragFromRack(tile, rackIndex, tileCenterX, tileCenterY);
       } else {

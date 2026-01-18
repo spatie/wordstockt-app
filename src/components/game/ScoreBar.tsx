@@ -1,5 +1,12 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
-import { View, StyleSheet, Pressable, Animated, Platform, TouchableOpacity } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  Animated,
+  Platform,
+  TouchableOpacity,
+} from 'react-native';
 import ReAnimated, {
   useSharedValue,
   useAnimatedStyle,
@@ -85,10 +92,7 @@ function TilesBadge({ count }: { count: number }) {
   }, [rotation, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { rotate: `${rotation.value}deg` },
-      { scale: scale.value },
-    ],
+    transform: [{ rotate: `${rotation.value}deg` }, { scale: scale.value }],
   }));
 
   return (
@@ -202,7 +206,9 @@ export function ScoreBar({
   onRevokeInvitation,
   tilesPlayed = 0,
 }: ScoreBarProps) {
-  const [statusModalPlayer, setStatusModalPlayer] = useState<'me' | 'opponent' | null>(null);
+  const [statusModalPlayer, setStatusModalPlayer] = useState<
+    'me' | 'opponent' | null
+  >(null);
   const myPlayer = game.players.find((p) => p.ulid === currentUserUlid);
   const opponent = game.players.find((p) => p.ulid !== currentUserUlid);
 
