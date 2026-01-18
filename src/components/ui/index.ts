@@ -19,6 +19,9 @@ export { ConfirmModal } from './ConfirmModal';
 export { FeedbackModal } from './FeedbackModal';
 export { MenuModal } from './MenuModal';
 
+// Animation
+export { FadeSlideIn } from './FadeSlideIn';
+
 // Avatars
 export { Avatar } from './Avatar';
 export { SmartAvatar } from './SmartAvatar';

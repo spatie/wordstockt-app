@@ -26,6 +26,7 @@ export function useVerificationReminder() {
     }
 
     hasCheckedRef.current = true;
+    const currentUser = user;
 
     async function checkAndShowReminder() {
       const lastShownAt = await AsyncStorage.getItem(STORAGE_KEY);
@@ -39,12 +40,12 @@ export function useVerificationReminder() {
 
       await AsyncStorage.setItem(STORAGE_KEY, Date.now().toString());
 
-      const daysRemaining = getDaysRemainingInGracePeriod(user);
+      const daysRemaining = getDaysRemainingInGracePeriod(currentUser);
       const dayText = daysRemaining === 1 ? 'day' : 'days';
 
       Alert.alert(
         'Verify Your Email',
-        `We've sent a verification email to ${user.email}. Please click the link in the email to verify your account.\n\nYou have ${daysRemaining} ${dayText} remaining.`,
+        `We've sent a verification email to ${currentUser.email}. Please click the link in the email to verify your account.\n\nYou have ${daysRemaining} ${dayText} remaining.`,
         [
           {
             text: 'Later',

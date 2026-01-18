@@ -5,7 +5,9 @@ import {
   Text,
   TouchableOpacity,
   Animated,
+  Platform,
 } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useGame } from '../../../src/api/queries/useGame';
 import { useValidation } from '../../../src/api/queries/useValidation';
@@ -19,6 +21,7 @@ import { useJoinGame } from '../../../src/api/queries/useGames';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { useGameStore } from '../../../src/stores/gameStore';
 import { useNavigationStore } from '../../../src/stores/navigationStore';
+import { useNotificationStore } from '../../../src/stores/notificationStore';
 import {
   useAchievementStore,
   useCurrentAchievement,
@@ -93,6 +96,21 @@ function GameScreenContent() {
       setCurrentlyViewedGameUlid(null);
     };
   }, [gameUlid, setCurrentlyViewedGameUlid]);
+
+  // Dismiss notifications for this game when viewing it
+  useEffect(() => {
+    if (!gameUlid || Platform.OS === 'web') {
+      return;
+    }
+
+    const store = useNotificationStore.getState();
+    const identifiers = store.getIdentifiersForGame(gameUlid);
+
+    identifiers.forEach((id) => {
+      Notifications.dismissNotificationAsync(id);
+    });
+    store.clearForGame(gameUlid);
+  }, [gameUlid]);
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
   const [lastMoveWarningShown, setLastMoveWarningShown] = useState(false);
   const [gameEndModalDismissed, setGameEndModalDismissed] = useState(false);

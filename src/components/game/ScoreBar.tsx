@@ -1,5 +1,13 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, Pressable, Animated, Platform } from 'react-native';
+import ReAnimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withRepeat,
+  withSequence,
+  Easing,
+} from 'react-native-reanimated';
 import { Text } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { colors } from '../../config/theme';
@@ -82,15 +90,30 @@ function PlayerAvatar({
 }) {
   const router = useRouter();
   const currentUserUlid = useAuthStore((s) => s.user?.ulid);
-  const activeOpacity = useRef(new Animated.Value(isActive ? 1 : 0)).current;
+
+  const opacity = useSharedValue(isActive ? 1 : 0);
+  const scale = useSharedValue(1);
 
   useEffect(() => {
-    Animated.timing(activeOpacity, {
-      toValue: isActive ? 1 : 0,
-      duration: 300,
-      useNativeDriver: Platform.OS !== 'web',
-    }).start();
-  }, [isActive, activeOpacity]);
+    if (isActive) {
+      opacity.value = withTiming(1, { duration: 300 });
+      scale.value = withRepeat(
+        withSequence(
+          withTiming(1.08, { duration: 750, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1, { duration: 750, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1
+      );
+    } else {
+      opacity.value = withTiming(0, { duration: 300 });
+      scale.value = withTiming(1, { duration: 150 });
+    }
+  }, [isActive, opacity, scale]);
+
+  const animatedIndicatorStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
 
   const handlePress = useCallback(() => {
     if (!player?.ulid) return;
@@ -108,9 +131,9 @@ function PlayerAvatar({
       onPress={handlePress}
       disabled={!player?.ulid}
     >
-      <Animated.View
+      <ReAnimated.View
         pointerEvents="none"
-        style={[styles.activeIndicator, { opacity: activeOpacity }]}
+        style={[styles.activeIndicator, animatedIndicatorStyle]}
       />
       <Avatar
         uri={player?.avatar}
@@ -373,7 +396,7 @@ const styles = StyleSheet.create({
     width: AVATAR_CONTAINER_SIZE,
     height: AVATAR_CONTAINER_SIZE,
     borderRadius: AVATAR_CONTAINER_SIZE / 2,
-    borderWidth: 2.5,
+    borderWidth: 3.5,
     borderColor: colors.warning,
   },
   playerName: {
@@ -472,6 +495,7 @@ const styles = StyleSheet.create({
   inviteContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   invitePrompt: {
     color: colors.textSecondary,
@@ -491,6 +515,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     textAlign: 'center',
+    lineHeight: 18,
   },
   pendingInviteSection: {
     flexDirection: 'row',
@@ -506,7 +531,7 @@ const styles = StyleSheet.create({
   },
   revokeOverlay: {
     position: 'absolute',
-    top: -2,
+    top: Platform.OS === 'android' ? -6 : -2,
     right: -2,
     width: 14,
     height: 14,

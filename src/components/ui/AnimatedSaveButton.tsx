@@ -11,9 +11,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import { colors } from '../../config/theme';
 
+import type { TouchableOpacityProps } from 'react-native';
+
 const AnimatedPressable = Animated.createAnimatedComponent(
   require('react-native').TouchableOpacity
-);
+) as React.ComponentType<TouchableOpacityProps & { children?: React.ReactNode }>;
 
 const SPINNER_DELAY = 200;
 
@@ -37,7 +39,7 @@ export function AnimatedSaveButton({
   const [isPending, setIsPending] = useState(false);
   const [showSpinner, setShowSpinner] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const spinnerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const spinnerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const colorProgress = useSharedValue(0);
   const labelOpacity = useSharedValue(1);

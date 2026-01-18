@@ -155,9 +155,9 @@ export function DraggableTile({
     return (
       <Animated.View
         onPointerDown={handlePointerDown}
-        // @ts-expect-error cursor is web-only CSS property
         style={[
           styles.container,
+          // @ts-expect-error cursor is web-only CSS property
           !disabled && { cursor: 'grab' },
           immediateHideStyle,
         ]}
@@ -197,6 +197,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'transparent',
     borderRadius: 6,
+    // Expand touch area beyond visual bounds for better drag initiation
+    // Add padding to ensure minimum touch target size (44x44 is iOS guideline)
+    minWidth: Math.max(TILE_SIZE, 44),
+    minHeight: Math.max(TILE_SIZE, 44),
     ...Platform.select({
       web: {
         userSelect: 'none',

@@ -49,5 +49,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.textPrimary,
     marginLeft: SPACING.sm,
+    lineHeight: 24,
   },
 });

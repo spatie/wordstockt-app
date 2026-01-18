@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { useRegisterPushToken } from '../api/queries/useAuth';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigationStore } from '../stores/navigationStore';
+import { useNotificationStore } from '../stores/notificationStore';
 
 if (Platform.OS !== 'web') {
   Notifications.setNotificationHandler({
@@ -131,6 +132,12 @@ export function usePushNotifications() {
     notificationListener.current =
       Notifications.addNotificationReceivedListener((notification) => {
         console.log('Notification received:', notification);
+        const gameUlid = notification.request.content.data?.game_ulid;
+        if (gameUlid && typeof gameUlid === 'string') {
+          useNotificationStore
+            .getState()
+            .addNotification(notification.request.identifier, gameUlid);
+        }
       });
 
     responseListener.current =

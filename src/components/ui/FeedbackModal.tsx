@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { BaseModal } from './BaseModal';
 import { Button } from './Button';
+import { FadeSlideIn } from './FadeSlideIn';
 import { colors } from '../../config/theme';
 import { SPACING } from '../../config/constants';
 
@@ -36,58 +37,6 @@ const typeConfig: Record<
     defaultButton: 'OK',
   },
 };
-
-function FadeSlideIn({
-  children,
-  delay = 0,
-  visible,
-  fullWidth = false,
-}: {
-  children: React.ReactNode;
-  delay?: number;
-  visible: boolean;
-  fullWidth?: boolean;
-}) {
-  const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(16)).current;
-
-  useEffect(() => {
-    if (visible) {
-      opacity.setValue(0);
-      translateY.setValue(16);
-
-      const timeout = setTimeout(() => {
-        Animated.parallel([
-          Animated.spring(opacity, {
-            toValue: 1,
-            tension: 50,
-            friction: 8,
-            useNativeDriver: true,
-          }),
-          Animated.spring(translateY, {
-            toValue: 0,
-            tension: 50,
-            friction: 8,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      }, delay);
-
-      return () => clearTimeout(timeout);
-    }
-  }, [delay, opacity, translateY, visible]);
-
-  return (
-    <Animated.View
-      style={[
-        { opacity, transform: [{ translateY }], alignItems: 'center' },
-        fullWidth && { width: '100%' },
-      ]}
-    >
-      {children}
-    </Animated.View>
-  );
-}
 
 interface FeedbackModalProps {
   visible: boolean;

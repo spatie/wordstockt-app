@@ -294,8 +294,8 @@ export function Tile({
 
 const styles = StyleSheet.create({
   tileWrapper: {
-    width: '99%',
-    height: '99%',
+    width: '100%',
+    height: '100%',
   },
   tile: {
     // Size is handled by tileWrapper

@@ -118,7 +118,7 @@ export function BoardCell({
 
   // Callback for when drag ends (called from DragDropContext on native)
   const handleNativeDragEnd = useCallback(
-    (target: DropTarget, wasDragged: boolean) => {
+    (target: DropTarget, wasDragged: boolean): boolean => {
       if (!wasDragged) {
         // If this is a pending blank tile, open the letter selection modal
         if (pendingTile?.isBlank && onBlankTileTap) {
@@ -126,9 +126,10 @@ export function BoardCell({
         } else {
           onPress();
         }
-        return;
+        return false;
       }
       onPendingTileDrag(x, y, target);
+      return true;
     },
     [x, y, onPress, onPendingTileDrag, pendingTile, onBlankTileTap]
   );
@@ -435,12 +436,15 @@ function CellContent({
   return null;
 }
 
+// Android renders hairline borders with artifacts at intersections, so use 1px instead
+const gridLineWidth = Platform.OS === 'android' ? 1 : StyleSheet.hairlineWidth;
+
 const styles = StyleSheet.create({
   cellWrapper: {
     flex: 1,
     aspectRatio: 1,
-    borderRightWidth: StyleSheet.hairlineWidth,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderRightWidth: gridLineWidth,
+    borderBottomWidth: gridLineWidth,
     borderColor: '#0D1520',
   },
   cell: {
