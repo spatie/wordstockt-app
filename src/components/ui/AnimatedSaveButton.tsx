@@ -15,7 +15,9 @@ import type { TouchableOpacityProps } from 'react-native';
 
 const AnimatedPressable = Animated.createAnimatedComponent(
   require('react-native').TouchableOpacity
-) as React.ComponentType<TouchableOpacityProps & { children?: React.ReactNode }>;
+) as React.ComponentType<
+  TouchableOpacityProps & { children?: React.ReactNode }
+>;
 
 const SPINNER_DELAY = 200;
 

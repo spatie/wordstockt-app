@@ -86,7 +86,9 @@ export function useWebSocketBase({
 
     const subscribeToChannel = async (ws: WebSocket, channelName: string) => {
       if (!socketIdRef.current || !tokenRef.current) {
-        console.log(`[${logPrefix}] Cannot subscribe: missing socket_id or token`);
+        console.log(
+          `[${logPrefix}] Cannot subscribe: missing socket_id or token`
+        );
         return;
       }
 
@@ -105,12 +107,19 @@ export function useWebSocketBase({
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.log(`[${logPrefix}] Auth failed:`, response.status, errorText);
+          console.log(
+            `[${logPrefix}] Auth failed:`,
+            response.status,
+            errorText
+          );
           return;
         }
 
         const authData = await response.json();
-        console.log(`[${logPrefix}] Auth successful, subscribing to`, channelName);
+        console.log(
+          `[${logPrefix}] Auth successful, subscribing to`,
+          channelName
+        );
 
         ws.send(
           JSON.stringify({
@@ -143,7 +152,9 @@ export function useWebSocketBase({
       );
 
       ws.onopen = () => {
-        console.log(`[${logPrefix}] Connected, waiting for connection_established`);
+        console.log(
+          `[${logPrefix}] Connected, waiting for connection_established`
+        );
         isConnectingRef.current = false;
       };
 
