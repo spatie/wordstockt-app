@@ -1,12 +1,14 @@
-import React, { useEffect, useRef, useCallback } from 'react';
-import { View, StyleSheet, Pressable, Animated, Platform } from 'react-native';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
+import { View, StyleSheet, Pressable, Animated, Platform, TouchableOpacity } from 'react-native';
 import ReAnimated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withRepeat,
   withSequence,
+  withSpring,
   Easing,
+  interpolate,
 } from 'react-native-reanimated';
 import { Text } from 'react-native-paper';
 import { useRouter } from 'expo-router';
@@ -19,6 +21,7 @@ import { SmartAvatar } from '../ui/SmartAvatar';
 import { TurnTimer } from './TurnTimer';
 import { AnimatedScore } from './AnimatedScore';
 import { AnimatedTilesCount } from './AnimatedTilesCount';
+import { StatusInfoModal } from './StatusInfoModal';
 import { calculateTilesPlayedBonus } from '../../utils/scoring';
 import type { Game, Move, Player, PendingInvitation } from '../../types';
 
@@ -61,12 +64,51 @@ interface ScoreBarProps {
   tilesPlayed?: number;
 }
 
+function TilesBadge({ count }: { count: number }) {
+  const rotation = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  const handlePress = useCallback(() => {
+    // Wobble animation: rotate back and forth while bouncing
+    rotation.value = withSequence(
+      withTiming(-12, { duration: 50 }),
+      withTiming(10, { duration: 60 }),
+      withTiming(-8, { duration: 60 }),
+      withTiming(6, { duration: 60 }),
+      withTiming(-3, { duration: 50 }),
+      withTiming(0, { duration: 50 })
+    );
+    scale.value = withSequence(
+      withSpring(1.15, { damping: 8, stiffness: 400 }),
+      withSpring(1, { damping: 10, stiffness: 300 })
+    );
+  }, [rotation, scale]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { rotate: `${rotation.value}deg` },
+      { scale: scale.value },
+    ],
+  }));
+
+  return (
+    <TouchableOpacity onPress={handlePress} activeOpacity={1}>
+      <ReAnimated.View style={[styles.tilesBadge, animatedStyle]}>
+        <AnimatedTilesCount count={count} />
+        <Text style={styles.tilesLabel}>tiles</Text>
+      </ReAnimated.View>
+    </TouchableOpacity>
+  );
+}
+
 function StatusDots({
   hasFreeSwap,
   hasReceivedBlank,
+  onPress,
 }: {
   hasFreeSwap?: boolean;
   hasReceivedBlank?: boolean;
+  onPress?: () => void;
 }) {
   const showBlankPending = hasReceivedBlank === false;
   const showFreeSwap = hasFreeSwap === true;
@@ -74,10 +116,15 @@ function StatusDots({
   if (!showBlankPending && !showFreeSwap) return null;
 
   return (
-    <View style={styles.statusDots}>
+    <TouchableOpacity
+      style={styles.statusDots}
+      onPress={onPress}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      activeOpacity={0.7}
+    >
       {showBlankPending && <View style={[styles.dot, styles.blankDot]} />}
       {showFreeSwap && <View style={[styles.dot, styles.swapDot]} />}
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -91,28 +138,28 @@ function PlayerAvatar({
   const router = useRouter();
   const currentUserUlid = useAuthStore((s) => s.user?.ulid);
 
-  const opacity = useSharedValue(isActive ? 1 : 0);
-  const scale = useSharedValue(1);
+  const visible = useSharedValue(isActive ? 1 : 0);
+  const pulse = useSharedValue(1);
 
   useEffect(() => {
     if (isActive) {
-      opacity.value = withTiming(1, { duration: 300 });
-      scale.value = withRepeat(
-        withSequence(
-          withTiming(1.08, { duration: 750, easing: Easing.inOut(Easing.ease) }),
-          withTiming(1, { duration: 750, easing: Easing.inOut(Easing.ease) })
-        ),
-        -1
+      visible.value = withTiming(1, { duration: 300 });
+      pulse.value = 1;
+      pulse.value = withRepeat(
+        withTiming(0, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
+        -1,
+        true
       );
     } else {
-      opacity.value = withTiming(0, { duration: 300 });
-      scale.value = withTiming(1, { duration: 150 });
+      visible.value = withTiming(0, { duration: 300 });
+      pulse.value = 1;
     }
-  }, [isActive, opacity, scale]);
+  }, [isActive, visible, pulse]);
 
   const animatedIndicatorStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ scale: scale.value }],
+    opacity: visible.value * interpolate(pulse.value, [0, 1], [0.7, 1]),
+    shadowOpacity: visible.value * interpolate(pulse.value, [0, 1], [0.2, 0.6]),
+    shadowRadius: interpolate(pulse.value, [0, 1], [4, 10]),
   }));
 
   const handlePress = useCallback(() => {
@@ -126,14 +173,15 @@ function PlayerAvatar({
   }, [player?.ulid, currentUserUlid, router]);
 
   return (
-    <Pressable
-      style={styles.avatarContainer}
+    <TouchableOpacity
+      style={styles.avatarWrapper}
       onPress={handlePress}
       disabled={!player?.ulid}
+      activeOpacity={0.7}
     >
       <ReAnimated.View
-        pointerEvents="none"
         style={[styles.activeIndicator, animatedIndicatorStyle]}
+        pointerEvents="none"
       />
       <Avatar
         uri={player?.avatar}
@@ -141,7 +189,7 @@ function PlayerAvatar({
         size={AVATAR_SIZE}
         backgroundColor={player?.avatarColor ?? undefined}
       />
-    </Pressable>
+    </TouchableOpacity>
   );
 }
 
@@ -154,6 +202,7 @@ export function ScoreBar({
   onRevokeInvitation,
   tilesPlayed = 0,
 }: ScoreBarProps) {
+  const [statusModalPlayer, setStatusModalPlayer] = useState<'me' | 'opponent' | null>(null);
   const myPlayer = game.players.find((p) => p.ulid === currentUserUlid);
   const opponent = game.players.find((p) => p.ulid !== currentUserUlid);
 
@@ -227,6 +276,7 @@ export function ScoreBar({
           <StatusDots
             hasFreeSwap={myPlayer?.hasFreeSwap}
             hasReceivedBlank={myPlayer?.hasReceivedBlank}
+            onPress={() => setStatusModalPlayer('me')}
           />
           {myPlayerGotEmptyRackBonus && (
             <Text style={styles.emptyRackBonus}>+25</Text>
@@ -236,10 +286,7 @@ export function ScoreBar({
 
       {/* Center section */}
       <View style={styles.centerSection}>
-        <View style={styles.tilesBadge}>
-          <AnimatedTilesCount count={game.tilesRemaining} />
-          <Text style={styles.tilesLabel}>tiles</Text>
-        </View>
+        <TilesBadge count={game.tilesRemaining} />
         {lastMoveText && (
           <Text style={styles.lastMoveText} numberOfLines={1}>
             {lastMoveText}
@@ -342,6 +389,7 @@ export function ScoreBar({
               <StatusDots
                 hasFreeSwap={opponent?.hasFreeSwap}
                 hasReceivedBlank={opponent?.hasReceivedBlank}
+                onPress={() => setStatusModalPlayer('opponent')}
               />
               {opponentGotEmptyRackBonus && (
                 <Text style={styles.emptyRackBonus}>+25</Text>
@@ -351,6 +399,21 @@ export function ScoreBar({
           </>
         )}
       </View>
+
+      <StatusInfoModal
+        visible={statusModalPlayer !== null}
+        onClose={() => setStatusModalPlayer(null)}
+        showBlankPending={
+          statusModalPlayer === 'me'
+            ? myPlayer?.hasReceivedBlank === false
+            : opponent?.hasReceivedBlank === false
+        }
+        showFreeSwap={
+          statusModalPlayer === 'me'
+            ? myPlayer?.hasFreeSwap === true
+            : opponent?.hasFreeSwap === true
+        }
+      />
     </View>
   );
 }
@@ -384,7 +447,7 @@ const styles = StyleSheet.create({
     marginRight: 6,
     alignItems: 'flex-end',
   },
-  avatarContainer: {
+  avatarWrapper: {
     width: AVATAR_CONTAINER_SIZE,
     height: AVATAR_CONTAINER_SIZE,
     justifyContent: 'center',
@@ -397,6 +460,9 @@ const styles = StyleSheet.create({
     borderRadius: AVATAR_CONTAINER_SIZE / 2,
     borderWidth: 3.5,
     borderColor: colors.warning,
+    shadowColor: colors.warning,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 8,
   },
   playerName: {
     color: colors.textSecondary,

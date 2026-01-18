@@ -65,6 +65,7 @@ export function BoardCell({
     unregisterDraggable,
     recallingBoardPositions,
     draggingBoardPositionShared,
+    boardLayout,
   } = useDragDrop();
 
   // Immediate hiding based on shared value (prevents visual glitch during fast drags)
@@ -201,12 +202,22 @@ export function BoardCell({
   }, [pendingTile, disabled, measureAndRegister]);
 
   const handleDragStart = useCallback(
-    (pageX: number, pageY: number) => {
+    (_pageX: number, _pageY: number) => {
       if (pendingTile) {
-        startDragFromBoard(pendingTile, x, y, pageX, pageY);
+        // Calculate cell's center position for seamless drag start
+        // startDragJS centers the floating tile on the passed point (using TILE_OFFSET)
+        // So we pass the cell's center, not its corner
+        if (boardLayout) {
+          const cellCenterX = boardLayout.x + x * boardLayout.cellSize + boardLayout.cellSize / 2;
+          const cellCenterY = boardLayout.y + y * boardLayout.cellSize + boardLayout.cellSize / 2;
+          startDragFromBoard(pendingTile, x, y, cellCenterX, cellCenterY);
+        } else {
+          // Fallback to pointer position if boardLayout not available
+          startDragFromBoard(pendingTile, x, y, _pageX, _pageY);
+        }
       }
     },
-    [pendingTile, x, y, startDragFromBoard]
+    [pendingTile, x, y, boardLayout, startDragFromBoard]
   );
 
   const handleDragEnd = useCallback(
@@ -300,19 +311,26 @@ export function BoardCell({
           style={[styles.cell, { backgroundColor }]}
           onLayout={handleCellLayout}
         >
-          <Animated.View style={[styles.tileContainer, immediateHideStyle]}>
-            <CellContent
-              x={x}
-              y={y}
-              tile={tile ?? null}
-              isPending={isPending}
-              squareType={squareType}
-              isStar={isStar}
-              isPlaced={!!placedTile}
-              isLastMove={isLastMove}
-              cellSize={cellSize}
-            />
-          </Animated.View>
+          {/* Background layer: bonus text (always visible, never hidden) */}
+          <BonusText
+            squareType={squareType}
+            isStar={isStar}
+            cellSize={cellSize}
+          />
+          {/* Foreground layer: tile (hidden during drag via immediateHideStyle) */}
+          {tile && (
+            <Animated.View style={[styles.tileOverlay, immediateHideStyle]}>
+              <TileContent
+                x={x}
+                y={y}
+                tile={tile}
+                isPending={isPending}
+                isPlaced={!!placedTile}
+                isLastMove={isLastMove}
+                cellSize={cellSize}
+              />
+            </Animated.View>
+          )}
         </View>
       </View>
     );
@@ -351,7 +369,92 @@ export function BoardCell({
   );
 }
 
-// Extracted cell content rendering
+// Bonus text component - always visible, never hidden during drag
+interface BonusTextProps {
+  squareType: SquareType;
+  isStar: boolean;
+  cellSize: number;
+}
+
+function BonusText({ squareType, isStar, cellSize }: BonusTextProps) {
+  const fontMultiplier = Platform.OS === 'android' ? 0.38 : 0.45;
+  const multiplierFontSize = Math.max(8, Math.round(cellSize * fontMultiplier));
+  const starFontSize = Math.max(8, Math.round(cellSize * 0.4));
+
+  if (isStar) {
+    return (
+      <View style={styles.bonusTextContainer}>
+        <Ionicons name="star" size={starFontSize} color="#FFFFFF" />
+      </View>
+    );
+  }
+
+  if (squareType) {
+    return (
+      <View style={styles.bonusTextContainer}>
+        <Text style={[styles.multiplierText, { fontSize: multiplierFontSize }]}>
+          {MULTIPLIER_LABELS[squareType]}
+        </Text>
+      </View>
+    );
+  }
+
+  return null;
+}
+
+// Tile content component - can be hidden during drag
+interface TileContentProps {
+  x: number;
+  y: number;
+  tile: PlacedTile;
+  isPending: boolean;
+  isPlaced: boolean;
+  isLastMove: boolean;
+  cellSize: number;
+}
+
+function TileContent({
+  x,
+  y,
+  tile,
+  isPending,
+  isPlaced,
+  isLastMove,
+  cellSize,
+}: TileContentProps) {
+  const validationState = useTileValidationState(x, y);
+  const wordHighlight = useBoardTileHighlight(x, y);
+  const tileValidationState = isPending ? validationState : wordHighlight;
+
+  return (
+    <>
+      <Tile
+        letter={tile.letter}
+        points={tile.points}
+        isPending={isPending}
+        isPlaced={isPlaced}
+        isBlank={tile.isBlank}
+        validationState={tileValidationState}
+        size="board"
+        cellSize={cellSize}
+      />
+      {isPlaced && isLastMove && !wordHighlight && (
+        <View style={styles.lastMoveHighlight} pointerEvents="none" />
+      )}
+      {isPlaced && wordHighlight && (
+        <View
+          style={[
+            styles.wordHighlight,
+            { backgroundColor: HIGHLIGHT_COLORS[wordHighlight] },
+          ]}
+          pointerEvents="none"
+        />
+      )}
+    </>
+  );
+}
+
+// Extracted cell content rendering (used for web and default paths)
 interface CellContentProps {
   x: number;
   y: number;
@@ -389,51 +492,55 @@ function CellContent({
   const multiplierFontSize = Math.max(8, Math.round(cellSize * fontMultiplier));
   const starFontSize = Math.max(8, Math.round(cellSize * 0.4));
 
-  if (tile) {
-    return (
-      <View style={styles.tileContainer}>
-        <Tile
-          letter={tile.letter}
-          points={tile.points}
-          isPending={isPending}
-          isPlaced={isPlaced}
-          isBlank={tile.isBlank}
-          validationState={tileValidationState}
-          size="board"
-          cellSize={cellSize}
-        />
-        {/* Last move highlight overlay - rendered after Tile so it appears on top */}
-        {isPlaced && isLastMove && !wordHighlight && (
-          <View style={styles.lastMoveHighlight} pointerEvents="none" />
-        )}
-        {/* Word highlight overlay for placed tiles */}
-        {isPlaced && wordHighlight && (
-          <View
-            style={[
-              styles.wordHighlight,
-              { backgroundColor: HIGHLIGHT_COLORS[wordHighlight] },
-            ]}
-            pointerEvents="none"
+  // Always render bonus text/star underneath - tile renders on top
+  // This prevents delay when tile is removed since bonus text is already mounted
+  return (
+    <View style={styles.tileContainer}>
+      {/* Background layer: bonus text or star (always rendered if applicable) */}
+      {isStar && (
+        <View style={styles.bonusTextContainer}>
+          <Ionicons name="star" size={starFontSize} color="#FFFFFF" />
+        </View>
+      )}
+      {!isStar && squareType && (
+        <View style={styles.bonusTextContainer}>
+          <Text style={[styles.multiplierText, { fontSize: multiplierFontSize }]}>
+            {MULTIPLIER_LABELS[squareType]}
+          </Text>
+        </View>
+      )}
+
+      {/* Foreground layer: tile (covers bonus text when present) */}
+      {tile && (
+        <>
+          <Tile
+            letter={tile.letter}
+            points={tile.points}
+            isPending={isPending}
+            isPlaced={isPlaced}
+            isBlank={tile.isBlank}
+            validationState={tileValidationState}
+            size="board"
+            cellSize={cellSize}
           />
-        )}
-      </View>
-    );
-  }
-
-  // Show star for STAR multiplier (center cell)
-  if (isStar) {
-    return <Ionicons name="star" size={starFontSize} color="#FFFFFF" />;
-  }
-
-  if (squareType) {
-    return (
-      <Text style={[styles.multiplierText, { fontSize: multiplierFontSize }]}>
-        {MULTIPLIER_LABELS[squareType]}
-      </Text>
-    );
-  }
-
-  return null;
+          {/* Last move highlight overlay */}
+          {isPlaced && isLastMove && !wordHighlight && (
+            <View style={styles.lastMoveHighlight} pointerEvents="none" />
+          )}
+          {/* Word highlight overlay for placed tiles */}
+          {isPlaced && wordHighlight && (
+            <View
+              style={[
+                styles.wordHighlight,
+                { backgroundColor: HIGHLIGHT_COLORS[wordHighlight] },
+              ]}
+              pointerEvents="none"
+            />
+          )}
+        </>
+      )}
+    </View>
+  );
 }
 
 // Android renders hairline borders with artifacts at intersections, so use 1px instead
@@ -454,6 +561,20 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   tileContainer: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bonusTextContainer: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tileOverlay: {
+    position: 'absolute',
     width: '100%',
     height: '100%',
     justifyContent: 'center',

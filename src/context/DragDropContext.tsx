@@ -23,17 +23,29 @@ import React, {
   useMemo,
   useEffect,
 } from 'react';
-import { View, StyleSheet, Platform, LayoutChangeEvent } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Platform,
+  LayoutChangeEvent,
+  TextInput,
+} from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useAnimatedProps,
+  useDerivedValue,
   withTiming,
   withSpring,
+  withDelay,
   runOnJS,
   Easing,
   SharedValue,
 } from 'react-native-reanimated';
+
+// TextInput that can update text from UI thread via animatedProps
+const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
 import {
   TILE_SIZE,
   GAP,
@@ -200,27 +212,53 @@ function FloatingTile({
     opacity: opacity.value,
   }));
 
-  // Extract tile data from shared value for rendering
+  // Derive letter and points strings directly from shared value on UI thread
+  const letterDerived = useDerivedValue(() => {
+    const tileData = dragTileShared.value;
+    if (!tileData) return '';
+    const letter = tileData[0];
+    return letter === '*' ? '' : letter;
+  }, [dragTileShared]);
+
+  const pointsDerived = useDerivedValue(() => {
+    const tileData = dragTileShared.value;
+    if (!tileData) return '';
+    return String(tileData[1]);
+  }, [dragTileShared]);
+
+  // Use animatedProps to update TextInput value on UI thread - no React re-render needed
+  const letterAnimatedProps = useAnimatedProps(() => ({
+    text: letterDerived.value,
+    defaultValue: letterDerived.value,
+  }));
+
+  const pointsAnimatedProps = useAnimatedProps(() => ({
+    text: pointsDerived.value,
+    defaultValue: pointsDerived.value,
+  }));
+
+  // Read isBlank for styling (this only affects initial render, not a concern for glitch)
   const tileData = dragTileShared.value;
-  if (!tileData) return null;
+  const isBlank = tileData?.[2] ?? false;
 
-  const [letter, points, isBlank] = tileData;
-  const displayLetter = letter === '*' ? '' : letter;
-
+  // Always render the structure - opacity controls visibility
+  // Using AnimatedTextInput with animatedProps updates text on UI thread instantly
   return (
     <Animated.View
       style={[styles.floatingTile, animatedStyle]}
       pointerEvents="none"
     >
       <View style={[styles.tileContent, isBlank && styles.blankTile]}>
-        {letter !== '*' && (
-          <>
-            <Animated.Text style={styles.letterText}>
-              {displayLetter}
-            </Animated.Text>
-            <Animated.Text style={styles.points}>{points}</Animated.Text>
-          </>
-        )}
+        <AnimatedTextInput
+          style={styles.letterText}
+          editable={false}
+          animatedProps={letterAnimatedProps}
+        />
+        <AnimatedTextInput
+          style={styles.pointsText}
+          editable={false}
+          animatedProps={pointsAnimatedProps}
+        />
       </View>
     </Animated.View>
   );
@@ -275,7 +313,7 @@ function RecallingTileItem({
             <Animated.Text style={styles.letterText}>
               {displayLetter}
             </Animated.Text>
-            <Animated.Text style={styles.points}>
+            <Animated.Text style={styles.pointsText}>
               {tile.tile.points}
             </Animated.Text>
           </>
@@ -922,7 +960,12 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
       const finishDrag = (target: DropTarget, animated: boolean = true) => {
         if (!animated) {
-          opacity.value = 0;
+          // Show source tile BEFORE hiding floating tile to prevent flicker
+          draggingRackIndexShared.value = -1;
+          draggingBoardPositionShared.value = null;
+          // Use delayed fade to ensure source tile is visible first
+          opacity.value = withTiming(0, { duration: 50 });
+
           isDraggingRef.current = false;
           isDraggingShared.value = false; // Sync shared value
           const now = Date.now();
@@ -934,8 +977,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           activeDragRef.current = null;
           dragTileShared.value = null;
           dragSourceShared.value = null;
-          draggingRackIndexShared.value = -1;
-          draggingBoardPositionShared.value = null;
+          scale.value = 1;
           onComplete?.(target);
           dragCallback?.(target, true);
           return;
@@ -1036,6 +1078,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
                 targetPos.y,
                 { duration: SETTLE_DURATION },
                 () => {
+                  'worklet';
+                  // Show rack tile immediately on UI thread before going to JS thread
+                  draggingRackIndexShared.value = -1;
                   runOnJS(onSettleComplete)();
                 }
               );
@@ -1088,6 +1133,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
               targetPos.y,
               { duration: SETTLE_DURATION },
               () => {
+                'worklet';
+                // Show rack tile immediately on UI thread before going to JS thread
+                draggingRackIndexShared.value = -1;
                 runOnJS(onSettleComplete)();
               }
             );
@@ -1101,7 +1149,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       finishDrag(null, false);
       return null;
     },
-    [positionX, positionY, scale, opacity]
+    [positionX, positionY, scale, opacity, draggingRackIndexShared, draggingBoardPositionShared]
   );
 
   // Ref to hold completeSettleFromRef for stable worklet access
@@ -1143,11 +1191,14 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         targetY,
         { duration: SETTLE_DURATION },
         () => {
+          'worklet';
+          // Show rack tile immediately on UI thread before going to JS thread
+          draggingRackIndexShared.value = -1;
           runOnJS(onComplete)();
         }
       );
     },
-    [positionX, positionY, scale]
+    [positionX, positionY, scale, draggingRackIndexShared]
   );
 
   // Stable settle completion handler that reads from ref (prevents GC issues on real devices)
@@ -1201,10 +1252,12 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         dragTileShared.value = null;
         dragSourceShared.value = null;
 
-        requestAnimationFrame(() => {
-          opacity.value = 0;
-          scale.value = 1;
-        });
+        // Show rack tile BEFORE hiding floating tile to prevent flicker
+        // Use withDelay to ensure rack tile opacity update is processed first
+        draggingRackIndexShared.value = -1;
+        draggingBoardPositionShared.value = null;
+        opacity.value = withTiming(0, { duration: 50 });
+        scale.value = 1;
       });
       return;
     }
@@ -1223,13 +1276,13 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     dragTileShared.value = null;
     dragSourceShared.value = null;
 
-    // Hide floating tile after a micro-delay to let React render the rack tile first
-    // This prevents the brief flash where neither tile is visible
-    requestAnimationFrame(() => {
-      opacity.value = 0;
-      scale.value = 1;
-    });
-  }, [opacity, scale, isDraggingShared, animateBackToRack]);
+    // Show source tile BEFORE hiding floating tile to prevent flicker
+    // Use withDelay to ensure source tile opacity update is processed first
+    draggingRackIndexShared.value = -1;
+    draggingBoardPositionShared.value = null;
+    opacity.value = withTiming(0, { duration: 50 });
+    scale.value = 1;
+  }, [opacity, scale, isDraggingShared, draggingRackIndexShared, draggingBoardPositionShared, animateBackToRack]);
 
   // Keep ref in sync
   useEffect(() => {
@@ -1570,12 +1623,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Activate immediately for rack touches and potential board tiles (not in swap mode)
-      // This improves gesture activation reliability by being more permissive
-      const shouldActivateImmediately = isOnRack || (rackLayoutMeasured && touchY < rackTopShared.value);
-
-      activatedImmediately.value = shouldActivateImmediately;
-      if (shouldActivateImmediately) {
+      // Activate immediately for rack touches only
+      // Board touches will activate on first move (onTouchesMove) to allow taps on ScoreBar
+      activatedImmediately.value = isOnRack;
+      if (isOnRack) {
         stateManager.activate();
       }
     })
@@ -1645,13 +1696,18 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           rackHit.tile.isBlank,
         ];
         dragSourceShared.value = { type: 'rack', rackIndex: rackHit.rackIndex };
-        draggingRackIndexShared.value = rackHit.rackIndex; // Hide rack tile immediately
 
-        // Position floating tile (container-relative coordinates)
-        positionX.value = event.x + TILE_OFFSET;
-        positionY.value = event.y + TILE_OFFSET;
+        // Position floating tile at the tile's exact position
+        // Calculate offset from touch to tile's top-left corner (both in screen coords)
+        const tileOffsetX = rackHit.hitArea.x - screenX;
+        const tileOffsetY = rackHit.hitArea.y - screenY;
+        positionX.value = event.x + tileOffsetX;
+        positionY.value = event.y + tileOffsetY;
         scale.value = 1;
         opacity.value = 1;
+
+        // Hide rack tile immediately - floating tile is always mounted and will show instantly
+        draggingRackIndexShared.value = rackHit.rackIndex;
 
         // Update JS state asynchronously (non-blocking)
         runOnJS(onWorkletDragStart)(
@@ -1676,13 +1732,18 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           x: boardHit.x,
           y: boardHit.y,
         };
-        draggingBoardPositionShared.value = { x: boardHit.x, y: boardHit.y }; // Hide board tile immediately
 
-        // Position floating tile (container-relative coordinates)
-        positionX.value = event.x + TILE_OFFSET;
-        positionY.value = event.y + TILE_OFFSET;
+        // Position floating tile at the tile's exact position
+        // Calculate offset from touch to tile's top-left corner (both in screen coords)
+        const tileOffsetX = boardHit.hitArea.x - screenX;
+        const tileOffsetY = boardHit.hitArea.y - screenY;
+        positionX.value = event.x + tileOffsetX;
+        positionY.value = event.y + tileOffsetY;
         scale.value = 1;
         opacity.value = 1;
+
+        // Hide board tile immediately - floating tile is always mounted and will show instantly
+        draggingBoardPositionShared.value = { x: boardHit.x, y: boardHit.y };
 
         // Update JS state asynchronously (non-blocking)
         runOnJS(onWorkletDragStart)(
@@ -1877,6 +1938,8 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     textAlign: 'center',
     marginRight: '15%',
+    padding: 0,
+    margin: 0,
     // Ensure proper centering on Android
     ...Platform.select({
       android: {
@@ -1886,7 +1949,7 @@ const styles = StyleSheet.create({
       default: {},
     }),
   },
-  points: {
+  pointsText: {
     position: 'absolute',
     bottom: '-4%',
     right: 0,
@@ -1898,6 +1961,9 @@ const styles = StyleSheet.create({
       default: 'System',
     }),
     color: '#1A1A1A',
+    padding: 0,
+    margin: 0,
+    minWidth: 10,
     // Ensure proper centering on Android
     ...Platform.select({
       android: {

@@ -120,10 +120,21 @@ export function DraggableTile({
   ]);
 
   const handleDragStart = useCallback(
-    (pageX: number, pageY: number) => {
-      startDragFromRack(tile, rackIndex, pageX, pageY);
+    (_pageX: number, _pageY: number) => {
+      // Calculate tile's center position for seamless drag start
+      // startDragJS centers the floating tile on the passed point (using TILE_OFFSET)
+      // So we pass the tile's center, not its corner
+      if (rackLayout) {
+        const slotWidth = TILE_SIZE + GAP;
+        const tileCenterX = rackLayout.x + visualSlot * slotWidth + TILE_SIZE / 2;
+        const tileCenterY = rackLayout.y + TILE_SIZE / 2;
+        startDragFromRack(tile, rackIndex, tileCenterX, tileCenterY);
+      } else {
+        // Fallback to pointer position if rackLayout not available
+        startDragFromRack(tile, rackIndex, _pageX, _pageY);
+      }
     },
-    [tile, rackIndex, startDragFromRack]
+    [tile, rackIndex, visualSlot, rackLayout, startDragFromRack]
   );
 
   const handleDragEnd = useCallback(
@@ -145,8 +156,10 @@ export function DraggableTile({
     disabled: disabled || isUsed,
   });
 
-  // Show empty slot when tile is used (placed on board) or being dragged
-  if (isUsed || isThisDragging) {
+  // Show empty slot when tile is used (placed on board)
+  // Note: we don't unmount the tile when dragging - we just hide it via immediateHideStyle
+  // This prevents flicker when the drag ends because the tile is already mounted
+  if (isUsed) {
     return <View style={styles.emptySlot} />;
   }
 
@@ -175,6 +188,7 @@ export function DraggableTile({
   }
 
   // Native: just render, hit-testing is handled by global PanGestureHandler
+  // The tile stays mounted even during drag - immediateHideStyle controls visibility
   return (
     <Animated.View style={[styles.container, immediateHideStyle]}>
       <Tile

@@ -17,3 +17,4 @@ export { SwapModeOverlay } from './SwapModeOverlay';
 
 // Modals
 export { InvitePlayerModal } from './InvitePlayerModal';
+export { StatusInfoModal } from './StatusInfoModal';
