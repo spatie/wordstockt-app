@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   FlatList,
@@ -95,6 +95,39 @@ export default function LeaderboardScreen() {
 
   const { data, isLoading, error, refetch } = useLeaderboard(leaderboardType);
   const [refreshing, setRefreshing] = useState(false);
+
+  const tabOpacity = useSharedValue(1);
+  const tabTranslateY = useSharedValue(0);
+
+  const tabContentStyle = useAnimatedStyle(() => ({
+    opacity: tabOpacity.value,
+    transform: [{ translateY: tabTranslateY.value }],
+  }));
+
+  const animateTabChange = useCallback(() => {
+    tabOpacity.value = 0;
+    tabTranslateY.value = 10;
+    tabOpacity.value = withTiming(1, { duration: 200 });
+    tabTranslateY.value = withTiming(0, { duration: 200 });
+  }, [tabOpacity, tabTranslateY]);
+
+  const handleMainTypeChange = useCallback(
+    (newType: MainType) => {
+      if (newType === mainType) return;
+      animateTabChange();
+      setMainType(newType);
+    },
+    [mainType, animateTabChange]
+  );
+
+  const handlePeriodChange = useCallback(
+    (newPeriod: PeriodType) => {
+      if (newPeriod === period) return;
+      animateTabChange();
+      setPeriod(newPeriod);
+    },
+    [period, animateTabChange]
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -212,39 +245,41 @@ export default function LeaderboardScreen() {
 
   return (
     <View style={styles.container}>
-      <TabBar tabs={MAIN_TABS} value={mainType} onChange={setMainType} />
-
-      <Animated.View entering={FadeIn.duration(200)} style={styles.titleRow}>
-        <Text style={styles.title}>{data?.meta?.label ?? 'Leaderboard'}</Text>
-        {mainType === 'wins' && (
-          <PeriodToggle value={period} onChange={setPeriod} />
-        )}
-      </Animated.View>
-
-      <FlatList
-        key={`${mainType}-${period}`}
-        data={data?.data}
-        renderItem={renderEntry}
-        keyExtractor={(item) => item.ulid}
-        contentContainerStyle={styles.list}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.textSecondary}
-          />
-        }
-        ListEmptyComponent={
-          <Animated.View
-            style={styles.emptyContainer}
-            entering={FadeIn.duration(300)}
-          >
-            <Text style={styles.emptyText}>
-              No players on the leaderboard yet
-            </Text>
-          </Animated.View>
-        }
+      <TabBar
+        tabs={MAIN_TABS}
+        value={mainType}
+        onChange={handleMainTypeChange}
       />
+
+      <Animated.View style={[styles.contentContainer, tabContentStyle]}>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>{data?.meta?.label ?? 'Leaderboard'}</Text>
+          {mainType === 'wins' && (
+            <PeriodToggle value={period} onChange={handlePeriodChange} />
+          )}
+        </View>
+
+        <FlatList
+          data={data?.data}
+          renderItem={renderEntry}
+          keyExtractor={(item) => item.ulid}
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.textSecondary}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                No players on the leaderboard yet
+              </Text>
+            </View>
+          }
+        />
+      </Animated.View>
 
       {renderCurrentUserFooter()}
     </View>
@@ -255,6 +290,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  contentContainer: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,

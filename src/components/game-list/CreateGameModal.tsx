@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SegmentedButtons, Switch, IconButton } from 'react-native-paper';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { BaseModal } from '../ui/BaseModal';
 import { Button } from '../ui/Button';
@@ -43,11 +49,31 @@ function BoardOption({
   description,
   onPress,
 }: BoardOptionProps) {
+  const progress = useSharedValue(selected ? 1 : 0);
+
+  useEffect(() => {
+    progress.value = withTiming(selected ? 1 : 0, { duration: 200 });
+  }, [selected, progress]);
+
+  const selectedOverlayStyle = useAnimatedStyle(() => ({
+    opacity: progress.value * 0.1,
+  }));
+
+  const radioInnerStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: progress.value }],
+    opacity: progress.value,
+  }));
+
   return (
     <Pressable
-      style={[styles.boardOption, selected && styles.boardOptionSelected]}
+      style={styles.boardOption}
       onPress={onPress}
+      android_ripple={null}
     >
+      <Animated.View
+        style={[styles.boardOptionSelectedOverlay, selectedOverlayStyle]}
+        pointerEvents="none"
+      />
       <View
         style={[
           styles.boardOptionIcon,
@@ -72,10 +98,8 @@ function BoardOption({
         <Text style={styles.boardOptionDescription}>{description}</Text>
       </View>
       <View style={styles.boardOptionRadio}>
-        <View
-          style={[styles.radioOuter, selected && styles.radioOuterSelected]}
-        >
-          {selected && <View style={styles.radioInner} />}
+        <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
+          <Animated.View style={[styles.radioInner, radioInnerStyle]} />
         </View>
       </View>
     </Pressable>
@@ -300,20 +324,21 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: 'transparent',
+    overflow: 'hidden',
   },
-  boardOptionSelected: {
-    borderColor: colors.primary,
-    backgroundColor: `${colors.primary}10`,
+  boardOptionSelectedOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.primary,
+    borderRadius: RADIUS.md,
   },
   boardOptionIcon: {
     width: 36,
     height: 36,
     borderRadius: RADIUS.sm,
-    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: SPACING.md,
+    backgroundColor: colors.background,
   },
   boardOptionIconSelected: {
     backgroundColor: `${colors.primary}20`,

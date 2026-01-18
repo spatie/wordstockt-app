@@ -14,6 +14,7 @@ export interface Player {
   isCurrentTurn: boolean;
   hasFreeSwap?: boolean;
   hasReceivedBlank?: boolean;
+  receivedEmptyRackBonus?: boolean;
 }
 
 export interface MoveTilePosition {

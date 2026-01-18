@@ -12,7 +12,10 @@ import Animated, {
   FadeIn,
   FadeInDown,
   FadeOut,
-  Layout,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withDelay,
 } from 'react-native-reanimated';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -127,6 +130,26 @@ export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState<TabValue>('active');
   const [showCreateModal, setShowCreateModal] = useState(false);
 
+  const tabOpacity = useSharedValue(1);
+  const tabTranslateY = useSharedValue(0);
+
+  const tabContentStyle = useAnimatedStyle(() => ({
+    opacity: tabOpacity.value,
+    transform: [{ translateY: tabTranslateY.value }],
+  }));
+
+  const handleTabChange = useCallback(
+    (newTab: TabValue) => {
+      if (newTab === activeTab) return;
+      tabOpacity.value = 0;
+      tabTranslateY.value = 10;
+      setActiveTab(newTab);
+      tabOpacity.value = withTiming(1, { duration: 200 });
+      tabTranslateY.value = withTiming(0, { duration: 200 });
+    },
+    [activeTab, tabOpacity, tabTranslateY]
+  );
+
   const {
     activeGames,
     completedGames,
@@ -234,7 +257,6 @@ export default function HomeScreen() {
                   key={game.ulid}
                   entering={FadeInDown.duration(300).delay(delay)}
                   exiting={FadeOut.duration(200)}
-                  layout={Layout.springify()}
                 >
                   <GameCard
                     game={game}
@@ -405,20 +427,21 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <FlatList
-        key={activeTab}
         data={[1]}
         renderItem={() => (
-          <View style={styles.content}>
-            {activeTab === 'active'
-              ? renderActiveContent()
-              : activeTab === 'public'
-                ? renderPublicContent()
-                : renderCompletedContent()}
-          </View>
+          <Animated.View style={[styles.content, tabContentStyle]}>
+            {activeTab === 'active' && renderActiveContent()}
+            {activeTab === 'public' && renderPublicContent()}
+            {activeTab === 'completed' && renderCompletedContent()}
+          </Animated.View>
         )}
         keyExtractor={() => 'content'}
         ListHeaderComponent={
-          <TabBar tabs={GAME_TABS} value={activeTab} onChange={setActiveTab} />
+          <TabBar
+            tabs={GAME_TABS}
+            value={activeTab}
+            onChange={handleTabChange}
+          />
         }
         stickyHeaderIndices={[0]}
         contentContainerStyle={styles.listContent}

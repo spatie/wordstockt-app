@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, FlatList, StyleSheet, RefreshControl, Text } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
 import { useRouter } from 'expo-router';
@@ -13,6 +13,13 @@ export default function FriendsScreen() {
   const router = useRouter();
   const { data: friends, isLoading, error, refetch } = useFriends();
   const [refreshing, setRefreshing] = useState(false);
+
+  const sortedFriends = useMemo(() => {
+    if (!friends) return [];
+    return [...friends].sort((a, b) =>
+      a.username.toLowerCase().localeCompare(b.username.toLowerCase())
+    );
+  }, [friends]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -55,7 +62,7 @@ export default function FriendsScreen() {
         </Text>
       </View>
       <FlatList
-        data={friends}
+        data={sortedFriends}
         renderItem={renderFriend}
         keyExtractor={(item) => item.ulid}
         contentContainerStyle={styles.list}

@@ -32,6 +32,7 @@ const PlayerSchema = z
     is_current_turn: z.boolean(),
     has_free_swap: z.boolean().optional(),
     has_received_blank: z.boolean().optional(),
+    received_empty_rack_bonus: z.boolean().optional(),
   })
   .passthrough();
 
@@ -128,6 +129,7 @@ function transformPlayer(data: z.infer<typeof PlayerSchema>): Player {
     isCurrentTurn: data.is_current_turn,
     hasFreeSwap: data.has_free_swap,
     hasReceivedBlank: data.has_received_blank,
+    receivedEmptyRackBonus: data.received_empty_rack_bonus,
   };
 }
 

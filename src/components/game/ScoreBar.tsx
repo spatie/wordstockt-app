@@ -145,6 +145,10 @@ export function ScoreBar({
     !opponent && game.pendingInvitation && game.status === 'pending';
   const showRackCount = game.tilesRemaining === 0;
 
+  // Show +25 empty rack bonus indicator (from server flag)
+  const myPlayerGotEmptyRackBonus = myPlayer?.receivedEmptyRackBonus === true;
+  const opponentGotEmptyRackBonus = opponent?.receivedEmptyRackBonus === true;
+
   const lastMoveText = formatLastMove(
     game.lastMove,
     currentUserUlid,
@@ -201,6 +205,9 @@ export function ScoreBar({
             hasFreeSwap={myPlayer?.hasFreeSwap}
             hasReceivedBlank={myPlayer?.hasReceivedBlank}
           />
+          {myPlayerGotEmptyRackBonus && (
+            <Text style={styles.emptyRackBonus}>+25</Text>
+          )}
         </View>
       </View>
 
@@ -215,6 +222,16 @@ export function ScoreBar({
             {lastMoveText}
           </Text>
         )}
+        {/* Long word bonus - same styling as lastMoveText */}
+        <Animated.Text
+          style={[
+            styles.bonusText,
+            !lastMoveText && styles.bonusNoLastMove,
+            { opacity: bonusOpacity },
+          ]}
+        >
+          +{bonus} long word bonus
+        </Animated.Text>
         {game.status === 'finished' && (
           <View
             style={[
@@ -303,19 +320,15 @@ export function ScoreBar({
                 hasFreeSwap={opponent?.hasFreeSwap}
                 hasReceivedBlank={opponent?.hasReceivedBlank}
               />
+              {opponentGotEmptyRackBonus && (
+                <Text style={styles.emptyRackBonus}>+25</Text>
+              )}
             </View>
             <PlayerAvatar player={opponent} isActive={isOpponentTurn} />
           </>
         )}
       </View>
 
-      {/* Animated bonus - absolutely positioned at bottom */}
-      <Animated.View
-        style={[styles.bonusContainer, { opacity: bonusOpacity }]}
-        pointerEvents="none"
-      >
-        <Text style={styles.bonusText}>+{bonus} long word bonus</Text>
-      </Animated.View>
     </View>
   );
 }
@@ -326,7 +339,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     paddingHorizontal: 10,
-    paddingBottom: 18,
     backgroundColor: colors.backgroundLight,
     marginHorizontal: 12,
     marginTop: 8,
@@ -382,6 +394,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textSecondary,
   },
+  emptyRackBonus: {
+    fontSize: 9,
+    color: '#4CAF50',
+    fontWeight: '600',
+    marginTop: 1,
+  },
   statusDots: {
     flexDirection: 'row',
     gap: 3,
@@ -423,6 +441,16 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
     maxWidth: 200,
+  },
+  bonusText: {
+    color: colors.textSecondary,
+    fontSize: 10,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    maxWidth: 200,
+  },
+  bonusNoLastMove: {
+    marginTop: 4,
   },
   statusChip: {
     paddingHorizontal: 8,
@@ -492,17 +520,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     lineHeight: 14,
-  },
-  bonusContainer: {
-    position: 'absolute',
-    bottom: 4,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  bonusText: {
-    color: colors.textSecondary,
-    fontSize: 10,
-    fontStyle: 'italic',
   },
 });
