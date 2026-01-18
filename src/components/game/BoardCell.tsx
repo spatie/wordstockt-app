@@ -208,8 +208,10 @@ export function BoardCell({
         // startDragJS centers the floating tile on the passed point (using TILE_OFFSET)
         // So we pass the cell's center, not its corner
         if (boardLayout) {
-          const cellCenterX = boardLayout.x + x * boardLayout.cellSize + boardLayout.cellSize / 2;
-          const cellCenterY = boardLayout.y + y * boardLayout.cellSize + boardLayout.cellSize / 2;
+          const cellCenterX =
+            boardLayout.x + x * boardLayout.cellSize + boardLayout.cellSize / 2;
+          const cellCenterY =
+            boardLayout.y + y * boardLayout.cellSize + boardLayout.cellSize / 2;
           startDragFromBoard(pendingTile, x, y, cellCenterX, cellCenterY);
         } else {
           // Fallback to pointer position if boardLayout not available
@@ -504,7 +506,9 @@ function CellContent({
       )}
       {!isStar && squareType && (
         <View style={styles.bonusTextContainer}>
-          <Text style={[styles.multiplierText, { fontSize: multiplierFontSize }]}>
+          <Text
+            style={[styles.multiplierText, { fontSize: multiplierFontSize }]}
+          >
             {MULTIPLIER_LABELS[squareType]}
           </Text>
         </View>

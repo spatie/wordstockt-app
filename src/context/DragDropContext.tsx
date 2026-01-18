@@ -639,11 +639,18 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
       // Check if within tile (with touch tolerance for gaps)
       const posInSlot = relativeX - visualSlot * slotWidth;
-      if (posInSlot > TILE_SIZE + TOUCH_TOLERANCE_PX || visualSlot < 0 || visualSlot >= SLOT_COUNT) {
+      if (
+        posInSlot > TILE_SIZE + TOUCH_TOLERANCE_PX ||
+        visualSlot < 0 ||
+        visualSlot >= SLOT_COUNT
+      ) {
         // If we're close to a slot boundary, try the adjacent slot
-        if (visualSlot >= 0 && visualSlot < SLOT_COUNT - 1 && 
-            posInSlot > TILE_SIZE - TOUCH_TOLERANCE_PX && 
-            posInSlot <= TILE_SIZE + GAP + TOUCH_TOLERANCE_PX) {
+        if (
+          visualSlot >= 0 &&
+          visualSlot < SLOT_COUNT - 1 &&
+          posInSlot > TILE_SIZE - TOUCH_TOLERANCE_PX &&
+          posInSlot <= TILE_SIZE + GAP + TOUCH_TOLERANCE_PX
+        ) {
           // Touch is in the gap, try next slot
           const nextSlot = visualSlot + 1;
           if (nextSlot < SLOT_COUNT) {
@@ -796,11 +803,18 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
       // Check if within tile (with touch tolerance for gaps)
       const posInSlot = relativeX - visualSlot * slotWidth;
-      if (posInSlot > TILE_SIZE + TOUCH_TOLERANCE_PX || visualSlot < 0 || visualSlot >= SLOT_COUNT) {
+      if (
+        posInSlot > TILE_SIZE + TOUCH_TOLERANCE_PX ||
+        visualSlot < 0 ||
+        visualSlot >= SLOT_COUNT
+      ) {
         // If we're close to a slot boundary, try the adjacent slot
-        if (visualSlot >= 0 && visualSlot < SLOT_COUNT - 1 && 
-            posInSlot > TILE_SIZE - TOUCH_TOLERANCE_PX && 
-            posInSlot <= TILE_SIZE + GAP + TOUCH_TOLERANCE_PX) {
+        if (
+          visualSlot >= 0 &&
+          visualSlot < SLOT_COUNT - 1 &&
+          posInSlot > TILE_SIZE - TOUCH_TOLERANCE_PX &&
+          posInSlot <= TILE_SIZE + GAP + TOUCH_TOLERANCE_PX
+        ) {
           // Touch is in the gap, try next slot
           const nextSlot = visualSlot + 1;
           const state = useGameStore.getState();
@@ -812,7 +826,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           const nextActualRackIndex = permutation[nextSlot];
           if (nextActualRackIndex !== undefined) {
             // Look up the registered draggable for next slot
-            const nextDraggable = draggablesRef.current.get(`rack-${nextActualRackIndex}`);
+            const nextDraggable = draggablesRef.current.get(
+              `rack-${nextActualRackIndex}`
+            );
             if (nextDraggable) {
               return {
                 ...nextDraggable,
@@ -1149,7 +1165,14 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       finishDrag(null, false);
       return null;
     },
-    [positionX, positionY, scale, opacity, draggingRackIndexShared, draggingBoardPositionShared]
+    [
+      positionX,
+      positionY,
+      scale,
+      opacity,
+      draggingRackIndexShared,
+      draggingBoardPositionShared,
+    ]
   );
 
   // Ref to hold completeSettleFromRef for stable worklet access
@@ -1282,7 +1305,14 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     draggingBoardPositionShared.value = null;
     opacity.value = withTiming(0, { duration: 50 });
     scale.value = 1;
-  }, [opacity, scale, isDraggingShared, draggingRackIndexShared, draggingBoardPositionShared, animateBackToRack]);
+  }, [
+    opacity,
+    scale,
+    isDraggingShared,
+    draggingRackIndexShared,
+    draggingBoardPositionShared,
+    animateBackToRack,
+  ]);
 
   // Keep ref in sync
   useEffect(() => {
@@ -1600,7 +1630,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         touchY >= rackTopShared.value - TOUCH_TOLERANCE_PX &&
         touchY <= rackBottomShared.value + TOUCH_TOLERANCE_PX &&
         touchX >= rackLeftShared.value - TOUCH_TOLERANCE_PX &&
-        touchX <= rackLeftShared.value + rackWidthShared.value + TOUCH_TOLERANCE_PX;
+        touchX <=
+          rackLeftShared.value + rackWidthShared.value + TOUCH_TOLERANCE_PX;
       touchStartedOnRack.value = isOnRack;
 
       // Check if touch is below the rack (button area) - use original bounds for buttons
@@ -1669,16 +1700,19 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
       // Try rack hit testing first (most common)
       let rackHit = findRackTileAtPositionWorklet(screenX, screenY);
-      
+
       // If no direct rack hit, try with expanded search area for better reliability
       if (!rackHit) {
         // Try slightly offset positions around the touch point
         const searchOffsets = [
-          [-TOUCH_TOLERANCE_PX, 0], [TOUCH_TOLERANCE_PX, 0], 
-          [0, -TOUCH_TOLERANCE_PX], [0, TOUCH_TOLERANCE_PX],
-          [-TOUCH_TOLERANCE_PX, -TOUCH_TOLERANCE_PX], [TOUCH_TOLERANCE_PX, TOUCH_TOLERANCE_PX]
+          [-TOUCH_TOLERANCE_PX, 0],
+          [TOUCH_TOLERANCE_PX, 0],
+          [0, -TOUCH_TOLERANCE_PX],
+          [0, TOUCH_TOLERANCE_PX],
+          [-TOUCH_TOLERANCE_PX, -TOUCH_TOLERANCE_PX],
+          [TOUCH_TOLERANCE_PX, TOUCH_TOLERANCE_PX],
         ];
-        
+
         for (const [dx, dy] of searchOffsets) {
           if (dx !== undefined && dy !== undefined) {
             rackHit = findRackTileAtPositionWorklet(screenX + dx, screenY + dy);
@@ -1686,7 +1720,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           }
         }
       }
-      
+
       if (rackHit) {
         // Start rack drag on UI thread
         isDraggingShared.value = true;
