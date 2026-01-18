@@ -11,32 +11,32 @@ interface NotificationActions {
   clearForGame: (gameUlid: string) => void;
 }
 
-export const useNotificationStore = create<NotificationState & NotificationActions>(
-  (set, get) => ({
-    notifications: {},
+export const useNotificationStore = create<
+  NotificationState & NotificationActions
+>((set, get) => ({
+  notifications: {},
 
-    addNotification: (identifier, gameUlid) =>
-      set((state) => {
-        const existing = state.notifications[gameUlid] ?? [];
-        if (existing.includes(identifier)) {
-          return state;
-        }
-        return {
-          notifications: {
-            ...state.notifications,
-            [gameUlid]: [...existing, identifier],
-          },
-        };
-      }),
+  addNotification: (identifier, gameUlid) =>
+    set((state) => {
+      const existing = state.notifications[gameUlid] ?? [];
+      if (existing.includes(identifier)) {
+        return state;
+      }
+      return {
+        notifications: {
+          ...state.notifications,
+          [gameUlid]: [...existing, identifier],
+        },
+      };
+    }),
 
-    getIdentifiersForGame: (gameUlid) => {
-      return get().notifications[gameUlid] ?? [];
-    },
+  getIdentifiersForGame: (gameUlid) => {
+    return get().notifications[gameUlid] ?? [];
+  },
 
-    clearForGame: (gameUlid) =>
-      set((state) => {
-        const { [gameUlid]: _, ...remaining } = state.notifications;
-        return { notifications: remaining };
-      }),
-  })
-);
+  clearForGame: (gameUlid) =>
+    set((state) => {
+      const { [gameUlid]: _, ...remaining } = state.notifications;
+      return { notifications: remaining };
+    }),
+}));

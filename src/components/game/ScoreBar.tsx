@@ -99,7 +99,10 @@ function PlayerAvatar({
       opacity.value = withTiming(1, { duration: 300 });
       scale.value = withRepeat(
         withSequence(
-          withTiming(1.08, { duration: 750, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1.08, {
+            duration: 750,
+            easing: Easing.inOut(Easing.ease),
+          }),
           withTiming(1, { duration: 750, easing: Easing.inOut(Easing.ease) })
         ),
         -1
