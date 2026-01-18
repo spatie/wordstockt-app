@@ -98,7 +98,9 @@ function BoardOption({
         <Text style={styles.boardOptionDescription}>{description}</Text>
       </View>
       <View style={styles.boardOptionRadio}>
-        <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
+        <View
+          style={[styles.radioOuter, selected && styles.radioOuterSelected]}
+        >
           <Animated.View style={[styles.radioInner, radioInnerStyle]} />
         </View>
       </View>
