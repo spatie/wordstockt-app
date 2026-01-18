@@ -960,14 +960,11 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
       const finishDrag = (target: DropTarget, animated: boolean = true) => {
         if (!animated) {
-          // Show source tile BEFORE hiding floating tile to prevent flicker
+          // Show rack tile immediately (rack tile will be marked as 'used' or swap positions)
           draggingRackIndexShared.value = -1;
-          draggingBoardPositionShared.value = null;
-          // Use delayed fade to ensure source tile is visible first
-          opacity.value = withTiming(0, { duration: 50 });
 
           isDraggingRef.current = false;
-          isDraggingShared.value = false; // Sync shared value
+          isDraggingShared.value = false;
           const now = Date.now();
           lastDragEndTimeRef.current = now;
           lastDragEndTimeShared.value = now;
@@ -975,11 +972,22 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           setDragTile(null);
           setDragSource(null);
           activeDragRef.current = null;
-          dragTileShared.value = null;
-          dragSourceShared.value = null;
-          scale.value = 1;
           onComplete?.(target);
           dragCallback?.(target, true);
+
+          // Delay hiding floating tile to allow React to process state updates
+          // Also delay clearing tile data so the floating tile still shows content until hidden
+          setTimeout(() => {
+            opacity.value = 0;
+            scale.value = 1;
+            dragTileShared.value = null;
+            dragSourceShared.value = null;
+          }, 50);
+
+          // Delay resetting board position to allow React to update pendingTiles first
+          setTimeout(() => {
+            draggingBoardPositionShared.value = null;
+          }, 150);
           return;
         }
 
@@ -1021,6 +1029,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
             targetScale,
             { duration: SETTLE_DURATION },
             () => {
+              'worklet';
+              // Don't reset draggingRackIndexShared here - wait for resetState() after
+              // the tile is placed on the board (isUsed becomes true). Otherwise there's
+              // a brief flash where the rack tile is visible before isUsed hides it.
               runOnJS(onSettleComplete)();
             }
           );
@@ -1077,10 +1089,12 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
               positionY.value = withTiming(
                 targetPos.y,
                 { duration: SETTLE_DURATION },
-                () => {
+                (finished) => {
                   'worklet';
-                  // Show rack tile immediately on UI thread before going to JS thread
-                  draggingRackIndexShared.value = -1;
+                  if (finished) {
+                    // Show rack tile - floating tile will be hidden in resetState()
+                    draggingRackIndexShared.value = -1;
+                  }
                   runOnJS(onSettleComplete)();
                 }
               );
@@ -1132,10 +1146,12 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
             positionY.value = withTiming(
               targetPos.y,
               { duration: SETTLE_DURATION },
-              () => {
+              (finished) => {
                 'worklet';
-                // Show rack tile immediately on UI thread before going to JS thread
-                draggingRackIndexShared.value = -1;
+                if (finished) {
+                  // Show rack tile - floating tile will be hidden in resetState()
+                  draggingRackIndexShared.value = -1;
+                }
                 runOnJS(onSettleComplete)();
               }
             );
@@ -1190,24 +1206,32 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       positionY.value = withTiming(
         targetY,
         { duration: SETTLE_DURATION },
-        () => {
+        (finished) => {
           'worklet';
-          // Show rack tile immediately on UI thread before going to JS thread
-          draggingRackIndexShared.value = -1;
+          if (finished) {
+            // Show rack tile - floating tile will be hidden in resetState()
+            draggingRackIndexShared.value = -1;
+          }
           runOnJS(onComplete)();
         }
       );
     },
-    [positionX, positionY, scale, draggingRackIndexShared]
+    [positionX, positionY, scale, opacity, draggingRackIndexShared]
   );
 
   // Stable settle completion handler that reads from ref (prevents GC issues on real devices)
+  // Note: UI thread work (opacity, draggingRackIndexShared) is done in worklets before this is called
   const completeSettleFromRef = useCallback(() => {
     const pending = pendingSettleRef.current;
     pendingSettleRef.current = null;
 
-    if (!pending) {
-      // No pending settle, just reset
+    // Helper to reset all JS state
+    const resetState = () => {
+      // NOTE: Don't reset draggingRackIndexShared here for board drops - it would cause
+      // a flash where the rack tile briefly shows before isUsed hides it.
+      // For rack drops, it's already reset in the worklet before this is called.
+      // For recall, it's reset in finishRecallFromRef.
+
       isDraggingRef.current = false;
       isDraggingShared.value = false;
       const now = Date.now();
@@ -1218,14 +1242,27 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       setDragSource(null);
       setSettlingTarget(null);
       activeDragRef.current = null;
-      dragTileShared.value = null;
-      dragSourceShared.value = null;
-      draggingRackIndexShared.value = -1;
-      draggingBoardPositionShared.value = null;
-      requestAnimationFrame(() => {
+
+      // Delay hiding floating tile to allow React to process state updates first
+      // This prevents a flash where neither floating tile nor destination tile is visible
+      // (React needs time to re-render the destination tile after state updates)
+      // Also delay clearing tile data so the floating tile still shows content until hidden
+      setTimeout(() => {
         opacity.value = 0;
         scale.value = 1;
-      });
+        dragTileShared.value = null;
+        dragSourceShared.value = null;
+      }, 50);
+
+      // Delay resetting board position to allow React to update pendingTiles first
+      // This prevents a flash where the tile briefly shows on the board before being removed
+      setTimeout(() => {
+        draggingBoardPositionShared.value = null;
+      }, 150);
+    };
+
+    if (!pending) {
+      resetState();
       return;
     }
 
@@ -1235,54 +1272,13 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
     if (!success && pending.source?.type === 'rack') {
       // Placement failed - animate back to rack
-      // Keep settlingTarget during animation so rack tile stays hidden (isFloatingTileAnimating = true)
-
-      animateBackToRack(pending.source.rackIndex, () => {
-        // Reset ALL drag state after return animation completes
-        isDraggingRef.current = false;
-        isDraggingShared.value = false;
-        const now = Date.now();
-        lastDragEndTimeRef.current = now;
-        lastDragEndTimeShared.value = now;
-        setDragStatus('idle');
-        setDragTile(null);
-        setDragSource(null);
-        setSettlingTarget(null);
-        activeDragRef.current = null;
-        dragTileShared.value = null;
-        dragSourceShared.value = null;
-
-        // Show rack tile BEFORE hiding floating tile to prevent flicker
-        // Use withDelay to ensure rack tile opacity update is processed first
-        draggingRackIndexShared.value = -1;
-        draggingBoardPositionShared.value = null;
-        opacity.value = withTiming(0, { duration: 50 });
-        scale.value = 1;
-      });
+      animateBackToRack(pending.source.rackIndex, resetState);
       return;
     }
 
-    // Placement succeeded - reset drag state immediately
-    isDraggingRef.current = false;
-    isDraggingShared.value = false;
-    const now = Date.now();
-    lastDragEndTimeRef.current = now;
-    lastDragEndTimeShared.value = now;
-    setDragStatus('idle');
-    setDragTile(null);
-    setDragSource(null);
-    setSettlingTarget(null);
-    activeDragRef.current = null;
-    dragTileShared.value = null;
-    dragSourceShared.value = null;
-
-    // Show source tile BEFORE hiding floating tile to prevent flicker
-    // Use withDelay to ensure source tile opacity update is processed first
-    draggingRackIndexShared.value = -1;
-    draggingBoardPositionShared.value = null;
-    opacity.value = withTiming(0, { duration: 50 });
-    scale.value = 1;
-  }, [opacity, scale, isDraggingShared, draggingRackIndexShared, draggingBoardPositionShared, animateBackToRack]);
+    // Placement succeeded - reset state
+    resetState();
+  }, [opacity, scale, isDraggingShared, draggingBoardPositionShared, animateBackToRack]);
 
   // Keep ref in sync
   useEffect(() => {
@@ -1340,10 +1336,20 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     const onComplete = pendingRecallCompleteRef.current;
     pendingRecallCompleteRef.current = null;
 
-    setRecallingTiles([]);
-    setRecallingRackIndices([]);
-    setRecallingBoardPositions([]);
+    // IMPORTANT: Call onComplete FIRST to update game state (clears pendingTiles)
+    // This ensures isUsed becomes false before we hide the recalling tiles
     onComplete?.();
+
+    // Reset dragging rack index so tiles show via immediateHideStyle
+    draggingRackIndexShared.value = -1;
+
+    // Delay clearing recalling state to allow React to update isUsed first
+    // Otherwise tiles briefly disappear because isBeingRecalled is false but isUsed is still true
+    setTimeout(() => {
+      setRecallingTiles([]);
+      setRecallingRackIndices([]);
+      setRecallingBoardPositions([]);
+    }, 150);
   }, []);
 
   // Ref to hold finishRecallFromRef for stable worklet access
@@ -1771,6 +1777,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       'worklet';
       if (!isDraggingShared.value) return;
 
+      // Mark as not dragging FIRST to prevent onFinalize from also firing
+      isDraggingShared.value = false;
+
       // Update shared drag end time for cooldown
       lastDragEndTimeShared.value = Date.now();
 
@@ -1783,8 +1792,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     })
     .onFinalize((event) => {
       'worklet';
-      // Handle cancelled gestures
+      // Handle cancelled gestures (only if onEnd didn't already handle it)
       if (isDraggingShared.value) {
+        isDraggingShared.value = false;
         lastDragEndTimeShared.value = Date.now();
         const screenX = event.x + containerOffsetX.value;
         const screenY = event.y + containerOffsetY.value;

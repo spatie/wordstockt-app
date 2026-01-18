@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
   TouchableOpacity,
   View,
@@ -78,7 +78,6 @@ export function BoardCell({
     return { opacity: 1 };
   }, [x, y]);
 
-  const viewRef = useRef<View>(null);
   const registrationId = `board-${x}-${y}`;
 
   const isThisDragging =
@@ -106,17 +105,6 @@ export function BoardCell({
     (pos) => pos.x === x && pos.y === y
   );
 
-  // Log when this cell has a pending tile and recall state
-  if (pendingTile && recallingBoardPositions.length > 0) {
-    console.log('[BoardCell] recall check', {
-      x,
-      y,
-      isBeingRecalled,
-      recallingBoardPositions,
-      pendingTile: pendingTile.letter,
-    });
-  }
-
   // Callback for when drag ends (called from DragDropContext on native)
   const handleNativeDragEnd = useCallback(
     (target: DropTarget, wasDragged: boolean): boolean => {
@@ -135,71 +123,53 @@ export function BoardCell({
     [x, y, onPress, onPendingTileDrag, pendingTile, onBlankTileTap]
   );
 
-  // Measure and register hit area - extracted for reuse in onLayout
   // Expand hit area by this amount on each side to make small cells easier to tap
   const HIT_AREA_PADDING = 8;
 
-  const measureAndRegister = useCallback(() => {
-    if (Platform.OS === 'web' || !pendingTile || disabled) return;
-    if (viewRef.current) {
-      viewRef.current.measureInWindow((px, py, width, height) => {
-        if (width > 0 && height > 0) {
-          // Expand hit area for easier tapping on small board cells
-          const expandedHitArea = {
-            x: px - HIT_AREA_PADDING,
-            y: py - HIT_AREA_PADDING,
-            width: width + HIT_AREA_PADDING * 2,
-            height: height + HIT_AREA_PADDING * 2,
-          };
-          registerDraggable(
-            registrationId,
-            expandedHitArea,
-            pendingTile,
-            { type: 'board', x, y },
-            handleNativeDragEnd
-          );
-        }
-      });
+  // Register draggable hit area for native hit-testing
+  // Use calculated position from boardLayout (like DraggableTile does with rackLayout)
+  // This avoids the async measureInWindow call which caused timing issues
+  useEffect(() => {
+    if (Platform.OS === 'web' || !pendingTile || disabled || !boardLayout) {
+      unregisterDraggable(registrationId);
+      return;
     }
+
+    // Calculate hit area from board layout and cell position
+    const cellX = boardLayout.x + x * boardLayout.cellSize;
+    const cellY = boardLayout.y + y * boardLayout.cellSize;
+    const cellSize = boardLayout.cellSize;
+
+    // Expand hit area for easier tapping on small board cells
+    const expandedHitArea = {
+      x: cellX - HIT_AREA_PADDING,
+      y: cellY - HIT_AREA_PADDING,
+      width: cellSize + HIT_AREA_PADDING * 2,
+      height: cellSize + HIT_AREA_PADDING * 2,
+    };
+
+    registerDraggable(
+      registrationId,
+      expandedHitArea,
+      pendingTile,
+      { type: 'board', x, y },
+      handleNativeDragEnd
+    );
+
+    return () => {
+      unregisterDraggable(registrationId);
+    };
   }, [
     pendingTile,
     x,
     y,
     disabled,
+    boardLayout,
     registerDraggable,
+    unregisterDraggable,
     registrationId,
     handleNativeDragEnd,
   ]);
-
-  // Register draggable hit area for native hit-testing
-  useEffect(() => {
-    if (Platform.OS === 'web' || !pendingTile || disabled) {
-      unregisterDraggable(registrationId);
-      return;
-    }
-
-    // Short delay to ensure layout is complete
-    const timeoutId = setTimeout(measureAndRegister, 50);
-
-    return () => {
-      clearTimeout(timeoutId);
-      unregisterDraggable(registrationId);
-    };
-  }, [
-    pendingTile,
-    disabled,
-    unregisterDraggable,
-    registrationId,
-    measureAndRegister,
-  ]);
-
-  // Handle layout changes by re-measuring hit area
-  const handleCellLayout = useCallback(() => {
-    if (Platform.OS !== 'web' && pendingTile && !disabled) {
-      // Re-measure after layout settles
-      setTimeout(measureAndRegister, 50);
-    }
-  }, [pendingTile, disabled, measureAndRegister]);
 
   const handleDragStart = useCallback(
     (_pageX: number, _pageY: number) => {
@@ -261,15 +231,6 @@ export function BoardCell({
     !isSettlingFromThis &&
     !isBeingRecalled;
 
-  // Log what tile is being shown during recall
-  if (pendingTile && isBeingRecalled) {
-    console.log('[BoardCell] tile visibility during recall', {
-      x,
-      y,
-      tile: tile?.letter ?? 'null',
-      isBeingRecalled,
-    });
-  }
   const isStar = squareType === 'STAR';
   const backgroundColor = placedTile
     ? colors.cellBackground
@@ -306,11 +267,7 @@ export function BoardCell({
   if (pendingTile && !disabled && Platform.OS !== 'web') {
     return (
       <View style={styles.cellWrapper}>
-        <View
-          ref={viewRef}
-          style={[styles.cell, { backgroundColor }]}
-          onLayout={handleCellLayout}
-        >
+        <View style={[styles.cell, { backgroundColor }]}>
           {/* Background layer: bonus text (always visible, never hidden) */}
           <BonusText
             squareType={squareType}

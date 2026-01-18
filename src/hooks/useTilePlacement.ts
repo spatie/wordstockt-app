@@ -81,7 +81,9 @@ export function useTilePlacement({
   // Handle drag from board (pending tile) ending
   const handlePendingTileDrag = useCallback(
     (fromX: number, fromY: number, target: DropTarget) => {
-      if (!game || game.status !== 'active') return;
+      if (!game || game.status !== 'active') {
+        return;
+      }
 
       // No target (dropped in empty area) or rack target = return tile to rack
       if (!target || target.type === 'rack') {
