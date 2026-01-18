@@ -4,10 +4,7 @@ import { useRouter } from 'expo-router';
 import { BaseModal } from '../ui/BaseModal';
 import { SmartAvatar } from '../ui/SmartAvatar';
 import { Button } from '../ui/Button';
-import {
-  useAcceptInvitation,
-  useDeclineInvitation,
-} from '../../api/queries/useInvitations';
+import { useDeclineInvitation } from '../../api/queries/useInvitations';
 import { getApiError } from '../../api/client';
 import { colors } from '../../config/theme';
 import { SPACING } from '../../config/constants';
@@ -24,23 +21,12 @@ export function InvitationDialog({
   onClose,
 }: InvitationDialogProps) {
   const router = useRouter();
-  const acceptMutation = useAcceptInvitation();
   const declineMutation = useDeclineInvitation();
 
-  const handleAccept = async () => {
-    if (!invitation || !invitation.ulid) {
-      Alert.alert('Error', 'Invalid invitation');
-      return;
-    }
-
-    try {
-      const result = await acceptMutation.mutateAsync(invitation.ulid);
-      onClose();
-      router.push(ROUTES.GAME(result.ulid));
-    } catch (error) {
-      const apiError = getApiError(error);
-      Alert.alert('Error', apiError.message);
-    }
+  const handleView = () => {
+    if (!invitation) return;
+    onClose();
+    router.push(`${ROUTES.GAME(invitation.game.ulid)}?invitation=${invitation.ulid}`);
   };
 
   const handleDecline = async () => {
@@ -58,7 +44,7 @@ export function InvitationDialog({
     }
   };
 
-  const isLoading = acceptMutation.isPending || declineMutation.isPending;
+  const isLoading = declineMutation.isPending;
 
   if (!invitation) return null;
 
@@ -99,10 +85,9 @@ export function InvitationDialog({
             style={styles.button}
           />
           <Button
-            label="Accept"
-            onPress={handleAccept}
+            label="View"
+            onPress={handleView}
             disabled={isLoading}
-            loading={acceptMutation.isPending}
             style={styles.button}
           />
         </View>

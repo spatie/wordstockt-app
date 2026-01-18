@@ -118,7 +118,7 @@ export function SelectableTile({
           points={displayTile.points}
           isSelected={isSelected || (isSwapped && swapCompleted)}
           size="board"
-          cellSize={TILE_SIZE * 1.3}
+          cellSize={TILE_SIZE}
         />
       </Animated.View>
     </TouchableOpacity>

@@ -394,13 +394,30 @@ export const useBoardTileHighlight = (
 ): 'valid' | 'invalid' | null =>
   useGameStore((state) => {
     const gameState = getCurrentGameState(state);
-    const isPending = gameState.pendingTiles.some(
+    const pendingTiles = gameState.pendingTiles;
+
+    const isPending = pendingTiles.some(
       (t) => t.x === x && t.y === y
     );
     if (isPending) return null;
 
     const validation = state.validationResult;
     if (!validation || !validation.placement_valid) return null;
+
+    // Check if validation is stale: pending tile positions must EXACTLY match
+    // what was validated (tile_status contains one entry per pending tile that was validated)
+    const validatedPositions = new Set(
+      validation.tile_status.map((t) => `${t.x},${t.y}`)
+    );
+    const pendingPositions = new Set(
+      pendingTiles.map((t) => `${t.x},${t.y}`)
+    );
+
+    // If sets don't match exactly, validation is stale
+    if (validatedPositions.size !== pendingPositions.size) return null;
+    for (const pos of validatedPositions) {
+      if (!pendingPositions.has(pos)) return null;
+    }
 
     let isPartOfWord = false;
     let isPartOfInvalidWord = false;

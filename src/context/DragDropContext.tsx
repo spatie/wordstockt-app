@@ -41,6 +41,10 @@ import {
   ANIMATION_DURATION,
   SPRING_CONFIG,
 } from '../config/constants';
+import {
+  FLOATING_TILE_SIZES,
+  FLOATING_TILE_INNER_SIZE,
+} from '../config/tileSizing';
 import { useGameStore, useIsSwapMode } from '../stores/gameStore';
 import {
   getBoardCellPosition,
@@ -154,6 +158,7 @@ interface DragDropContextType {
 
   // Shared values for immediate UI updates (worklet access)
   draggingRackIndexShared: SharedValue<number>;
+  draggingBoardPositionShared: SharedValue<{ x: number; y: number } | null>;
 }
 
 // ============================================================================
@@ -200,7 +205,6 @@ function FloatingTile({
 
   const [letter, points, isBlank] = tileData;
   const displayLetter = letter === '*' ? '' : letter;
-  const TILE_INNER_SIZE = TILE_SIZE * 0.92;
 
   return (
     <Animated.View
@@ -257,7 +261,6 @@ function RecallingTileItem({
     };
   });
 
-  const TILE_INNER_SIZE = TILE_SIZE * 0.92;
   const displayLetter = tile.tile.letter === '*' ? '' : tile.tile.letter;
 
   return (
@@ -324,8 +327,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   } | null>(null);
   const lastDragEndTimeShared = useSharedValue(0);
 
-  // Shared value for immediate rack tile hiding (prevents visual glitch)
+  // Shared values for immediate tile hiding (prevents visual glitch)
   const draggingRackIndexShared = useSharedValue(-1); // -1 means no rack tile is dragging
+  const draggingBoardPositionShared = useSharedValue<{ x: number; y: number } | null>(null);
 
   // Shared values for rack layout (accessed in worklet for gesture decisions)
   const rackTopShared = useSharedValue(0);
@@ -870,6 +874,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           dragTileShared.value = null;
           dragSourceShared.value = null;
           draggingRackIndexShared.value = -1;
+          draggingBoardPositionShared.value = null;
           onComplete?.(target);
           dragCallback?.(target, true);
           return;
@@ -891,7 +896,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           const targetPos = toRelative(
             getBoardCellPosition(cell.x, cell.y, boardLayoutRef.current)
           );
-          const targetScale = (boardLayoutRef.current.cellSize - 2) / TILE_SIZE;
+          const targetScale = boardLayoutRef.current.cellSize / TILE_SIZE;
 
           // Store callback data in ref before animation (prevents GC on real devices)
           pendingSettleRef.current = {
@@ -1104,6 +1109,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       dragTileShared.value = null;
       dragSourceShared.value = null;
       draggingRackIndexShared.value = -1;
+      draggingBoardPositionShared.value = null;
       requestAnimationFrame(() => {
         opacity.value = 0;
         scale.value = 1;
@@ -1590,6 +1596,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           x: boardHit.x,
           y: boardHit.y,
         };
+        draggingBoardPositionShared.value = { x: boardHit.x, y: boardHit.y }; // Hide board tile immediately
 
         // Position floating tile (container-relative coordinates)
         positionX.value = event.x + TILE_OFFSET;
@@ -1671,6 +1678,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       startRecallAnimation,
       getBoardCell,
       draggingRackIndexShared,
+      draggingBoardPositionShared,
     }),
     [
       isDragging,
@@ -1694,6 +1702,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       startRecallAnimation,
       getBoardCell,
       draggingRackIndexShared,
+      draggingBoardPositionShared,
     ]
   );
 
@@ -1740,8 +1749,6 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 // Styles
 // ============================================================================
 
-const TILE_INNER_SIZE = TILE_SIZE * 0.92;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -1762,8 +1769,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tileContent: {
-    width: TILE_INNER_SIZE,
-    height: TILE_INNER_SIZE,
+    width: FLOATING_TILE_INNER_SIZE,
+    height: FLOATING_TILE_INNER_SIZE,
     backgroundColor: '#E8E4DC',
     borderRadius: 5,
     justifyContent: 'center',
@@ -1785,10 +1792,11 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   letterText: {
-    fontSize: 37,
+    fontSize: FLOATING_TILE_SIZES.letterSize,
     fontWeight: '700',
     color: '#1A1A1A',
     textAlign: 'center',
+    marginRight: '15%',
     // Ensure proper centering on Android
     ...Platform.select({
       android: {
@@ -1800,10 +1808,15 @@ const styles = StyleSheet.create({
   },
   points: {
     position: 'absolute',
-    bottom: '4%',
-    right: '5%',
-    fontSize: 10,
-    fontWeight: '800',
+    bottom: '-4%',
+    right: 0,
+    fontSize: FLOATING_TILE_SIZES.pointsSize,
+    fontWeight: '600',
+    fontFamily: Platform.select({
+      ios: 'System',
+      android: 'sans-serif-condensed',
+      default: 'System',
+    }),
     color: '#1A1A1A',
     // Ensure proper centering on Android
     ...Platform.select({

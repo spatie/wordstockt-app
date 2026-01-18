@@ -10,24 +10,21 @@ import type { GameInvitation } from '../../types/invitation';
 
 interface InvitationCardProps {
   invitation: GameInvitation;
-  onAccept: () => void;
+  onPress: () => void;
   onDecline: () => void;
-  isAccepting?: boolean;
   isDeclining?: boolean;
 }
 
 export function InvitationCard({
   invitation,
-  onAccept,
+  onPress,
   onDecline,
-  isAccepting = false,
   isDeclining = false,
 }: InvitationCardProps) {
   const { inviter, game, createdAt } = invitation;
-  const isLoading = isAccepting || isDeclining;
 
   return (
-    <Card accentColor={colors.secondary} showAccent>
+    <Card accentColor={colors.secondary} showAccent onPress={onPress}>
       <View style={styles.cardTop}>
         <SmartAvatar
           userUlid={inviter.ulid}
@@ -59,18 +56,14 @@ export function InvitationCard({
             variant="outline"
             size="sm"
             rounded
-            disabled={isLoading}
+            disabled={isDeclining}
             loading={isDeclining}
-            style={styles.declineButton}
           />
           <Button
-            label="Accept"
-            onPress={onAccept}
+            label="View"
+            onPress={onPress}
             size="sm"
             rounded
-            disabled={isLoading}
-            loading={isAccepting}
-            style={styles.acceptButton}
           />
         </View>
       </View>
@@ -133,11 +126,5 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     gap: SPACING.sm,
-  },
-  declineButton: {
-    paddingHorizontal: SPACING.lg,
-  },
-  acceptButton: {
-    paddingHorizontal: SPACING.xl,
   },
 });

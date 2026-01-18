@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { Tile } from './Tile';
 import {
@@ -63,7 +64,18 @@ export function BoardCell({
     registerDraggable,
     unregisterDraggable,
     recallingBoardPositions,
+    draggingBoardPositionShared,
   } = useDragDrop();
+
+  // Immediate hiding based on shared value (prevents visual glitch during fast drags)
+  const immediateHideStyle = useAnimatedStyle(() => {
+    'worklet';
+    const draggingPos = draggingBoardPositionShared.value;
+    if (draggingPos && draggingPos.x === x && draggingPos.y === y) {
+      return { opacity: 0 };
+    }
+    return { opacity: 1 };
+  }, [x, y]);
 
   const viewRef = useRef<View>(null);
   const registrationId = `board-${x}-${y}`;
@@ -287,17 +299,19 @@ export function BoardCell({
           style={[styles.cell, { backgroundColor }]}
           onLayout={handleCellLayout}
         >
-          <CellContent
-            x={x}
-            y={y}
-            tile={tile ?? null}
-            isPending={isPending}
-            squareType={squareType}
-            isStar={isStar}
-            isPlaced={!!placedTile}
-            isLastMove={isLastMove}
-            cellSize={cellSize}
-          />
+          <Animated.View style={[styles.tileContainer, immediateHideStyle]}>
+            <CellContent
+              x={x}
+              y={y}
+              tile={tile ?? null}
+              isPending={isPending}
+              squareType={squareType}
+              isStar={isStar}
+              isPlaced={!!placedTile}
+              isLastMove={isLastMove}
+              cellSize={cellSize}
+            />
+          </Animated.View>
         </View>
       </View>
     );
@@ -368,8 +382,10 @@ function CellContent({
   // - Placed tiles that are part of a formed word: use wordHighlight (valid/invalid)
   const tileValidationState = isPending ? validationState : wordHighlight;
 
-  // Calculate dynamic font size based on cell size (approximately 45% of cell size)
-  const multiplierFontSize = Math.max(8, Math.round(cellSize * 0.45));
+  // Calculate dynamic font size based on cell size
+  // Android renders fonts larger, so use a smaller multiplier
+  const fontMultiplier = Platform.OS === 'android' ? 0.38 : 0.45;
+  const multiplierFontSize = Math.max(8, Math.round(cellSize * fontMultiplier));
   const starFontSize = Math.max(8, Math.round(cellSize * 0.4));
 
   if (tile) {
@@ -423,7 +439,9 @@ const styles = StyleSheet.create({
   cellWrapper: {
     flex: 1,
     aspectRatio: 1,
-    padding: 1,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: '#0D1520',
   },
   cell: {
     flex: 1,
@@ -439,14 +457,14 @@ const styles = StyleSheet.create({
   },
   wordHighlight: {
     position: 'absolute',
-    width: '92%',
-    height: '92%',
+    width: '99%',
+    height: '99%',
     borderRadius: 4,
   },
   lastMoveHighlight: {
     position: 'absolute',
-    width: '92%',
-    height: '92%',
+    width: '99%',
+    height: '99%',
     borderRadius: 4,
     backgroundColor: colors.warningOverlay,
   },

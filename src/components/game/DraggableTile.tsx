@@ -168,7 +168,7 @@ export function DraggableTile({
           isBlank={tile.isBlank}
           disabled={disabled}
           size="board"
-          cellSize={TILE_SIZE * 1.3}
+          cellSize={TILE_SIZE}
         />
       </Animated.View>
     );
@@ -183,7 +183,7 @@ export function DraggableTile({
         isBlank={tile.isBlank}
         disabled={disabled}
         size="board"
-        cellSize={TILE_SIZE * 1.3}
+        cellSize={TILE_SIZE}
       />
     </Animated.View>
   );

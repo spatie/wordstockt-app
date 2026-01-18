@@ -119,9 +119,17 @@ export function BaseModal({
   };
 
   const modalContent = (
-    <Animated.View style={[styles.content, contentStyle, animatedContentStyle]}>
-      <Pressable onPress={() => {}}>{children}</Pressable>
-    </Animated.View>
+    <View
+      style={[
+        styles.overlay,
+        { justifyContent: centered ? 'center' : 'flex-start' },
+      ]}
+      pointerEvents="box-none"
+    >
+      <Animated.View style={[styles.content, contentStyle, animatedContentStyle]}>
+        {children}
+      </Animated.View>
+    </View>
   );
 
   // Web: create animated blur style
@@ -141,6 +149,11 @@ export function BaseModal({
 
   const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+  const backdropStyle = [
+    StyleSheet.absoluteFill,
+    { backgroundColor: `rgba(0, 0, 0, ${getBackgroundOpacity()})` },
+  ];
+
   return (
     <Modal
       visible={modalVisible}
@@ -150,31 +163,21 @@ export function BaseModal({
       testID={testID}
     >
       <Animated.View style={{ flex: 1, opacity: opacityAnim }}>
-        {/* Native: use BlurView for blur effect */}
+        {/* Backdrop - sibling to content, not parent */}
         {backdropBlur && Platform.OS !== 'web' ? (
           <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
-            <Pressable
-              style={overlayStyle as StyleProp<ViewStyle>}
-              onPress={onClose}
-            >
-              {modalContent}
-            </Pressable>
+            <Pressable style={backdropStyle} onPress={onClose} />
           </BlurView>
         ) : backdropBlur && Platform.OS === 'web' ? (
           <AnimatedPressable
-            style={[overlayStyle as StyleProp<ViewStyle>, webBlurStyle]}
+            style={[backdropStyle as StyleProp<ViewStyle>, webBlurStyle]}
             onPress={onClose}
-          >
-            {modalContent}
-          </AnimatedPressable>
+          />
         ) : (
-          <Pressable
-            style={overlayStyle as StyleProp<ViewStyle>}
-            onPress={onClose}
-          >
-            {modalContent}
-          </Pressable>
+          <Pressable style={backdropStyle} onPress={onClose} />
         )}
+        {/* Content - positioned above backdrop */}
+        {modalContent}
       </Animated.View>
     </Modal>
   );

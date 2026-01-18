@@ -24,7 +24,6 @@ import {
 } from '../../src/api/queries/useGames';
 import {
   useInvitations,
-  useAcceptInvitation,
   useDeclineInvitation,
 } from '../../src/api/queries/useInvitations';
 import { useAuthStore } from '../../src/stores/authStore';
@@ -89,7 +88,6 @@ export default function HomeScreen() {
   const { data: publicGames, refetch: refetchPublicGames } = usePublicGames();
   const createGame = useCreateGame();
   const deleteGame = useDeleteGame();
-  const acceptInvitation = useAcceptInvitation();
   const declineInvitation = useDeclineInvitation();
   const clearLastGameUlid = useNavigationStore((s) => s.clearLastGameUlid);
 
@@ -102,10 +100,7 @@ export default function HomeScreen() {
     }, [refetch, refetchInvitations, refetchPublicGames])
   );
 
-  // Track which invitation is being acted on
-  const [acceptingInvitation, setAcceptingInvitation] = useState<string | null>(
-    null
-  );
+  // Track which invitation is being declined
   const [decliningInvitation, setDecliningInvitation] = useState<string | null>(
     null
   );
@@ -146,17 +141,8 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
-  const handleAcceptInvitation = async (invitationUlid: string) => {
-    setAcceptingInvitation(invitationUlid);
-    try {
-      const result = await acceptInvitation.mutateAsync(invitationUlid);
-      router.push(ROUTES.GAME(result.ulid));
-    } catch (e) {
-      const error = getApiError(e);
-      Alert.alert('Error', error.message);
-    } finally {
-      setAcceptingInvitation(null);
-    }
+  const navigateToInvitedGame = (gameUlid: string, invitationUlid: string) => {
+    router.push(`${ROUTES.GAME(gameUlid)}?invitation=${invitationUlid}`);
   };
 
   const handleDeclineInvitation = async (invitationUlid: string) => {
@@ -279,9 +265,10 @@ export default function HomeScreen() {
                 >
                   <InvitationCard
                     invitation={invitation}
-                    onAccept={() => handleAcceptInvitation(invitation.ulid)}
+                    onPress={() =>
+                      navigateToInvitedGame(invitation.game.ulid, invitation.ulid)
+                    }
                     onDecline={() => handleDeclineInvitation(invitation.ulid)}
-                    isAccepting={acceptingInvitation === invitation.ulid}
                     isDeclining={decliningInvitation === invitation.ulid}
                   />
                 </Animated.View>

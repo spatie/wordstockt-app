@@ -1,4 +1,4 @@
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../client';
 import { placedTilesToApi } from '../transforms/tileTransforms';
 import { validationKeys } from './queryKeys';
@@ -30,6 +30,6 @@ export function useValidation({ gameUlid, tiles }: ValidateParams) {
     enabled: tiles.length > 0 && gameUlid.length > 0,
     staleTime: 0, // Always refetch when tiles change
     gcTime: 0, // Don't cache old results
-    placeholderData: keepPreviousData, // Keep showing previous result while loading new one
+    // Note: removed keepPreviousData to prevent stale highlights flashing on old tile neighbors
   });
 }

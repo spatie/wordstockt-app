@@ -11,6 +11,7 @@ import { SmartAvatar } from '../ui/SmartAvatar';
 import { TurnTimer } from './TurnTimer';
 import { AnimatedScore } from './AnimatedScore';
 import { AnimatedTilesCount } from './AnimatedTilesCount';
+import { calculateTilesPlayedBonus } from '../../utils/scoring';
 import type { Game, Move, Player, PendingInvitation } from '../../types';
 
 const AVATAR_SIZE = DIMENSIONS.avatarScoreBar;
@@ -49,6 +50,7 @@ interface ScoreBarProps {
   currentUserUlid: string | undefined;
   onInvite?: () => void;
   onRevokeInvitation?: (invitationUlid: string) => void;
+  tilesPlayed?: number;
 }
 
 function StatusDots({
@@ -120,11 +122,14 @@ function PlayerAvatar({
   );
 }
 
+const ANIMATION_DURATION = 150;
+
 export function ScoreBar({
   game,
   currentUserUlid,
   onInvite,
   onRevokeInvitation,
+  tilesPlayed = 0,
 }: ScoreBarProps) {
   const myPlayer = game.players.find((p) => p.ulid === currentUserUlid);
   const opponent = game.players.find((p) => p.ulid !== currentUserUlid);
@@ -145,6 +150,34 @@ export function ScoreBar({
     currentUserUlid,
     opponent?.username ?? 'Opponent'
   );
+
+  // Calculate bonus for tiles played
+  const bonus = calculateTilesPlayedBonus(tilesPlayed);
+  const showBonus = bonus > 0;
+
+  // Animation value for bonus display - simple fade
+  const bonusOpacity = useRef(new Animated.Value(0)).current;
+  const prevShowBonus = useRef(false);
+
+  useEffect(() => {
+    const useNativeDriver = Platform.OS !== 'web';
+
+    if (showBonus && !prevShowBonus.current) {
+      Animated.timing(bonusOpacity, {
+        toValue: 1,
+        duration: ANIMATION_DURATION,
+        useNativeDriver,
+      }).start();
+    } else if (!showBonus && prevShowBonus.current) {
+      Animated.timing(bonusOpacity, {
+        toValue: 0,
+        duration: ANIMATION_DURATION,
+        useNativeDriver,
+      }).start();
+    }
+
+    prevShowBonus.current = showBonus;
+  }, [showBonus, bonusOpacity]);
 
   return (
     <View style={styles.container}>
@@ -275,6 +308,14 @@ export function ScoreBar({
           </>
         )}
       </View>
+
+      {/* Animated bonus - absolutely positioned at bottom */}
+      <Animated.View
+        style={[styles.bonusContainer, { opacity: bonusOpacity }]}
+        pointerEvents="none"
+      >
+        <Text style={styles.bonusText}>+{bonus} long word bonus</Text>
+      </Animated.View>
     </View>
   );
 }
@@ -285,6 +326,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     paddingHorizontal: 10,
+    paddingBottom: 18,
     backgroundColor: colors.backgroundLight,
     marginHorizontal: 12,
     marginTop: 8,
@@ -450,5 +492,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     lineHeight: 14,
+  },
+  bonusContainer: {
+    position: 'absolute',
+    bottom: 4,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  bonusText: {
+    color: colors.textSecondary,
+    fontSize: 10,
+    fontStyle: 'italic',
   },
 });

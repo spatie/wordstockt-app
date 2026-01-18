@@ -10,7 +10,11 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useGame } from '../../../src/api/queries/useGame';
 import { useValidation } from '../../../src/api/queries/useValidation';
 import { useWordInfo } from '../../../src/api/queries/useWordInfo';
-import { useRevokeInvitation } from '../../../src/api/queries/useInvitations';
+import {
+  useRevokeInvitation,
+  useAcceptInvitation,
+  useDeclineInvitation,
+} from '../../../src/api/queries/useInvitations';
 import { useJoinGame } from '../../../src/api/queries/useGames';
 import { useAuthStore } from '../../../src/stores/authStore';
 import { useGameStore } from '../../../src/stores/gameStore';
@@ -52,7 +56,10 @@ const USE_MOCK_DATA = false;
 const BUTTON_FADE_DURATION = 200;
 
 function GameScreenContent() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, invitation: invitationUlid } = useLocalSearchParams<{
+    id: string;
+    invitation?: string;
+  }>();
   const router = useRouter();
   const gameUlid = id ?? '';
   const userUlid = useAuthStore((s) => s.user?.ulid) ?? '';
@@ -108,6 +115,8 @@ function GameScreenContent() {
   const setValidationResult = useGameStore((s) => s.setValidationResult);
   const revokeInvitation = useRevokeInvitation();
   const joinGame = useJoinGame();
+  const acceptInvitation = useAcceptInvitation();
+  const declineInvitation = useDeclineInvitation();
 
   // Redirect to game list if game can't be loaded
   useEffect(() => {
@@ -199,15 +208,36 @@ function GameScreenContent() {
   };
 
   const [isJoining, setIsJoining] = useState(false);
+  const [isDeclining, setIsDeclining] = useState(false);
 
   const handleJoinGame = async () => {
     setIsJoining(true);
     try {
-      await joinGame.mutateAsync(gameUlid);
+      if (invitationUlid) {
+        await acceptInvitation.mutateAsync(invitationUlid);
+      } else {
+        await joinGame.mutateAsync(gameUlid);
+      }
       await refetch();
     } catch {
       // Error handled by mutation
       setIsJoining(false);
+    }
+  };
+
+  const handleDeclineInvitation = async () => {
+    if (!invitationUlid) return;
+    setIsDeclining(true);
+    try {
+      await declineInvitation.mutateAsync(invitationUlid);
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/');
+      }
+    } catch {
+      // Error handled by mutation
+      setIsDeclining(false);
     }
   };
 
@@ -217,6 +247,16 @@ function GameScreenContent() {
       'Are you sure you want to join this game?',
       handleJoinGame,
       'Join'
+    );
+  };
+
+  const confirmDecline = () => {
+    showConfirm(
+      'Decline Invitation',
+      'Are you sure you want to decline this invitation?',
+      handleDeclineInvitation,
+      'Decline',
+      'destructive'
     );
   };
 
@@ -300,6 +340,22 @@ function GameScreenContent() {
       swapButtonsOpacity.setValue(0);
     }
   }, [isSwapMode, isSwapExiting, actionButtonsOpacity, swapButtonsOpacity]);
+
+  // Track tile positions to detect when they change
+  const tilePositionsKey = pendingTiles
+    .map((t) => `${t.x},${t.y}`)
+    .sort()
+    .join('|');
+  const prevTilePositionsRef = useRef(tilePositionsKey);
+
+  // Clear validation immediately when tile positions change (before new validation arrives)
+  // This prevents stale highlights from flashing on tiles that are no longer adjacent
+  useEffect(() => {
+    if (tilePositionsKey !== prevTilePositionsRef.current) {
+      prevTilePositionsRef.current = tilePositionsKey;
+      setValidationResult(null);
+    }
+  }, [tilePositionsKey, setValidationResult]);
 
   // Validate pending tiles on every change
   const { data: validationResult } = useValidation({
@@ -395,6 +451,7 @@ function GameScreenContent() {
           currentUserUlid={userUlid}
           onInvite={() => setInviteModalVisible(true)}
           onRevokeInvitation={handleRevokeInvitation}
+          tilesPlayed={pendingTiles.length}
         />
         <View style={styles.boardWrapper}>
           <GameBoard
@@ -418,14 +475,32 @@ function GameScreenContent() {
       </View>
       {canJoin ? (
         <View style={styles.joinContainer}>
-          <Text style={styles.joinText}>Join this game to start playing!</Text>
-          <Button
-            label="Join Game"
-            onPress={confirmJoin}
-            loading={isJoining}
-            fullWidth
-            rounded
-          />
+          <Text style={styles.joinText}>
+            {invitationUlid
+              ? 'You have been invited to this game!'
+              : 'Join this game to start playing!'}
+          </Text>
+          <View style={styles.joinButtons}>
+            {invitationUlid && (
+              <Button
+                label="Decline"
+                onPress={confirmDecline}
+                variant="outline"
+                loading={isDeclining}
+                disabled={isJoining}
+                rounded
+                style={styles.declineButton}
+              />
+            )}
+            <Button
+              label="Join Game"
+              onPress={confirmJoin}
+              loading={isJoining}
+              disabled={isDeclining}
+              rounded
+              style={styles.joinButton}
+            />
+          </View>
         </View>
       ) : (
         <>
@@ -600,5 +675,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textSecondary,
     textAlign: 'center',
+  },
+  joinButtons: {
+    flexDirection: 'row',
+    gap: SPACING.md,
+    width: '100%',
+  },
+  declineButton: {
+    flex: 1,
+  },
+  joinButton: {
+    flex: 1,
   },
 });
