@@ -351,7 +351,6 @@ export function ScoreBar({
           </>
         )}
       </View>
-
     </View>
   );
 }
