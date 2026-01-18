@@ -266,7 +266,10 @@ export default function HomeScreen() {
                   <InvitationCard
                     invitation={invitation}
                     onPress={() =>
-                      navigateToInvitedGame(invitation.game.ulid, invitation.ulid)
+                      navigateToInvitedGame(
+                        invitation.game.ulid,
+                        invitation.ulid
+                      )
                     }
                     onDecline={() => handleDeclineInvitation(invitation.ulid)}
                     isDeclining={decliningInvitation === invitation.ulid}

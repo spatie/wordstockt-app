@@ -396,9 +396,7 @@ export const useBoardTileHighlight = (
     const gameState = getCurrentGameState(state);
     const pendingTiles = gameState.pendingTiles;
 
-    const isPending = pendingTiles.some(
-      (t) => t.x === x && t.y === y
-    );
+    const isPending = pendingTiles.some((t) => t.x === x && t.y === y);
     if (isPending) return null;
 
     const validation = state.validationResult;
@@ -409,9 +407,7 @@ export const useBoardTileHighlight = (
     const validatedPositions = new Set(
       validation.tile_status.map((t) => `${t.x},${t.y}`)
     );
-    const pendingPositions = new Set(
-      pendingTiles.map((t) => `${t.x},${t.y}`)
-    );
+    const pendingPositions = new Set(pendingTiles.map((t) => `${t.x},${t.y}`));
 
     // If sets don't match exactly, validation is stale
     if (validatedPositions.size !== pendingPositions.size) return null;

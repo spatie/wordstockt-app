@@ -59,12 +59,7 @@ export function InvitationCard({
             disabled={isDeclining}
             loading={isDeclining}
           />
-          <Button
-            label="View"
-            onPress={onPress}
-            size="sm"
-            rounded
-          />
+          <Button label="View" onPress={onPress} size="sm" rounded />
         </View>
       </View>
     </Card>

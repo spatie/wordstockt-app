@@ -329,7 +329,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
   // Shared values for immediate tile hiding (prevents visual glitch)
   const draggingRackIndexShared = useSharedValue(-1); // -1 means no rack tile is dragging
-  const draggingBoardPositionShared = useSharedValue<{ x: number; y: number } | null>(null);
+  const draggingBoardPositionShared = useSharedValue<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   // Shared values for rack layout (accessed in worklet for gesture decisions)
   const rackTopShared = useSharedValue(0);

@@ -26,7 +26,9 @@ export function InvitationDialog({
   const handleView = () => {
     if (!invitation) return;
     onClose();
-    router.push(`${ROUTES.GAME(invitation.game.ulid)}?invitation=${invitation.ulid}`);
+    router.push(
+      `${ROUTES.GAME(invitation.game.ulid)}?invitation=${invitation.ulid}`
+    );
   };
 
   const handleDecline = async () => {

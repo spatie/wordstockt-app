@@ -79,7 +79,11 @@ export function Tile({
     const color = interpolateColor(
       colorProgress.value,
       [-1, 0, 1],
-      [VALIDATION_COLORS.invalid, VALIDATION_COLORS.default, VALIDATION_COLORS.valid]
+      [
+        VALIDATION_COLORS.invalid,
+        VALIDATION_COLORS.default,
+        VALIDATION_COLORS.valid,
+      ]
     );
     return { color };
   });
@@ -137,12 +141,26 @@ export function Tile({
       ['#E0A8A8', '#E0E0D0', '#80C080']
     );
 
-    const borderTopColor = interpolateColor(pulseProgress.value, [0, 1], [baseBorderLight, pulseBorderLight]);
+    const borderTopColor = interpolateColor(
+      pulseProgress.value,
+      [0, 1],
+      [baseBorderLight, pulseBorderLight]
+    );
     const borderLeftColor = borderTopColor;
-    const borderBottomColor = interpolateColor(pulseProgress.value, [0, 1], [baseBorderDark, pulseBorderDark]);
+    const borderBottomColor = interpolateColor(
+      pulseProgress.value,
+      [0, 1],
+      [baseBorderDark, pulseBorderDark]
+    );
     const borderRightColor = borderBottomColor;
 
-    return { backgroundColor, borderTopColor, borderLeftColor, borderBottomColor, borderRightColor };
+    return {
+      backgroundColor,
+      borderTopColor,
+      borderLeftColor,
+      borderBottomColor,
+      borderRightColor,
+    };
   });
 
   // Animated style for border color (blank tiles)
@@ -237,7 +255,11 @@ export function Tile({
     if (isPending) {
       // Pending tiles get animated background (red/green/transparent)
       if (showAnimatedBorder) {
-        return [tileStyles, animatedPendingBackgroundStyle, animatedBorderStyle];
+        return [
+          tileStyles,
+          animatedPendingBackgroundStyle,
+          animatedBorderStyle,
+        ];
       }
       return [tileStyles, animatedPendingBackgroundStyle];
     }

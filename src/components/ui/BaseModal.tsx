@@ -126,7 +126,9 @@ export function BaseModal({
       ]}
       pointerEvents="box-none"
     >
-      <Animated.View style={[styles.content, contentStyle, animatedContentStyle]}>
+      <Animated.View
+        style={[styles.content, contentStyle, animatedContentStyle]}
+      >
         {children}
       </Animated.View>
     </View>
