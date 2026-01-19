@@ -23,6 +23,9 @@ import {
   useIsSwappedTile,
   useGameStore,
 } from '../../stores/gameStore';
+
+// Track current game to detect game switches
+const useCurrentGameUlid = () => useGameStore((state) => state.currentGameUlid);
 import { useDragDrop } from '../../context/DragDropContext';
 import {
   TILE_SIZE,
@@ -96,12 +99,14 @@ function AnimatedTileSlot({
     getLastRackDrop,
     clearLastRackDrop,
   } = useDragDrop();
+  const currentGameUlid = useCurrentGameUlid();
   const animatedX = useSharedValue(visualSlot * (SLOT_WIDTH + GAP));
   const exitLiftY = useSharedValue(0); // For animating tiles down when exiting swap mode
   const prevVisualSlot = useRef(visualSlot);
   const prevIsUsed = useRef(isUsed);
   const prevIsSwapMode = useRef(isSwapMode);
   const prevWasLifted = useRef(false);
+  const prevGameUlid = useRef(currentGameUlid); // Track game changes to skip animation
 
   // Track if tile was lifted (selected or swapped) when in swap mode
   const isLifted =
@@ -145,6 +150,16 @@ function AnimatedTileSlot({
     const lastRackDrop = getLastRackDrop();
     const justBecameVisible = prevIsUsed.current && !isUsed;
 
+    // On game change, snap to position without animation
+    // This prevents the "shuffle animation" when entering or switching games
+    if (prevGameUlid.current !== currentGameUlid) {
+      prevGameUlid.current = currentGameUlid;
+      animatedX.value = targetX;
+      prevVisualSlot.current = visualSlot;
+      prevIsUsed.current = isUsed;
+      return;
+    }
+
     // Check if this tile was just dropped/returned (matches our rackIndex)
     // This handles: rack-to-rack drops, board-to-rack drops, and drops in empty area
     if (lastRackDrop?.rackIndex === actualRackIndex) {
@@ -170,6 +185,7 @@ function AnimatedTileSlot({
     getLastRackDrop,
     clearLastRackDrop,
     isUsed,
+    currentGameUlid,
   ]);
 
   const handleDragEnd = useCallback(
@@ -260,7 +276,8 @@ export function TileRack({ tiles, disabled, onTileDrop }: TileRackProps) {
   }, [rackPermutation]);
 
   // Sync tiles to shared values for worklet-based hit testing
-  useEffect(() => {
+  // Use useLayoutEffect to ensure tiles are synced before paint
+  useLayoutEffect(() => {
     updateRackTiles(tiles);
   }, [tiles, updateRackTiles]);
 

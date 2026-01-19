@@ -53,10 +53,17 @@ export function BaseModal({
 
   useEffect(() => {
     if (visible) {
-      setModalVisible(true);
+      // Set initial values before showing modal to prevent flicker
       scaleAnim.setValue(0.85);
       opacityAnim.setValue(0);
+      
+      if (backdropBlur && Platform.OS === 'web') {
+        blurAnim.setValue(8);
+      }
+      
+      setModalVisible(true);
 
+      // Start animations immediately
       Animated.parallel([
         Animated.spring(scaleAnim, {
           toValue: 1,
@@ -70,15 +77,6 @@ export function BaseModal({
           useNativeDriver: true,
         }),
       ]).start();
-
-      if (backdropBlur && Platform.OS === 'web') {
-        blurAnim.setValue(0);
-        Animated.timing(blurAnim, {
-          toValue: 8,
-          duration: 200,
-          useNativeDriver: false,
-        }).start();
-      }
     } else if (modalVisible) {
       Animated.parallel([
         Animated.timing(scaleAnim, {
@@ -134,22 +132,15 @@ export function BaseModal({
     </View>
   );
 
-  // Web: create animated blur style
+  // Web: create static blur style (no animation to avoid flicker)
   const webBlurStyle =
     Platform.OS === 'web' && backdropBlur
       ? {
-          backdropFilter: blurAnim.interpolate({
-            inputRange: [0, 8],
-            outputRange: ['blur(0px)', 'blur(8px)'],
-          }),
-          WebkitBackdropFilter: blurAnim.interpolate({
-            inputRange: [0, 8],
-            outputRange: ['blur(0px)', 'blur(8px)'],
-          }),
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
         }
       : undefined;
 
-  const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
   const backdropStyle = [
     StyleSheet.absoluteFill,
@@ -171,8 +162,8 @@ export function BaseModal({
             <Pressable style={backdropStyle} onPress={onClose} />
           </BlurView>
         ) : backdropBlur && Platform.OS === 'web' ? (
-          <AnimatedPressable
-            style={[backdropStyle as StyleProp<ViewStyle>, webBlurStyle]}
+          <Pressable
+            style={[backdropStyle, webBlurStyle]}
             onPress={onClose}
           />
         ) : (

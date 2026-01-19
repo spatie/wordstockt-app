@@ -150,9 +150,12 @@ function PlayerAvatar({
       visible.value = withTiming(1, { duration: 300 });
       pulse.value = 1;
       pulse.value = withRepeat(
-        withTiming(0, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
+        withSequence(
+          withTiming(0.3, { duration: 1200, easing: Easing.inOut(Easing.quad) }),
+          withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.quad) })
+        ),
         -1,
-        true
+        false
       );
     } else {
       visible.value = withTiming(0, { duration: 300 });
@@ -161,9 +164,9 @@ function PlayerAvatar({
   }, [isActive, visible, pulse]);
 
   const animatedIndicatorStyle = useAnimatedStyle(() => ({
-    opacity: visible.value * interpolate(pulse.value, [0, 1], [0.7, 1]),
-    shadowOpacity: visible.value * interpolate(pulse.value, [0, 1], [0.2, 0.6]),
-    shadowRadius: interpolate(pulse.value, [0, 1], [4, 10]),
+    opacity: visible.value * interpolate(pulse.value, [0.3, 1], [0.6, 1]),
+    shadowOpacity: visible.value * interpolate(pulse.value, [0.3, 1], [0.3, 0.8]),
+    shadowRadius: interpolate(pulse.value, [0.3, 1], [6, 14]),
   }));
 
   const handlePress = useCallback(() => {
@@ -265,30 +268,30 @@ export function ScoreBar({
     <View style={styles.container}>
       {/* Left player section */}
       <View style={styles.playerSection}>
-        <PlayerAvatar player={myPlayer} isActive={isMyTurn} />
-        <View style={styles.playerInfo}>
-          <Text
-            style={[styles.playerName, isMyTurn && styles.activeName]}
-            numberOfLines={1}
-          >
-            You
-          </Text>
-          <View style={styles.scoreRow}>
-            <AnimatedScore score={myPlayer?.score ?? 0} />
-            {showRackCount && (
-              <Text style={styles.rackCount}>({myPlayer?.rackCount ?? 0})</Text>
+          <PlayerAvatar player={myPlayer} isActive={isMyTurn} />
+          <View style={styles.playerInfo}>
+            <Text
+              style={[styles.playerName, isMyTurn && styles.activeName]}
+              numberOfLines={1}
+            >
+              You
+            </Text>
+            <View style={styles.scoreRow}>
+              <AnimatedScore score={myPlayer?.score ?? 0} />
+              {showRackCount && (
+                <Text style={styles.rackCount}>({myPlayer?.rackCount ?? 0})</Text>
+              )}
+            </View>
+            <StatusDots
+              hasFreeSwap={myPlayer?.hasFreeSwap}
+              hasReceivedBlank={myPlayer?.hasReceivedBlank}
+              onPress={() => setStatusModalPlayer('me')}
+            />
+            {myPlayerGotEmptyRackBonus && (
+              <Text style={styles.emptyRackBonus}>+25</Text>
             )}
           </View>
-          <StatusDots
-            hasFreeSwap={myPlayer?.hasFreeSwap}
-            hasReceivedBlank={myPlayer?.hasReceivedBlank}
-            onPress={() => setStatusModalPlayer('me')}
-          />
-          {myPlayerGotEmptyRackBonus && (
-            <Text style={styles.emptyRackBonus}>+25</Text>
-          )}
         </View>
-      </View>
 
       {/* Center section */}
       <View style={styles.centerSection}>
@@ -329,82 +332,82 @@ export function ScoreBar({
 
       {/* Right player section */}
       <View style={[styles.playerSection, styles.playerSectionRight]}>
-        {canInvite ? (
-          <View style={styles.inviteContainer}>
-            <Text style={styles.invitePrompt}>Invite opponent</Text>
-            <Pressable
-              style={({ pressed }) => [
-                styles.inviteButton,
-                pressed && { opacity: 0.5 },
-              ]}
-              onPressOut={onInvite}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Text style={styles.inviteText}>+</Text>
-            </Pressable>
-          </View>
-        ) : hasPendingInvitation ? (
-          <View style={styles.pendingInviteSection}>
-            <View style={[styles.playerInfo, styles.playerInfoRight]}>
-              <Text style={styles.playerName} numberOfLines={1}>
-                {game.pendingInvitation!.invitee.username}
-              </Text>
-              <Text style={styles.pendingLabel}>Invited</Text>
-            </View>
-            <Pressable
-              style={({ pressed }) => [
-                styles.pendingAvatarContainer,
-                pressed && { opacity: 0.7 },
-              ]}
-              onPressOut={() =>
-                onRevokeInvitation?.(game.pendingInvitation!.ulid)
-              }
-            >
-              <SmartAvatar
-                userUlid={game.pendingInvitation!.invitee.ulid}
-                uri={game.pendingInvitation!.invitee.avatar}
-                name={game.pendingInvitation!.invitee.username}
-                size={AVATAR_SIZE}
-                disabled
-                backgroundColor={
-                  game.pendingInvitation!.invitee.avatarColor ?? undefined
-                }
-              />
-              <View style={styles.revokeOverlay}>
-                <Text style={styles.revokeIcon}>×</Text>
-              </View>
-            </Pressable>
-          </View>
-        ) : (
-          <>
-            <View style={[styles.playerInfo, styles.playerInfoRight]}>
-              <Text
-                style={[styles.playerName, isOpponentTurn && styles.activeName]}
-                numberOfLines={1}
+          {canInvite ? (
+            <View style={styles.inviteContainer}>
+              <Text style={styles.invitePrompt}>Invite opponent</Text>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.inviteButton,
+                  pressed && { opacity: 0.5 },
+                ]}
+                onPressOut={onInvite}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                {opponent?.username ?? 'Opponent'}
-              </Text>
-              <View style={styles.scoreRow}>
-                {showRackCount && (
-                  <Text style={styles.rackCount}>
-                    ({opponent?.rackCount ?? 0})
-                  </Text>
-                )}
-                <AnimatedScore score={opponent?.score ?? 0} />
-              </View>
-              <StatusDots
-                hasFreeSwap={opponent?.hasFreeSwap}
-                hasReceivedBlank={opponent?.hasReceivedBlank}
-                onPress={() => setStatusModalPlayer('opponent')}
-              />
-              {opponentGotEmptyRackBonus && (
-                <Text style={styles.emptyRackBonus}>+25</Text>
-              )}
+                <Text style={styles.inviteText}>+</Text>
+              </Pressable>
             </View>
-            <PlayerAvatar player={opponent} isActive={isOpponentTurn} />
-          </>
-        )}
-      </View>
+          ) : hasPendingInvitation ? (
+            <View style={styles.pendingInviteSection}>
+              <View style={[styles.playerInfo, styles.playerInfoRight]}>
+                <Text style={styles.playerName} numberOfLines={1}>
+                  {game.pendingInvitation!.invitee.username}
+                </Text>
+                <Text style={styles.pendingLabel}>Invited</Text>
+              </View>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.pendingAvatarContainer,
+                  pressed && { opacity: 0.7 },
+                ]}
+                onPressOut={() =>
+                  onRevokeInvitation?.(game.pendingInvitation!.ulid)
+                }
+              >
+                <SmartAvatar
+                  userUlid={game.pendingInvitation!.invitee.ulid}
+                  uri={game.pendingInvitation!.invitee.avatar}
+                  name={game.pendingInvitation!.invitee.username}
+                  size={AVATAR_SIZE}
+                  disabled
+                  backgroundColor={
+                    game.pendingInvitation!.invitee.avatarColor ?? undefined
+                  }
+                />
+                <View style={styles.revokeOverlay}>
+                  <Text style={styles.revokeIcon}>×</Text>
+                </View>
+              </Pressable>
+            </View>
+          ) : (
+            <>
+              <View style={[styles.playerInfo, styles.playerInfoRight]}>
+                <Text
+                  style={[styles.playerName, isOpponentTurn && styles.activeName]}
+                  numberOfLines={1}
+                >
+                  {opponent?.username ?? 'Opponent'}
+                </Text>
+                <View style={styles.scoreRow}>
+                  {showRackCount && (
+                    <Text style={styles.rackCount}>
+                      ({opponent?.rackCount ?? 0})
+                    </Text>
+                  )}
+                  <AnimatedScore score={opponent?.score ?? 0} />
+                </View>
+                <StatusDots
+                  hasFreeSwap={opponent?.hasFreeSwap}
+                  hasReceivedBlank={opponent?.hasReceivedBlank}
+                  onPress={() => setStatusModalPlayer('opponent')}
+                />
+                {opponentGotEmptyRackBonus && (
+                  <Text style={styles.emptyRackBonus}>+25</Text>
+                )}
+              </View>
+              <PlayerAvatar player={opponent} isActive={isOpponentTurn} />
+            </>
+          )}
+        </View>
 
       <StatusInfoModal
         visible={statusModalPlayer !== null}
@@ -512,8 +515,8 @@ const styles = StyleSheet.create({
   },
   centerSection: {
     alignItems: 'center',
-    paddingHorizontal: 6,
-    minWidth: 60,
+    paddingHorizontal: 4,
+    flex: 2,
   },
   tilesBadge: {
     backgroundColor: colors.primary,

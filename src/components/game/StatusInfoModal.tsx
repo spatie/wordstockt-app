@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { BaseModal } from '../ui/BaseModal';
 import { Button } from '../ui/Button';
-import { FadeSlideIn } from '../ui/FadeSlideIn';
 import { colors } from '../../config/theme';
 import { SPACING } from '../../config/constants';
 
@@ -61,52 +60,39 @@ export function StatusInfoModal({
       contentStyle={styles.modal}
     >
       <View style={styles.content}>
-        <FadeSlideIn delay={0} visible={visible}>
-          <Text style={styles.title}>Player Status</Text>
-        </FadeSlideIn>
+        <Text style={styles.title}>Player Status</Text>
 
-        <FadeSlideIn delay={80} visible={visible}>
-          <Text style={styles.subtitle}>
-            These indicators show special bonuses
-          </Text>
-        </FadeSlideIn>
+        <Text style={styles.subtitle}>
+          These indicators show special bonuses
+        </Text>
 
         <View style={styles.itemsContainer}>
           {displayItems.map((item, index) => (
-            <FadeSlideIn
-              key={item.title}
-              delay={160 + index * 100}
-              visible={visible}
-              fullWidth
-            >
-              <View style={styles.statusItem}>
-                <View style={styles.dotContainer}>
-                  <View style={[styles.dot, { backgroundColor: item.color }]} />
-                  <View
-                    style={[
-                      styles.dotGlow,
-                      { backgroundColor: item.color, opacity: 0.3 },
-                    ]}
-                  />
-                </View>
-                <View style={styles.textContainer}>
-                  <Text style={styles.itemTitle}>{item.title}</Text>
-                  <Text style={styles.itemDescription}>{item.description}</Text>
-                </View>
+            <View key={item.title} style={styles.statusItem}>
+              <View style={styles.dotContainer}>
+                <View style={[styles.dot, { backgroundColor: item.color }]} />
+                <View
+                  style={[
+                    styles.dotGlow,
+                    { backgroundColor: item.color, opacity: 0.3 },
+                  ]}
+                />
               </View>
-            </FadeSlideIn>
+              <View style={styles.textContainer}>
+                <Text style={styles.itemTitle}>{item.title}</Text>
+                <Text style={styles.itemDescription}>{item.description}</Text>
+              </View>
+            </View>
           ))}
         </View>
 
-        <FadeSlideIn delay={360} visible={visible} fullWidth>
-          <Button
-            label="Got it"
-            onPress={onClose}
-            fullWidth
-            rounded
-            size="lg"
-          />
-        </FadeSlideIn>
+        <Button
+          label="Got it"
+          onPress={onClose}
+          fullWidth
+          rounded
+          size="lg"
+        />
       </View>
     </BaseModal>
   );

@@ -18,43 +18,64 @@ export interface RackLayout {
 }
 
 /**
- * Calculate top-left position for a tile centered in a board cell
- * Board cells have 1px padding, so content area is (cellSize - 2)
- * We position the floating tile so its center aligns with the cell content center
+ * Get the CENTER of a board cell (in screen coordinates).
+ * This is where the visual center of a tile should be when placed on this cell.
+ */
+export function getBoardCellCenter(
+  cellX: number,
+  cellY: number,
+  layout: BoardLayout
+): { x: number; y: number } {
+  return {
+    x: layout.x + (cellX + 0.5) * layout.cellSize,
+    y: layout.y + (cellY + 0.5) * layout.cellSize,
+  };
+}
+
+/**
+ * Get the CENTER of a rack slot (in screen coordinates).
+ * This is where the visual center of a tile should be in this slot.
+ */
+export function getRackSlotCenter(
+  slotIndex: number,
+  layout: RackLayout
+): { x: number; y: number } {
+  // Slot width includes gap. Tile width within slot is (slotWidth - GAP).
+  // Tile center within slot = slotWidth/2 - GAP/2 = (slotWidth - GAP) / 2
+  const slotStartX = layout.x + slotIndex * layout.slotWidth;
+  const tileCenterInSlot = (layout.slotWidth - GAP) / 2;
+  return {
+    x: slotStartX + tileCenterInSlot,
+    y: layout.y + layout.height / 2,
+  };
+}
+
+/**
+ * @deprecated Use getBoardCellCenter instead
  */
 export function getBoardCellPosition(
   cellX: number,
   cellY: number,
   layout: BoardLayout
 ): { x: number; y: number } {
-  // Cell content starts at 1px offset due to padding
-  // Content center is at: cellStart + 1 + (cellSize - 2) / 2 = cellStart + cellSize/2
-  // Which equals: layout.x + (cellX + 0.5) * cellSize (padding cancels out)
-  // For the floating tile center to be at cell center:
-  // translateX + TILE_SIZE/2 = cellCenterX
-  // translateX = cellCenterX - TILE_SIZE/2
-  const cellCenterX = layout.x + (cellX + 0.5) * layout.cellSize;
-  const cellCenterY = layout.y + (cellY + 0.5) * layout.cellSize;
+  const center = getBoardCellCenter(cellX, cellY, layout);
   return {
-    x: cellCenterX - TILE_SIZE / 2,
-    y: cellCenterY - TILE_SIZE / 2,
+    x: center.x - TILE_SIZE / 2,
+    y: center.y - TILE_SIZE / 2,
   };
 }
 
 /**
- * Calculate top-left position for a tile centered in a rack slot
+ * @deprecated Use getRackSlotCenter instead
  */
 export function getRackSlotPosition(
   slotIndex: number,
   layout: RackLayout
 ): { x: number; y: number } {
+  const center = getRackSlotCenter(slotIndex, layout);
   return {
-    x:
-      layout.x +
-      slotIndex * layout.slotWidth +
-      (layout.slotWidth - GAP) / 2 -
-      TILE_SIZE / 2,
-    y: layout.y + (layout.height - TILE_SIZE) / 2,
+    x: center.x - TILE_SIZE / 2,
+    y: center.y - TILE_SIZE / 2,
   };
 }
 

@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useGameStore, usePendingTiles } from '../stores/gameStore';
+import { useGameStore, usePendingTiles, useValidationResult } from '../stores/gameStore';
 import { useTilePlacement } from './useTilePlacement';
 import { useRackActions } from './useRackActions';
 import { useGameActions } from './useGameActions';
@@ -21,6 +21,7 @@ export function useGameInteractions({
   userUlid,
 }: UseGameInteractionsOptions) {
   const pendingTiles = usePendingTiles();
+  const validationResult = useValidationResult();
   const isSwapMode = useGameStore((s) => s.isSwapMode);
   const selectedSwapIndices = useGameStore((s) => s.selectedSwapIndices);
   const swapCompleted = useGameStore((s) => s.swapCompleted);
@@ -42,7 +43,10 @@ export function useGameInteractions({
   // Derived state
   const isMyTurn = game?.currentTurnUserUlid === userUlid;
   const canPlay =
-    isMyTurn && pendingTiles.length > 0 && game?.status === 'active';
+    isMyTurn && 
+    pendingTiles.length > 0 && 
+    game?.status === 'active' &&
+    validationResult?.placement_valid === true;
   const isGameActive = game?.status === 'active';
   // Can swap when it's your turn and there are enough tiles in the bag
   const canSwap = isMyTurn && isGameActive && (game?.tilesRemaining ?? 0) >= 7;

@@ -42,9 +42,9 @@ export function Tile({
   cellSize,
 }: TileProps) {
   // Animated color transition
-  // Map validation state to numeric value: 0 = default, 1 = valid, -1 = invalid
+  // Map validation state to numeric value: 0 = default, 1 = valid, -1 = invalid/placement_error
   const getColorValue = (state: TileValidationState) =>
-    state === 'valid' ? 1 : state === 'invalid' ? -1 : 0;
+    state === 'valid' ? 1 : (state === 'invalid' || state === 'placement_error') ? -1 : 0;
 
   // Initialize with current state (no animation on first render)
   const colorProgress = useSharedValue(getColorValue(validationState));

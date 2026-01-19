@@ -15,7 +15,7 @@ import {
 import { BoardCell } from './BoardCell';
 import { ScoreBubble } from './ScoreBubble';
 import { useDragDrop } from '../../context/DragDropContext';
-import { usePendingTiles } from '../../stores/gameStore';
+import { usePendingTiles, useGameStore } from '../../stores/gameStore';
 import { BOARD_SIZE } from '../../config/constants';
 import { colors } from '../../config/theme';
 import type { Game } from '../../types';
@@ -55,6 +55,8 @@ export function GameBoard({
   const boardRef = useRef<View>(null);
   const { setBoardLayout, isDragging } = useDragDrop();
   const pendingTiles = usePendingTiles();
+  const currentGameUlid = useGameStore((state) => state.currentGameUlid);
+  const prevGameUlid = useRef(currentGameUlid);
   const [containerSize, setContainerSize] = useState<{
     width: number;
     height: number;
@@ -80,16 +82,28 @@ export function GameBoard({
     return () => clearTimeout(timer);
   }, [boardSize]);
 
+  // Reset fade when game changes
+  useEffect(() => {
+    if (prevGameUlid.current !== null && prevGameUlid.current !== currentGameUlid) {
+      fadeAnim.setValue(0);
+    }
+    prevGameUlid.current = currentGameUlid;
+  }, [currentGameUlid, fadeAnim]);
+
   // Fade in board when ready
   useEffect(() => {
     if (boardSize > 0) {
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: FADE_IN_DURATION,
-        useNativeDriver: true,
-      }).start();
+      // Small delay to ensure any reset from game change takes effect
+      const timer = setTimeout(() => {
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: FADE_IN_DURATION,
+          useNativeDriver: true,
+        }).start();
+      }, 10);
+      return () => clearTimeout(timer);
     }
-  }, [boardSize, fadeAnim]);
+  }, [boardSize, fadeAnim, currentGameUlid]);
 
   const handleContainerLayout = useCallback((event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
@@ -102,13 +116,6 @@ export function GameBoard({
       const boardPadding = 8;
       const innerWidth = width - boardPadding * 2;
       const cellSize = innerWidth / BOARD_SIZE;
-      console.log('[GameBoard] measureInWindow raw:', { x, y, width, height });
-      console.log('[GameBoard] setting boardLayout:', {
-        x: x + boardPadding,
-        y: y + boardPadding,
-        innerWidth,
-        cellSize,
-      });
       setBoardLayout({
         x: x + boardPadding,
         y: y + boardPadding,

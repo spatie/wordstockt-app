@@ -114,6 +114,7 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
           currentGameUlid: gameUlid,
           // Reset transient state when switching games
           selectedRackIndex: null,
+          isRackDragging: false,
           validationResult: null,
           isSwapMode: false,
           selectedSwapIndices: [],
@@ -457,3 +458,7 @@ export const useBlankTileSelection = () =>
 // Drag state selector
 export const useIsRackDragging = () =>
   useGameStore((state) => state.isRackDragging);
+
+// Validation result selector
+export const useValidationResult = () =>
+  useGameStore((state) => state.validationResult);
