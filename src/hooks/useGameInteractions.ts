@@ -46,11 +46,14 @@ export function useGameInteractions({
 
   // Derived state
   const isMyTurn = game?.currentTurnUserUlid === userUlid;
+  const allWordsValid =
+    validationResult?.words?.every((w) => w.valid) ?? false;
   const canPlay =
     isMyTurn &&
     pendingTiles.length > 0 &&
     game?.status === 'active' &&
-    validationResult?.placement_valid === true;
+    validationResult?.placement_valid === true &&
+    allWordsValid;
   const isGameActive = game?.status === 'active';
   // Can swap when it's your turn and there are enough tiles in the bag
   const canSwap = isMyTurn && isGameActive && (game?.tilesRemaining ?? 0) >= 7;

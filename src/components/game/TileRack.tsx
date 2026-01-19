@@ -10,6 +10,7 @@ import { View, StyleSheet, LayoutChangeEvent, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useDerivedValue,
   withSpring,
 } from 'react-native-reanimated';
 import { DraggableTile } from './DraggableTile';
@@ -95,6 +96,7 @@ function AnimatedTileSlot({
     isSettling,
     settlingTarget,
     recallingRackIndices,
+    recallingRackIndicesShared,
     dragSource,
     getLastRackDrop,
     clearLastRackDrop,
@@ -199,8 +201,16 @@ function AnimatedTileSlot({
     toggleSwapTile(actualRackIndex);
   }, [actualRackIndex, toggleSwapTile]);
 
+  // Check if this tile is being recalled (shared value for immediate UI update)
+  const isBeingRecalledShared = useDerivedValue(() => {
+    'worklet';
+    return recallingRackIndicesShared.value.includes(actualRackIndex);
+  }, [actualRackIndex]);
+
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: animatedX.value }],
+    // Hide immediately via shared value (prevents flash during recall)
+    opacity: isBeingRecalledShared.value ? 0 : 1,
   }));
 
   // Style with exit lift animation (for DraggableTile after exiting swap mode)
@@ -209,6 +219,8 @@ function AnimatedTileSlot({
       { translateX: animatedX.value },
       { translateY: exitLiftY.value },
     ],
+    // Hide immediately via shared value (prevents flash during recall)
+    opacity: isBeingRecalledShared.value ? 0 : 1,
   }));
 
   // Don't render if:

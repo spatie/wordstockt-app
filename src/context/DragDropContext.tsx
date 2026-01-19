@@ -103,6 +103,7 @@ interface DragDropContextType {
   dragTile: TileType | null;
   settlingTarget: DropTarget;
   recallingRackIndices: number[];
+  recallingRackIndicesShared: SharedValue<number[]>;
   recallingBoardPositions: Array<{ x: number; y: number }>;
   boardLayout: BoardLayout | null;
 
@@ -350,7 +351,9 @@ function RecallingTileItem({
   tile: RecallingTile;
   progress: SharedValue<number>;
 }) {
-  // Positions are CENTER-based, convert to top-left for transform
+  // Start invisible, fade in once animation starts (progress > 0).
+  // This prevents a flash where both rack tile and recalling tile are visible
+  // before React has processed the state update to hide the rack tile.
   const animatedStyle = useAnimatedStyle(() => {
     const p = progress.value;
     const centerX = tile.startX + (tile.endX - tile.startX) * p;
@@ -360,6 +363,8 @@ function RecallingTileItem({
         { translateX: centerX - TILE_SIZE / 2 },
         { translateY: centerY - TILE_SIZE / 2 },
       ],
+      // Only visible once animation has started
+      opacity: p > 0 ? 1 : 0,
     };
   });
 
@@ -444,6 +449,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     x: number;
     y: number;
   } | null>(null);
+  // Rack indices being recalled - updates immediately on UI thread (no React state delay)
+  const recallingRackIndicesShared = useSharedValue<number[]>([]);
 
   // Shared values for rack layout (accessed in worklet for gesture decisions)
   const rackTopShared = useSharedValue(0);
@@ -1541,8 +1548,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       setRecallingTiles([]);
       setRecallingRackIndices([]);
       setRecallingBoardPositions([]);
+      // Clear shared value after React state is cleared
+      recallingRackIndicesShared.value = [];
     }, 150);
-  }, []);
+  }, [recallingRackIndicesShared]);
 
   // Ref to hold finishRecallFromRef for stable worklet access
   const finishRecallRef = useRef<() => void>(() => {});
@@ -1583,7 +1592,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         y: screenPos.y - offset.y,
       });
 
-      // Set recalling state to hide tiles
+      // Set shared value FIRST for immediate UI thread update (prevents flash)
+      recallingRackIndicesShared.value = tiles.map((t) => t.rackIndex);
+
+      // Set React state for other components
       setRecallingRackIndices(tiles.map((t) => t.rackIndex));
       setRecallingBoardPositions(tiles.map((t) => ({ x: t.x, y: t.y })));
 
@@ -1621,19 +1633,24 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       // Store callback in ref before animation (prevents GC on real devices)
       pendingRecallCompleteRef.current = onComplete;
 
+      // Delay animation start to allow React to process state updates first.
+      // Without this, the animated tiles appear before rack tiles are hidden,
+      // causing a flash where both are visible at the rack position.
       recallProgress.value = 0;
-      recallProgress.value = withTiming(
-        1,
-        {
-          duration: RECALL_DURATION,
-          easing: Easing.out(Easing.cubic),
-        },
-        () => {
-          runOnJS(onRecallComplete)();
-        }
-      );
+      requestAnimationFrame(() => {
+        recallProgress.value = withTiming(
+          1,
+          {
+            duration: RECALL_DURATION,
+            easing: Easing.out(Easing.cubic),
+          },
+          () => {
+            runOnJS(onRecallComplete)();
+          }
+        );
+      });
     },
-    [recallProgress, onRecallComplete]
+    [recallProgress, onRecallComplete, recallingRackIndicesShared]
   );
 
   // -------------------------------------------------------------------------
@@ -1760,6 +1777,13 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   // -------------------------------------------------------------------------
   // Native Gesture Handler (Gesture API)
   // -------------------------------------------------------------------------
+  //
+  // IMPORTANT: We use event.absoluteX/absoluteY instead of calculating coordinates
+  // from event.x + containerOffset. On real iOS devices with New Architecture (Fabric),
+  // measureInWindow returns coordinates in a different system than relative gesture
+  // coordinates, causing tiles to snap back when dropped. absoluteX/absoluteY gives
+  // reliable window-relative coordinates that match measureInWindow on all devices.
+  // See: https://github.com/facebook/react-native/issues/48425
 
   // Shared values for container offset (accessed in worklet)
   const containerOffsetX = useSharedValue(0);
@@ -2101,6 +2125,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       dragTile,
       settlingTarget,
       recallingRackIndices,
+      recallingRackIndicesShared,
       recallingBoardPositions,
       boardLayout: boardLayoutRef.current,
       getLastRackDrop,
@@ -2126,6 +2151,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       dragTile,
       settlingTarget,
       recallingRackIndices,
+      recallingRackIndicesShared,
       recallingBoardPositions,
       getLastRackDrop,
       clearLastRackDrop,
