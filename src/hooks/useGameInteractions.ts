@@ -46,8 +46,7 @@ export function useGameInteractions({
 
   // Derived state
   const isMyTurn = game?.currentTurnUserUlid === userUlid;
-  const allWordsValid =
-    validationResult?.words?.every((w) => w.valid) ?? false;
+  const allWordsValid = validationResult?.words?.every((w) => w.valid) ?? false;
   const canPlay =
     isMyTurn &&
     pendingTiles.length > 0 &&
