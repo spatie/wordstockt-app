@@ -110,8 +110,6 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
       blankTileSelection: null,
 
       setCurrentGame: (gameUlid) => {
-        console.warn('[gameStore] setCurrentGame called', { gameUlid, timestamp: Date.now() });
-        console.warn('[gameStore] setCurrentGame stack:', new Error().stack);
         set({
           currentGameUlid: gameUlid,
           // Reset transient state when switching games

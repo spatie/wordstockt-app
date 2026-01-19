@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   TouchableOpacity,
   View,
@@ -6,9 +6,15 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  useDerivedValue,
+  withTiming,
+  withDelay,
+} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { Tile } from './Tile';
+import { ScaledTile } from './Tile';
 import {
   usePendingTileAt,
   useTileValidationState,
@@ -64,16 +70,33 @@ export function BoardCell({
     registerDraggable,
     unregisterDraggable,
     recallingBoardPositions,
+    recallingBoardPositionsShared,
     draggingBoardPositionShared,
+    settlingTargetShared,
     boardLayout,
   } = useDragDrop();
 
-  // Immediate hiding based on shared value (prevents visual glitch during fast drags)
+  // Immediate hiding based on shared values (prevents visual glitch during fast drags/settles)
+  // Uses shared values instead of React state for frame-perfect synchronization
   const immediateHideStyle = useAnimatedStyle(() => {
     'worklet';
+    // Hide when being dragged FROM this cell
     const draggingPos = draggingBoardPositionShared.value;
     if (draggingPos && draggingPos.x === x && draggingPos.y === y) {
       return { opacity: 0 };
+    }
+    // Hide when floating tile is settling TO this cell
+    const settlingPos = settlingTargetShared.value;
+    if (settlingPos && settlingPos.x === x && settlingPos.y === y) {
+      return { opacity: 0 };
+    }
+    // Hide when being recalled (animated back to rack)
+    const recallingPositions = recallingBoardPositionsShared.value;
+    for (let i = 0; i < recallingPositions.length; i++) {
+      const pos = recallingPositions[i];
+      if (pos && pos.x === x && pos.y === y) {
+        return { opacity: 0 };
+      }
     }
     return { opacity: 1 };
   }, [x, y]);
@@ -101,9 +124,12 @@ export function BoardCell({
     dragSource.y === y;
 
   // Hide tile when it's being recalled (animated back to rack)
-  const isBeingRecalled = recallingBoardPositions.some(
-    (pos) => pos.x === x && pos.y === y
-  );
+  // On native, use false here - the worklet immediateHideStyle handles hiding via shared value
+  // This prevents re-render cascades when recallingBoardPositions changes
+  const isBeingRecalled =
+    Platform.OS === 'web'
+      ? recallingBoardPositions.some((pos) => pos.x === x && pos.y === y)
+      : false;
 
   // Callback for when drag ends (called from DragDropContext on native)
   const handleNativeDragEnd = useCallback(
@@ -220,16 +246,16 @@ export function BoardCell({
   });
 
   // Determine what tile to show
-  // Hide pending tile when dragging/settling from this cell, settling to this cell, or being recalled
-  const tile =
-    placedTile ??
-    (isThisDragging || isSettlingToThis || isSettlingFromThis || isBeingRecalled
-      ? null
-      : pendingTile);
+  // For native: always render pending tile content, visibility controlled by immediateHideStyle (shared value)
+  // For web: hide via React state since we don't use immediateHideStyle
+  const shouldHideViaReactState =
+    Platform.OS === 'web'
+      ? isThisDragging || isSettlingToThis || isSettlingFromThis || isBeingRecalled
+      : isThisDragging || isSettlingFromThis || isBeingRecalled; // Note: no isSettlingToThis for native
+  const tile = placedTile ?? (shouldHideViaReactState ? null : pendingTile);
   const isPending =
     pendingTile != null &&
     !isThisDragging &&
-    !isSettlingToThis &&
     !isSettlingFromThis &&
     !isBeingRecalled;
 
@@ -361,6 +387,71 @@ function BonusText({ squareType, isStar, cellSize }: BonusTextProps) {
   return null;
 }
 
+// Animation timing for word highlight on placed tiles
+const HIGHLIGHT_ANIMATION_DELAY = 0;
+const HIGHLIGHT_ANIMATION_DURATION = 500;
+
+// Animated word highlight overlay - fades in with delay to sync with tile color animation
+interface AnimatedWordHighlightProps {
+  highlight: 'valid' | 'invalid' | null;
+}
+
+function AnimatedWordHighlight({ highlight }: AnimatedWordHighlightProps) {
+  // Don't render at all during delay period, then fade in
+  const [shouldRender, setShouldRender] = useState(false);
+  const opacity = useSharedValue(0);
+  const prevHighlight = useRef<'valid' | 'invalid' | null>(null);
+
+  useEffect(() => {
+    const wasVisible = prevHighlight.current === 'valid' || prevHighlight.current === 'invalid';
+    const isNowVisible = highlight === 'valid' || highlight === 'invalid';
+
+    if (isNowVisible && !wasVisible) {
+      // Appearing for first time - delay, then fade in
+      prevHighlight.current = highlight;
+      const timer = setTimeout(() => {
+        setShouldRender(true);
+        opacity.value = withTiming(1, { duration: HIGHLIGHT_ANIMATION_DURATION });
+      }, HIGHLIGHT_ANIMATION_DELAY);
+      return () => clearTimeout(timer);
+    }
+
+    if (isNowVisible && wasVisible && highlight !== prevHighlight.current) {
+      // Changing between valid/invalid - keep visible, just update color
+      prevHighlight.current = highlight;
+      setShouldRender(true);
+      opacity.value = 1;
+    }
+
+    if (!isNowVisible && wasVisible) {
+      // Disappearing - fade out, then stop rendering
+      prevHighlight.current = highlight;
+      opacity.value = withTiming(0, { duration: HIGHLIGHT_ANIMATION_DURATION });
+      const timer = setTimeout(() => {
+        setShouldRender(false);
+      }, HIGHLIGHT_ANIMATION_DURATION);
+      return () => clearTimeout(timer);
+    }
+  }, [highlight, opacity]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  if (!shouldRender || !highlight) return null;
+
+  return (
+    <Animated.View
+      style={[
+        styles.wordHighlight,
+        { backgroundColor: HIGHLIGHT_COLORS[highlight] },
+        animatedStyle,
+      ]}
+      pointerEvents="none"
+    />
+  );
+}
+
 // Tile content component - can be hidden during drag
 interface TileContentProps {
   x: number;
@@ -387,28 +478,19 @@ function TileContent({
 
   return (
     <>
-      <Tile
+      <ScaledTile
         letter={tile.letter}
         points={tile.points}
         isPending={isPending}
         isPlaced={isPlaced}
         isBlank={tile.isBlank}
         validationState={tileValidationState}
-        size="board"
-        cellSize={cellSize}
+        displaySize={cellSize}
       />
       {isPlaced && isLastMove && !wordHighlight && (
         <View style={styles.lastMoveHighlight} pointerEvents="none" />
       )}
-      {isPlaced && wordHighlight && (
-        <View
-          style={[
-            styles.wordHighlight,
-            { backgroundColor: HIGHLIGHT_COLORS[wordHighlight] },
-          ]}
-          pointerEvents="none"
-        />
-      )}
+      {isPlaced && <AnimatedWordHighlight highlight={wordHighlight} />}
     </>
   );
 }
@@ -474,30 +556,21 @@ function CellContent({
       {/* Foreground layer: tile (covers bonus text when present) */}
       {tile && (
         <>
-          <Tile
+          <ScaledTile
             letter={tile.letter}
             points={tile.points}
             isPending={isPending}
             isPlaced={isPlaced}
             isBlank={tile.isBlank}
             validationState={tileValidationState}
-            size="board"
-            cellSize={cellSize}
+            displaySize={cellSize}
           />
           {/* Last move highlight overlay */}
           {isPlaced && isLastMove && !wordHighlight && (
             <View style={styles.lastMoveHighlight} pointerEvents="none" />
           )}
           {/* Word highlight overlay for placed tiles */}
-          {isPlaced && wordHighlight && (
-            <View
-              style={[
-                styles.wordHighlight,
-                { backgroundColor: HIGHLIGHT_COLORS[wordHighlight] },
-              ]}
-              pointerEvents="none"
-            />
-          )}
+          {isPlaced && <AnimatedWordHighlight highlight={wordHighlight} />}
         </>
       )}
     </View>

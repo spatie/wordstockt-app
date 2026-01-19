@@ -6,7 +6,13 @@ import React, {
   useState,
   useMemo,
 } from 'react';
-import { View, StyleSheet, LayoutChangeEvent, Platform } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  LayoutChangeEvent,
+  Platform,
+  StatusBar,
+} from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -95,7 +101,6 @@ function AnimatedTileSlot({
   const {
     isSettling,
     settlingTarget,
-    recallingRackIndices,
     recallingRackIndicesShared,
     dragSource,
     getLastRackDrop,
@@ -142,7 +147,10 @@ function AnimatedTileSlot({
   const isFloatingTileAnimating =
     isThisRackTileAnimating && (isSettlingToBoard || isSettlingToRack);
 
-  const isBeingRecalled = recallingRackIndices.includes(actualRackIndex);
+  // NOTE: We use isBeingRecalledShared (worklet) for hiding instead of React state
+  // to prevent re-render cascades during recall animation. The opacity-based hiding
+  // in animatedStyle handles the visual hiding on the UI thread.
+  const isBeingRecalledForRender = false; // Was: recallingRackIndices.includes(actualRackIndex)
 
   // Animate when visual slot changes OR when tile returns to rack from board/empty area
   // If this tile was just dropped, start animation from drop position instead of current position
@@ -226,9 +234,10 @@ function AnimatedTileSlot({
   // Don't render if:
   // - No tile data
   // - Tile is placed on board (isUsed)
-  // - Tile is animating back from board (isBeingRecalled)
+  // - Tile is animating back from board (handled by opacity via isBeingRecalledShared)
   // - This tile's floating version is currently being dragged/settling (isFloatingTileAnimating)
-  if (!tile || isUsed || isBeingRecalled || isFloatingTileAnimating) {
+  // NOTE: isBeingRecalledForRender is always false - hiding handled by worklet opacity
+  if (!tile || isUsed || isBeingRecalledForRender || isFloatingTileAnimating) {
     return null;
   }
 
@@ -298,7 +307,10 @@ export function TileRack({ tiles, disabled, onTileDrop }: TileRackProps) {
       const startX = x + (width - TOTAL_SLOTS_WIDTH) / 2;
       // Tiles are vertically centered within the rack container
       // Calculate the Y offset to get the actual tile position
-      const tileY = y + (height - TILE_SIZE) / 2;
+      // On Android, measureInWindow may not include status bar height, but touch events do
+      const statusBarOffset =
+        Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0;
+      const tileY = y + statusBarOffset + (height - TILE_SIZE) / 2;
       const layout: RackLayout = {
         x: startX,
         y: tileY,

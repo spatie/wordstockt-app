@@ -41,14 +41,14 @@ export function useScoreBubble({
       opacity.setValue(0);
       Animated.timing(opacity, {
         toValue: 1,
-        duration: 200,
+        duration: 500,
         useNativeDriver,
       }).start();
     } else if (displayScore === null && prevDisplayScore !== null) {
       // Score disappeared - fade out then hide
       Animated.timing(opacity, {
         toValue: 0,
-        duration: 150,
+        duration: 300,
         useNativeDriver,
       }).start(() => {
         setIsVisible(false);
@@ -58,16 +58,16 @@ export function useScoreBubble({
       prevDisplayScore !== null &&
       displayScore !== prevDisplayScore
     ) {
-      // Score changed - quick pulse
+      // Score changed - pulse animation
       Animated.sequence([
         Animated.timing(opacity, {
-          toValue: 0.7,
-          duration: 80,
+          toValue: 0.5,
+          duration: 150,
           useNativeDriver,
         }),
         Animated.timing(opacity, {
           toValue: 1,
-          duration: 80,
+          duration: 150,
           useNativeDriver,
         }),
       ]).start();

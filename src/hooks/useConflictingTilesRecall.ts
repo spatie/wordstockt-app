@@ -97,10 +97,18 @@ export function useConflictingTilesRecall(game: Game | undefined) {
         y: t.y,
       }));
 
-      // Animate tiles back to rack, remove from state when animation completes
-      startRecallAnimation(tilesToRecall, () => {
-        removeConflictingTiles(positionsToRemove);
-      });
+      // Animate tiles back to rack
+      // onStart: Remove from state immediately after tiles hidden, so score/validation updates
+      // onComplete: Animation done, nothing else to do
+      startRecallAnimation(
+        tilesToRecall,
+        () => {
+          removeConflictingTiles(positionsToRemove);
+        },
+        () => {
+          // Animation complete
+        }
+      );
     }
 
     // Update ref with current board

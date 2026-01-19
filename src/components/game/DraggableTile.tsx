@@ -181,8 +181,6 @@ export function DraggableTile({
           points={tile.points}
           isBlank={tile.isBlank}
           disabled={disabled}
-          size="board"
-          cellSize={TILE_SIZE}
         />
       </Animated.View>
     );
@@ -197,8 +195,6 @@ export function DraggableTile({
         points={tile.points}
         isBlank={tile.isBlank}
         disabled={disabled}
-        size="board"
-        cellSize={TILE_SIZE}
       />
     </Animated.View>
   );

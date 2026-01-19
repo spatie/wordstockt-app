@@ -30,12 +30,18 @@ export function useRackActions({ game, pendingTiles }: UseRackActionsOptions) {
         ...t,
         visualSlot: rackPermutation.indexOf(t.rackIndex),
       }));
-      // Start animation first - it will hide tiles via recallingBoardPositions/recallingRackIndices
-      // Clear state only when animation completes
-      startRecallAnimation(tilesToRecall, () => {
-        console.warn(`[useRackActions] [${Date.now()}] onComplete callback fired - calling recallAllTiles`);
-        recallAllTiles();
-      });
+      // Start animation - onStart clears game state after shared values hide tiles
+      startRecallAnimation(
+        tilesToRecall,
+        () => {
+          // Called immediately after shared values hide tiles on UI thread
+          // Clear game state so score bubble and tile colors update immediately
+          recallAllTiles();
+        },
+        () => {
+          // Animation complete - nothing else to do, state already cleared
+        }
+      );
     }
   }, [pendingTiles, rackPermutation, recallAllTiles, startRecallAnimation]);
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -8,11 +8,22 @@ import Animated, {
   interpolateColor,
 } from 'react-native-reanimated';
 import { VALIDATION_COLORS, colors } from '../../config/theme';
-import { calculateTileFontSizes } from '../../config/tileSizing';
+import { TILE_SIZE } from '../../config/constants';
 import type { TileValidationState } from '../../types';
 
 // Animation duration for color transitions
-const COLOR_ANIMATION_DURATION = 500;
+const COLOR_ANIMATION_DURATION = 100;
+// Delay before starting color animation after tile settles
+const COLOR_ANIMATION_DELAY = 300;
+
+// Fixed sizes for TILE_SIZE (52px) - all tiles render at this size and scale
+// These ratios match the original tileSizing.ts calculations
+const LETTER_SIZE_RATIO = 0.65;
+const POINTS_SIZE_RATIO = 0.38;
+const LETTER_FONT_SIZE = Math.round(TILE_SIZE * LETTER_SIZE_RATIO); // ~34px
+const POINTS_FONT_SIZE = Math.round(TILE_SIZE * POINTS_SIZE_RATIO); // ~20px
+const BORDER_WIDTH = 2;
+const BORDER_RADIUS = 5;
 
 interface TileProps {
   letter: string;
@@ -24,10 +35,19 @@ interface TileProps {
   validationState?: TileValidationState;
   onPress?: () => void;
   disabled?: boolean;
-  size?: 'board' | 'small' | 'normal' | 'large';
-  cellSize?: number;
 }
 
+/**
+ * Unified Tile component - always renders at TILE_SIZE (52px).
+ *
+ * Parents are responsible for scaling to display size using CSS transform.
+ * This ensures all tiles look identical regardless of display size.
+ *
+ * Usage:
+ * - Rack tiles: Wrap in TILE_SIZE container (no scaling needed)
+ * - Board tiles: Wrap in cellSize container with scale={cellSize/TILE_SIZE}
+ * - Floating tiles: Animate scale from 1 to cellSize/TILE_SIZE
+ */
 export function Tile({
   letter,
   points,
@@ -38,11 +58,8 @@ export function Tile({
   validationState = null,
   onPress,
   disabled = false,
-  size = 'normal',
-  cellSize,
 }: TileProps) {
   // Animated color transition
-  // Map validation state to numeric value: 0 = default, 1 = valid, -1 = invalid/placement_error
   const getColorValue = (state: TileValidationState) =>
     state === 'valid'
       ? 1
@@ -50,34 +67,60 @@ export function Tile({
         ? -1
         : 0;
 
-  // Initialize with current state (no animation on first render)
-  const colorProgress = useSharedValue(getColorValue(validationState));
+  const colorProgress = useSharedValue(0);
   const pulseProgress = useSharedValue(0);
-  const prevValidationState = useRef<TileValidationState>(validationState);
+  const prevValidationState = useRef<TileValidationState>(null);
 
   useEffect(() => {
+    const targetValue = getColorValue(validationState);
     if (validationState !== prevValidationState.current) {
+      const wasNeutral = getColorValue(prevValidationState.current) === 0;
       prevValidationState.current = validationState;
-      colorProgress.value = withTiming(getColorValue(validationState), {
+
+      if (wasNeutral && targetValue !== 0) {
+        const timer = setTimeout(() => {
+          colorProgress.value = withTiming(targetValue, {
+            duration: COLOR_ANIMATION_DURATION,
+          });
+        }, COLOR_ANIMATION_DELAY);
+        return () => clearTimeout(timer);
+      }
+
+      colorProgress.value = withTiming(targetValue, {
         duration: COLOR_ANIMATION_DURATION,
       });
     }
   }, [validationState, colorProgress]);
 
-  // Start pulse animation when pending with validation state
+  // Pulse animation for pending tiles with validation state
+  const hasHadValidationState = useRef(false);
   useEffect(() => {
     if (isPending && validationState !== null) {
+      const isFirstValidation = !hasHadValidationState.current;
+      hasHadValidationState.current = true;
+
+      if (isFirstValidation) {
+        const timer = setTimeout(() => {
+          pulseProgress.value = withRepeat(
+            withTiming(1, { duration: 1000 }),
+            -1,
+            true
+          );
+        }, COLOR_ANIMATION_DELAY);
+        return () => clearTimeout(timer);
+      }
+
       pulseProgress.value = withRepeat(
-        withTiming(1, { duration: 1500 }),
-        -1, // Repeat indefinitely
-        true // Reverse on each repeat
+        withTiming(1, { duration: 1000 }),
+        -1,
+        true
       );
     } else {
       pulseProgress.value = 0;
     }
   }, [isPending, validationState, pulseProgress]);
 
-  // Animated style for text color
+  // Animated text color
   const animatedTextStyle = useAnimatedStyle(() => {
     'worklet';
     const color = interpolateColor(
@@ -92,38 +135,25 @@ export function Tile({
     return { color };
   });
 
-  // Animated style for pending tile background (red/green tint with pulse)
-  // Pending tiles are brighter/whiter than played tiles to stand out
+  // Animated background for pending tiles
   const animatedPendingBackgroundStyle = useAnimatedStyle(() => {
     'worklet';
-    // Base colors (brighter)
     const baseColor = interpolateColor(
       colorProgress.value,
       [-1, 0, 1],
-      [
-        '#FFE0E0', // Bright white-pink for invalid
-        '#FFFFF0', // Bright ivory/white for neutral
-        '#E0FFE0', // Bright white-green for valid
-      ]
+      ['#FFE0E0', '#FFFFF0', '#E0FFE0']
     );
-    // More saturated colors for pulse peak
     const pulseColor = interpolateColor(
       colorProgress.value,
       [-1, 0, 1],
-      [
-        '#FFC0C0', // Softer pink for invalid
-        '#FFFFF0', // Same for neutral (no pulse)
-        '#90EE90', // More saturated green for valid
-      ]
+      ['#FFC0C0', '#FFFFF0', '#90EE90']
     );
-    // Interpolate between base and pulse colors
     const backgroundColor = interpolateColor(
       pulseProgress.value,
       [0, 1],
       [baseColor, pulseColor]
     );
 
-    // Also animate border colors to match (lighter for top/left, darker for bottom/right)
     const baseBorderLight = interpolateColor(
       colorProgress.value,
       [-1, 0, 1],
@@ -150,24 +180,22 @@ export function Tile({
       [0, 1],
       [baseBorderLight, pulseBorderLight]
     );
-    const borderLeftColor = borderTopColor;
     const borderBottomColor = interpolateColor(
       pulseProgress.value,
       [0, 1],
       [baseBorderDark, pulseBorderDark]
     );
-    const borderRightColor = borderBottomColor;
 
     return {
       backgroundColor,
       borderTopColor,
-      borderLeftColor,
+      borderLeftColor: borderTopColor,
       borderBottomColor,
-      borderRightColor,
+      borderRightColor: borderBottomColor,
     };
   });
 
-  // Animated style for border color (blank tiles)
+  // Animated border for blank tiles
   const animatedBorderStyle = useAnimatedStyle(() => {
     'worklet';
     const borderColor = interpolateColor(
@@ -178,64 +206,26 @@ export function Tile({
     return { borderColor };
   });
 
-  // Don't render empty tiles (but blank tiles with '*' should render)
   if (!letter) return null;
 
-  // Calculate font sizes based on cell size using unified sizing system
-  const getDynamicSizes = () => {
-    if (size === 'board' && cellSize) {
-      const { letterSize, pointsSize } = calculateTileFontSizes(cellSize);
-      return { fontSize: letterSize, pointsSize };
-    }
-
-    // Fallback sizes for non-board tiles
-    const sizeStyles = {
-      board: { fontSize: 18, pointsSize: 8 },
-      small: { fontSize: 26, pointsSize: 10 },
-      normal: { fontSize: 32, pointsSize: 11 },
-      large: { fontSize: 38, pointsSize: 12 },
-    };
-
-    return sizeStyles[size];
-  };
-
-  const { fontSize, pointsSize } = getDynamicSizes();
-
-  // Use thinner borders for small board tiles (cellSize < 50)
-  const isSmallTile = cellSize && cellSize < 50;
-  const borderWidth = isSmallTile ? 1 : 2;
-
-  // For blank tiles in the rack (letter is '*'), show empty or the asterisk
-  // For blank tiles on board with chosen letter, show the letter with indicator
   const displayLetter = letter === '*' ? '' : letter;
-
-  // For blank tiles, also animate the border color
   const showAnimatedBorder = isBlank && isPending;
 
-  // Base tile styles (background is animated separately via animatedTileStyle)
   const tileStyles = [
     styles.tile,
-    {
-      borderTopWidth: borderWidth,
-      borderLeftWidth: borderWidth,
-      borderBottomWidth: borderWidth,
-      borderRightWidth: borderWidth,
-    },
     isPending && styles.pendingTile,
     isSelected && styles.selectedTile,
     isBlank && isPending && styles.blankTile,
     disabled && styles.disabledTile,
   ];
 
-  // Content (letter and points)
   const content = letter !== '*' && (
     <>
       <Animated.Text
         style={[
           styles.letter,
-          { fontSize },
           animatedTextStyle,
-          letter === 'Q' && { marginRight: '30%' },
+          letter === 'Q' && styles.letterQ,
           disabled && styles.disabledText,
         ]}
       >
@@ -244,7 +234,7 @@ export function Tile({
       <Animated.Text
         style={[
           styles.points,
-          { fontSize: points >= 10 ? pointsSize * 0.7 : pointsSize },
+          points >= 10 && styles.pointsDouble,
           animatedTextStyle,
           disabled && styles.disabledText,
         ]}
@@ -254,26 +244,18 @@ export function Tile({
     </>
   );
 
-  // Build animated styles based on tile state
   const getAnimatedStyles = () => {
     if (isPending) {
-      // Pending tiles get animated background (red/green/transparent)
       if (showAnimatedBorder) {
-        return [
-          tileStyles,
-          animatedPendingBackgroundStyle,
-          animatedBorderStyle,
-        ];
+        return [tileStyles, animatedPendingBackgroundStyle, animatedBorderStyle];
       }
       return [tileStyles, animatedPendingBackgroundStyle];
     }
-    // Non-pending tiles use static background
     if (showAnimatedBorder) {
       return [tileStyles, animatedBorderStyle];
     }
     return tileStyles;
   };
-  const animatedStyles = getAnimatedStyles();
 
   if (onPress) {
     return (
@@ -281,44 +263,65 @@ export function Tile({
         onPress={onPress}
         disabled={disabled}
         activeOpacity={0.7}
-        style={styles.tileWrapper}
+        style={styles.container}
       >
-        <Animated.View style={animatedStyles}>{content}</Animated.View>
+        <Animated.View style={getAnimatedStyles()}>{content}</Animated.View>
       </TouchableOpacity>
     );
   }
 
-  // For non-pressable tiles, apply wrapper size after tile styles so it wins
   return (
-    <Animated.View style={[animatedStyles, styles.tileWrapper]}>
+    <Animated.View style={[getAnimatedStyles(), styles.container]}>
       {content}
     </Animated.View>
   );
 }
 
+/**
+ * Wrapper component that scales a Tile to a target display size.
+ * Use this for board cells where tiles need to display smaller than TILE_SIZE.
+ */
+interface ScaledTileProps extends TileProps {
+  displaySize: number;
+}
+
+export function ScaledTile({ displaySize, ...tileProps }: ScaledTileProps) {
+  const scale = displaySize / TILE_SIZE;
+
+  return (
+    <View style={[styles.scaledContainer, { width: displaySize, height: displaySize }]}>
+      <View
+        style={[
+          styles.scaleWrapper,
+          { transform: [{ scale }] },
+        ]}
+      >
+        <Tile {...tileProps} />
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  tileWrapper: {
-    width: '100%',
-    height: '100%',
+  container: {
+    width: TILE_SIZE,
+    height: TILE_SIZE,
   },
   tile: {
-    // Size is handled by tileWrapper
-    width: '100%',
-    height: '100%',
+    width: TILE_SIZE,
+    height: TILE_SIZE,
     backgroundColor: colors.tileClassicBackground,
-    borderRadius: 5,
+    borderRadius: BORDER_RADIUS,
     justifyContent: 'center',
     alignItems: 'center',
-    // 3D embossed effect - light top/left, dark bottom/right
-    borderTopWidth: 2,
-    borderLeftWidth: 2,
-    borderBottomWidth: 2,
-    borderRightWidth: 2,
+    borderTopWidth: BORDER_WIDTH,
+    borderLeftWidth: BORDER_WIDTH,
+    borderBottomWidth: BORDER_WIDTH,
+    borderRightWidth: BORDER_WIDTH,
     borderTopColor: '#F5F3EF',
     borderLeftColor: '#F5F3EF',
     borderBottomColor: '#B8B4AA',
     borderRightColor: '#B8B4AA',
-    // Enhanced shadow for depth
     shadowColor: '#000',
     shadowOffset: { width: 1, height: 2 },
     shadowOpacity: 0.3,
@@ -337,11 +340,10 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   letter: {
+    fontSize: LETTER_FONT_SIZE,
     fontWeight: '700',
-    // Note: color is set via animatedTextStyle for smooth transitions
     textAlign: 'center',
     marginRight: '15%',
-    // Ensure proper centering on Android
     ...Platform.select({
       android: {
         includeFontPadding: false,
@@ -350,24 +352,29 @@ const styles = StyleSheet.create({
       default: {},
     }),
   },
+  letterQ: {
+    marginRight: '30%',
+  },
   points: {
     position: 'absolute',
     bottom: '-4%',
     right: 0,
+    fontSize: POINTS_FONT_SIZE,
     fontWeight: '600',
     fontFamily: Platform.select({
       ios: 'System',
       android: 'sans-serif-condensed',
       default: 'System',
     }),
-    // Note: color is set via animatedTextStyle for smooth transitions
-    // Ensure proper centering on Android
     ...Platform.select({
       android: {
         includeFontPadding: false,
       },
       default: {},
     }),
+  },
+  pointsDouble: {
+    fontSize: POINTS_FONT_SIZE * 0.7,
   },
   disabledText: {
     color: '#666',
@@ -376,5 +383,14 @@ const styles = StyleSheet.create({
     borderWidth: 5,
     borderColor: '#555555',
     borderStyle: 'dotted',
+  },
+  scaledContainer: {
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scaleWrapper: {
+    width: TILE_SIZE,
+    height: TILE_SIZE,
   },
 });

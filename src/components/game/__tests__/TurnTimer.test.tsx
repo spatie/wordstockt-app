@@ -9,16 +9,15 @@ jest.mock('../../../utils/timeRemaining', () => ({
     if (expiresAt.includes('expired')) {
       return {
         hours: 0,
-        isExpired: true,
         isUrgent: true,
         isCritical: true,
-        displayText: 'Expired',
+        displayText: '0h left',
+        shortText: '0h left',
       };
     }
     if (expiresAt.includes('critical')) {
       return {
         hours: 0,
-        isExpired: false,
         isUrgent: true,
         isCritical: true,
         displayText: '30m',
@@ -27,7 +26,6 @@ jest.mock('../../../utils/timeRemaining', () => ({
     if (expiresAt.includes('urgent')) {
       return {
         hours: 2,
-        isExpired: false,
         isUrgent: true,
         isCritical: false,
         displayText: '2h',
@@ -36,7 +34,6 @@ jest.mock('../../../utils/timeRemaining', () => ({
     if (expiresAt.includes('normal')) {
       return {
         hours: 8,
-        isExpired: false,
         isUrgent: false,
         isCritical: false,
         displayText: '8h',
@@ -45,7 +42,6 @@ jest.mock('../../../utils/timeRemaining', () => ({
     // Default: more than 10 hours (should not render)
     return {
       hours: 24,
-      isExpired: false,
       isUrgent: false,
       isCritical: false,
       displayText: '24h',
@@ -60,12 +56,10 @@ describe('TurnTimer', () => {
     expect(toJSON()).toBeNull();
   });
 
-  it('renders nothing when not my turn', () => {
-    const { toJSON } = render(
-      <TurnTimer expiresAt="normal" isMyTurn={false} />
-    );
+  it('renders with secondary color when not my turn', () => {
+    render(<TurnTimer expiresAt="normal" isMyTurn={false} />);
 
-    expect(toJSON()).toBeNull();
+    expect(screen.getByText('8h')).toBeTruthy();
   });
 
   it('renders nothing when 10 or more hours remain', () => {
@@ -95,9 +89,9 @@ describe('TurnTimer', () => {
     expect(screen.getByText('30m')).toBeTruthy();
   });
 
-  it('renders expired status', () => {
+  it('renders 0h left when expired', () => {
     render(<TurnTimer expiresAt="expired" isMyTurn={true} />);
 
-    expect(screen.getByText('Expired')).toBeTruthy();
+    expect(screen.getByText('0h left')).toBeTruthy();
   });
 });

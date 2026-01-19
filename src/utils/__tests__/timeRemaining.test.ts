@@ -5,12 +5,13 @@ describe('getTimeRemaining', () => {
     expect(getTimeRemaining(null)).toBeNull();
   });
 
-  it('returns expired for past dates', () => {
+  it('returns 0h left for past dates', () => {
     const pastDate = new Date(Date.now() - 1000 * 60 * 60).toISOString();
     const result = getTimeRemaining(pastDate);
 
-    expect(result?.isExpired).toBe(true);
-    expect(result?.displayText).toBe('Expired');
+    expect(result?.hours).toBe(0);
+    expect(result?.shortText).toBe('0h left');
+    expect(result?.isCritical).toBe(true);
   });
 
   it('returns critical and urgent for less than 1 hour', () => {
@@ -41,35 +42,40 @@ describe('getTimeRemaining', () => {
     const futureDate = new Date(Date.now() + 1000 * 60 * 60 * 12).toISOString();
     const result = getTimeRemaining(futureDate);
 
-    expect(result?.displayText).toBe('12h');
+    expect(result?.displayText).toBe('12h left to make the next move');
+    expect(result?.shortText).toBe('12h left');
   });
 
-  it('formats days and hours correctly', () => {
+  it('formats many hours correctly', () => {
     const futureDate = new Date(Date.now() + 1000 * 60 * 60 * 50).toISOString();
     const result = getTimeRemaining(futureDate);
 
-    expect(result?.displayText).toBe('2d 2h');
+    expect(result?.displayText).toBe('50h left to make the next move');
+    expect(result?.shortText).toBe('50h left');
   });
 
-  it('formats minutes when less than an hour', () => {
+  it('formats less than an hour correctly', () => {
     const futureDate = new Date(Date.now() + 1000 * 60 * 45).toISOString();
     const result = getTimeRemaining(futureDate);
 
-    expect(result?.displayText).toBe('45m');
+    expect(result?.displayText).toBe('<1h left to make the next move');
+    expect(result?.shortText).toBe('<1h left');
   });
 
-  it('formats days only when no remaining hours', () => {
+  it('formats 48 hours correctly', () => {
     const futureDate = new Date(Date.now() + 1000 * 60 * 60 * 48).toISOString();
     const result = getTimeRemaining(futureDate);
 
-    expect(result?.displayText).toBe('2d');
+    expect(result?.displayText).toBe('48h left to make the next move');
+    expect(result?.shortText).toBe('48h left');
   });
 
-  it('returns zero hours when expired', () => {
+  it('returns 0h when expired', () => {
     const pastDate = new Date(Date.now() - 1000 * 60 * 60 * 10).toISOString();
     const result = getTimeRemaining(pastDate);
 
     expect(result?.hours).toBe(0);
+    expect(result?.shortText).toBe('0h left');
   });
 });
 
@@ -80,11 +86,11 @@ describe('formatTimeRemaining', () => {
 
   it('returns formatted text for valid date', () => {
     const futureDate = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString();
-    expect(formatTimeRemaining(futureDate)).toBe('24h');
+    expect(formatTimeRemaining(futureDate)).toBe('24h left to make the next move');
   });
 
-  it('returns Expired for past date', () => {
+  it('returns 0h left for past date', () => {
     const pastDate = new Date(Date.now() - 1000 * 60 * 60).toISOString();
-    expect(formatTimeRemaining(pastDate)).toBe('Expired');
+    expect(formatTimeRemaining(pastDate)).toBe('0h left to make the next move');
   });
 });

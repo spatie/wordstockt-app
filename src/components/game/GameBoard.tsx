@@ -11,6 +11,8 @@ import {
   LayoutChangeEvent,
   Animated,
   ActivityIndicator,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { BoardCell } from './BoardCell';
 import { ScoreBubble } from './ScoreBubble';
@@ -115,13 +117,19 @@ export function GameBoard({
 
   const measureBoard = useCallback(() => {
     boardRef.current?.measureInWindow((x, y, width, height) => {
-      // Board has 8px padding, so cells start 8px inside and the cell area is 16px smaller
+      // Board has 8px padding AND 2px border, so cells start (8+2)px inside
+      // and the cell area is (8+2)*2 = 20px smaller
       const boardPadding = 8;
-      const innerWidth = width - boardPadding * 2;
+      const boardBorder = 2;
+      const inset = boardPadding + boardBorder;
+      const innerWidth = width - inset * 2;
       const cellSize = innerWidth / BOARD_SIZE;
+      // On Android, measureInWindow may not include status bar height, but touch events do
+      const statusBarOffset =
+        Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0;
       setBoardLayout({
-        x: x + boardPadding,
-        y: y + boardPadding,
+        x: x + inset,
+        y: y + statusBarOffset + inset,
         width: innerWidth,
         height: innerWidth, // Board is square
         cellSize,
@@ -155,7 +163,8 @@ export function GameBoard({
   const lastMoveTiles = game.lastMove?.tiles;
 
   // Calculate cell size for score bubble positioning and cell text sizing
-  const cellSize = (boardSize - 16) / BOARD_SIZE; // subtract padding (8*2)
+  // Board has 8px padding + 2px border = 10px inset on each side
+  const cellSize = (boardSize - 20) / BOARD_SIZE;
 
   const renderCell = useCallback(
     (x: number, y: number) => (
@@ -198,6 +207,12 @@ export function GameBoard({
     });
   }, [pendingTiles]);
 
+  // Track last known position for score bubble so it can animate out
+  const lastScoreBubblePosition = useRef<{ x: number; y: number } | null>(null);
+  if (topLeftTile) {
+    lastScoreBubblePosition.current = { x: topLeftTile.x, y: topLeftTile.y };
+  }
+
   return (
     <View style={styles.boardContainer} onLayout={handleContainerLayout}>
       {boardSize > 0 ? (
@@ -214,11 +229,12 @@ export function GameBoard({
             </View>
           ))}
           {/* Score bubble positioned at top-left of the top-left pending tile */}
-          {topLeftTile && (
+          {/* Always render if we have a position so fade-out animation can complete */}
+          {lastScoreBubblePosition.current && (
             <ScoreBubble
               score={potentialScore}
-              x={topLeftTile.x}
-              y={topLeftTile.y}
+              x={lastScoreBubblePosition.current.x}
+              y={lastScoreBubblePosition.current.y}
               cellSize={cellSize}
             />
           )}

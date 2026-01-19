@@ -33,17 +33,20 @@ import {
   ScrollView,
   TouchableOpacity,
   Clipboard,
+  StatusBar,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   useDerivedValue,
+  useAnimatedReaction,
   withTiming,
   withSpring,
   runOnJS,
   Easing,
   SharedValue,
+  interpolateColor,
 } from 'react-native-reanimated';
 import {
   TILE_SIZE,
@@ -98,6 +101,7 @@ interface RecallingTile {
   startY: number;
   endX: number;
   endY: number;
+  startScale: number; // Scale at board size (cellSize / TILE_SIZE)
 }
 
 // ============================================================================
@@ -114,6 +118,7 @@ interface DragDropContextType {
   recallingRackIndices: number[];
   recallingRackIndicesShared: SharedValue<number[]>;
   recallingBoardPositions: Array<{ x: number; y: number }>;
+  recallingBoardPositionsShared: SharedValue<Array<{ x: number; y: number }>>;
   boardLayout: BoardLayout | null;
 
   // Rack drop tracking (for spring animation)
@@ -159,6 +164,7 @@ interface DragDropContextType {
     tiles: Array<
       TileType & { x: number; y: number; rackIndex: number; visualSlot: number }
     >,
+    onStart: () => void,
     onComplete: () => void
   ) => void;
 
@@ -168,6 +174,7 @@ interface DragDropContextType {
   // Shared values for immediate UI updates (worklet access)
   draggingRackIndexShared: SharedValue<number>;
   draggingBoardPositionShared: SharedValue<{ x: number; y: number } | null>;
+  settlingTargetShared: SharedValue<{ x: number; y: number } | null>;
 }
 
 // ============================================================================
@@ -205,10 +212,12 @@ function debugLog(...args: unknown[]) {
 // ============================================================================
 
 const DRAG_ACTIVATION_DISTANCE = 0;
-const SETTLE_DURATION = 150;
-const RECALL_DURATION = 400;
-const DRAG_COOLDOWN_MS = 50;
-const TOUCH_TOLERANCE_PX = 2;
+const SETTLE_DURATION = 110;
+const RECALL_DURATION = 500;
+// Reduced cooldown for Android due to touch event handling differences
+const DRAG_COOLDOWN_MS = Platform.OS === 'android' ? 25 : 50;
+// Android needs larger touch tolerance due to measureInWindow() variance
+const TOUCH_TOLERANCE_PX = Platform.OS === 'android' ? 10 : 2;
 
 // ============================================================================
 // Position System (SIMPLIFIED)
@@ -249,14 +258,42 @@ function RackFloatingTile({
   scale,
   draggingRackIndex,
 }: RackFloatingTileProps) {
+  // Track whether this tile is currently being dragged (via React state for re-render)
+  const [isDraggingThis, setIsDraggingThis] = useState(false);
+
+  // Keep a ref with the last valid tile (so we can show it even after prop becomes null)
+  // Initialize with current tile to handle immediate drag after mount
+  const lastValidTileRef = useRef<TileType | null>(tile);
+  useEffect(() => {
+    if (tile) {
+      lastValidTileRef.current = tile;
+    }
+  }, [tile]);
+
   // Derive visibility based on whether this rackIndex is being dragged
   const isVisible = useDerivedValue(() => {
     'worklet';
     return draggingRackIndex.value === rackIndex ? 1 : 0;
   }, [rackIndex]);
 
-  // Position is the CENTER of the visual tile.
-  // Convert to top-left for transform (container is TILE_SIZE, centered content).
+  // Track drag state changes - when dragging starts/ends, update React state
+  useAnimatedReaction(
+    () => draggingRackIndex.value === rackIndex,
+    (isThisDragging, wasThisDragging) => {
+      if (isThisDragging && !wasThisDragging) {
+        runOnJS(setIsDraggingThis)(true);
+      } else if (!isThisDragging && wasThisDragging) {
+        runOnJS(setIsDraggingThis)(false);
+      }
+    },
+    [rackIndex]
+  );
+
+  // During drag, use the last valid tile (from ref) to prevent disappearing
+  // After drag ends, use the current tile prop
+  const displayTile = isDraggingThis ? lastValidTileRef.current : tile;
+
+  // Use CSS scale for smooth animation without React state delay
   const animatedStyle = useAnimatedStyle(() => {
     'worklet';
     return {
@@ -269,20 +306,16 @@ function RackFloatingTile({
     };
   });
 
-  // Always render the Animated.View so the animated style is ready
-  // Only show tile content when we have tile data
   return (
     <Animated.View
       style={[styles.floatingTile, animatedStyle]}
       pointerEvents="none"
     >
-      {tile && (
+      {displayTile && (
         <Tile
-          letter={tile.letter}
-          points={tile.points}
-          isBlank={tile.isBlank}
-          size="board"
-          cellSize={TILE_SIZE}
+          letter={displayTile.letter}
+          points={displayTile.points}
+          isBlank={displayTile.isBlank}
         />
       )}
     </Animated.View>
@@ -324,14 +357,18 @@ function BoardFloatingTile({
     }
   }, [shouldShow, tile, pendingBoardPosition, opacity, draggingBoardPosition]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: positionX.value - TILE_SIZE / 2 },
-      { translateY: positionY.value - TILE_SIZE / 2 },
-      { scale: scale.value },
-    ],
-    opacity: opacity.value,
-  }));
+  // Use CSS scale for smooth animation without React state delay
+  const animatedStyle = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      transform: [
+        { translateX: positionX.value - TILE_SIZE / 2 },
+        { translateY: positionY.value - TILE_SIZE / 2 },
+        { scale: scale.value },
+      ],
+      opacity: opacity.value,
+    };
+  });
 
   return (
     <Animated.View
@@ -343,8 +380,6 @@ function BoardFloatingTile({
           letter={tile.letter}
           points={tile.points}
           isBlank={tile.isBlank}
-          size="board"
-          cellSize={TILE_SIZE}
         />
       )}
     </Animated.View>
@@ -370,46 +405,70 @@ function RecallingTiles({ tiles, progress }: RecallingTilesProps) {
   );
 }
 
-function RecallingTileItem({
+// Color constants for recall animation
+const PENDING_TILE_BG = '#FFFFF0'; // Bright ivory (pending tiles on board)
+const RACK_TILE_BG = '#E8E4DC'; // Classic beige (rack tiles)
+const PENDING_BORDER_LIGHT = '#FFFFF8';
+const PENDING_BORDER_DARK = '#E0E0D0';
+const RACK_BORDER_LIGHT = '#F5F3EF';
+const RACK_BORDER_DARK = '#B8B4AA';
+
+// Lightweight tile for recall animation - avoids full Tile component overhead
+const RecallingTileItem = React.memo(function RecallingTileItem({
   tile,
   progress,
 }: {
   tile: RecallingTile;
   progress: SharedValue<number>;
 }) {
-  // Start invisible, fade in once animation starts (progress > 0).
-  // This prevents a flash where both rack tile and recalling tile are visible
-  // before React has processed the state update to hide the rack tile.
-  const animatedStyle = useAnimatedStyle(() => {
+  // Animated position, scale, and fade-in
+  const animatedContainerStyle = useAnimatedStyle(() => {
+    'worklet';
     const p = progress.value;
     const centerX = tile.startX + (tile.endX - tile.startX) * p;
     const centerY = tile.startY + (tile.endY - tile.startY) * p;
+    // Animate scale from board size to rack size
+    const currentScale = tile.startScale + (1 - tile.startScale) * p;
     return {
       transform: [
         { translateX: centerX - TILE_SIZE / 2 },
         { translateY: centerY - TILE_SIZE / 2 },
+        { scale: currentScale },
       ],
       // Only visible once animation has started
       opacity: p > 0 ? 1 : 0,
     };
   });
 
-  // Use the actual Tile component for identical rendering
+  // Animated colors - transition from pending (board) to rack colors
+  const animatedTileStyle = useAnimatedStyle(() => {
+    'worklet';
+    const p = progress.value;
+    return {
+      backgroundColor: interpolateColor(p, [0, 1], [PENDING_TILE_BG, RACK_TILE_BG]),
+      borderTopColor: interpolateColor(p, [0, 1], [PENDING_BORDER_LIGHT, RACK_BORDER_LIGHT]),
+      borderLeftColor: interpolateColor(p, [0, 1], [PENDING_BORDER_LIGHT, RACK_BORDER_LIGHT]),
+      borderBottomColor: interpolateColor(p, [0, 1], [PENDING_BORDER_DARK, RACK_BORDER_DARK]),
+      borderRightColor: interpolateColor(p, [0, 1], [PENDING_BORDER_DARK, RACK_BORDER_DARK]),
+    };
+  });
+
+  // Simple tile rendering without full Tile component hooks
+  const displayLetter = tile.tile.letter === '*' ? '' : tile.tile.letter;
+  const points = tile.tile.points;
+
   return (
     <Animated.View
-      style={[styles.floatingTile, animatedStyle]}
+      style={[styles.floatingTile, animatedContainerStyle]}
       pointerEvents="none"
     >
-      <Tile
-        letter={tile.tile.letter}
-        points={tile.tile.points}
-        isBlank={tile.tile.isBlank}
-        size="board"
-        cellSize={TILE_SIZE}
-      />
+      <Animated.View style={[styles.simpleTile, animatedTileStyle]}>
+        <Text style={styles.simpleTileLetter}>{displayLetter}</Text>
+        <Text style={styles.simpleTilePoints}>{points}</Text>
+      </Animated.View>
     </Animated.View>
   );
-}
+});
 
 // ============================================================================
 // Context
@@ -478,8 +537,17 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     x: number;
     y: number;
   } | null>(null);
+  // Board position being settled to - hides target cell until floating tile settles
+  const settlingTargetShared = useSharedValue<{
+    x: number;
+    y: number;
+  } | null>(null);
   // Rack indices being recalled - updates immediately on UI thread (no React state delay)
   const recallingRackIndicesShared = useSharedValue<number[]>([]);
+  // Board positions being recalled - updates immediately on UI thread (no React state delay)
+  const recallingBoardPositionsShared = useSharedValue<
+    Array<{ x: number; y: number }>
+  >([]);
 
   // Shared values for rack layout (accessed in worklet for gesture decisions)
   const rackTopShared = useSharedValue(0);
@@ -536,9 +604,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       boardFloatingOpacity.value = 0;
       scale.value = 1;
       recallProgress.value = 0;
+      recallingBoardPositionsShared.value = [];
     }
     prevGameUlidRef.current = currentGameUlid;
-  }, [currentGameUlid, boardFloatingOpacity, scale, recallProgress]);
+  }, [currentGameUlid, boardFloatingOpacity, scale, recallProgress, recallingBoardPositionsShared]);
 
   // Sync game state to shared values for worklet access
   // Re-runs when currentGameUlid changes (including after Zustand hydration)
@@ -782,7 +851,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   // Measure container offset from screen (for converting absolute coordinates)
   const measureContainerOffset = useCallback(() => {
     containerRef.current?.measureInWindow((x, y) => {
-      containerOffsetRef.current = { x, y };
+      // On Android, measureInWindow may not include status bar height, but touch events do
+      const statusBarOffset =
+        Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0;
+      containerOffsetRef.current = { x, y: y + statusBarOffset };
     });
   }, []);
 
@@ -1229,6 +1301,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
         setDragStatus('settling');
         setSettlingTarget(target);
+        // Also set shared value for immediate UI thread hiding (no React delay)
+        if (target?.type === 'board') {
+          settlingTargetShared.value = { x: target.x, y: target.y };
+        }
       };
 
       // Check board target
@@ -1307,9 +1383,6 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
             placementSuccess: placementSuccess, // Already determined
           };
 
-          // Snap scale immediately
-          scale.value = cellSize / TILE_SIZE;
-
           // Log animation destination
           console.warn(`[DragDrop] [${Date.now()}] Animating to BOARD cell`, {
             targetPosX: targetPos.x,
@@ -1319,7 +1392,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
             duration: SETTLE_DURATION,
           });
 
-          // Animate to cell center
+          // Animate scale and position together
+          scale.value = withTiming(cellSize / TILE_SIZE, {
+            duration: SETTLE_DURATION,
+          });
           positionX.value = withTiming(targetPos.x, {
             duration: SETTLE_DURATION,
           });
@@ -1567,31 +1643,35 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       const now = Date.now();
       lastDragEndTimeRef.current = now;
       lastDragEndTimeShared.value = now;
+
+      // Hide floating tile AND show board tile in the SAME FRAME
+      // Both are shared value updates, so they happen on UI thread simultaneously
+      // This prevents any flash (double-tile or no-tile)
+      settlingTargetShared.value = null; // Shows board tile
+      boardFloatingOpacity.value = 0; // Hides floating tile
+      draggingRackIndexShared.value = -1;
+      scale.value = 1;
+
       setDragStatus('idle');
       // Note: Keep dragTile populated until setTimeout - see below
       setDragSource(null);
       setSettlingTarget(null);
       activeDragRef.current = null;
 
-      // Delay hiding floating tile AND clearing tile data together.
-      // This prevents a flash where the floating tile is visible but has no content.
-      // The rack/board tiles need time to become visible before we hide the floating tile.
+      // Delay clearing tile data to allow React to process state updates
       setTimeout(() => {
-        draggingRackIndexShared.value = -1;
-        boardFloatingOpacity.value = 0;
-        scale.value = 1;
         dragSourceShared.value = null;
-        setDragTile(null); // Clear tile data when hiding floating tile
+        setDragTile(null);
         setBoardFloatingTile(null);
         setPendingBoardPosition(null);
         setBoardFloatingShouldShow(false);
-      }, 50);
+      }, 16);
 
       // Delay resetting board position to allow React to update pendingTiles first
       // This prevents a flash where the tile briefly shows on the board before being removed
       setTimeout(() => {
         draggingBoardPositionShared.value = null;
-      }, 150);
+      }, 50);
     };
 
     if (!pending) {
@@ -1762,10 +1842,11 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       setRecallingTiles([]);
       setRecallingRackIndices([]);
       setRecallingBoardPositions([]);
-      // Clear shared value after React state is cleared
+      // Clear shared values after React state is cleared
       recallingRackIndicesShared.value = [];
-    }, 150);
-  }, [recallingRackIndicesShared]);
+      recallingBoardPositionsShared.value = [];
+    }, 50);
+  }, [recallingRackIndicesShared, recallingBoardPositionsShared]);
 
   // Ref to hold finishRecallFromRef for stable worklet access
   const finishRecallRef = useRef<() => void>(() => {});
@@ -1789,6 +1870,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           visualSlot: number;
         }
       >,
+      onStart: () => void,
       onComplete: () => void
     ) => {
       const boardLayout = boardLayoutRef.current;
@@ -1796,6 +1878,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       const offset = containerOffsetRef.current;
 
       if (tiles.length === 0 || !boardLayout || !rackLayout) {
+        onStart();
         onComplete();
         return;
       }
@@ -1806,14 +1889,16 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         y: screenPos.y - offset.y,
       });
 
-      // Set shared value FIRST for immediate UI thread update (prevents flash)
+      // Set shared values FIRST for immediate UI thread update (prevents flash)
+      // This hides the tiles instantly on the UI thread without waiting for React
       recallingRackIndicesShared.value = tiles.map((t) => t.rackIndex);
-
-      // Set React state for other components
-      setRecallingRackIndices(tiles.map((t) => t.rackIndex));
-      setRecallingBoardPositions(tiles.map((t) => ({ x: t.x, y: t.y })));
+      recallingBoardPositionsShared.value = tiles.map((t) => ({
+        x: t.x,
+        y: t.y,
+      }));
 
       // Create animation data (all positions are CENTER-based)
+      const startScale = boardLayout.cellSize / TILE_SIZE;
       const recallData: RecallingTile[] = tiles.map((t) => {
         const registrationId = `board-${t.x}-${t.y}`;
         const registration = draggablesRef.current.get(registrationId);
@@ -1839,32 +1924,39 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           startY: startCenter.y,
           endX: endCenter.x,
           endY: endCenter.y,
+          startScale,
         };
       });
-
-      setRecallingTiles(recallData);
 
       // Store callback in ref before animation (prevents GC on real devices)
       pendingRecallCompleteRef.current = onComplete;
 
-      // Delay animation start to allow React to process state updates first.
-      // Without this, the animated tiles appear before rack tiles are hidden,
-      // causing a flash where both are visible at the rack position.
+      // Render the animated tiles FIRST (before any heavy state updates)
+      setRecallingTiles(recallData);
+
+      // Start animation on UI thread
       recallProgress.value = 0;
+      recallProgress.value = withTiming(
+        1,
+        {
+          duration: RECALL_DURATION,
+          easing: Easing.out(Easing.cubic),
+        },
+        () => {
+          runOnJS(onRecallComplete)();
+        }
+      );
+
+      // Defer onStart and other state updates to next frame
+      // This lets React render the animated tiles first, then update game state
+      // (which triggers score bubble fade-out and tile color changes)
       requestAnimationFrame(() => {
-        recallProgress.value = withTiming(
-          1,
-          {
-            duration: RECALL_DURATION,
-            easing: Easing.out(Easing.cubic),
-          },
-          () => {
-            runOnJS(onRecallComplete)();
-          }
-        );
+        onStart();
+        setRecallingRackIndices(tiles.map((t) => t.rackIndex));
+        setRecallingBoardPositions(tiles.map((t) => ({ x: t.x, y: t.y })));
       });
     },
-    [recallProgress, onRecallComplete, recallingRackIndicesShared]
+    [recallProgress, onRecallComplete, recallingRackIndicesShared, recallingBoardPositionsShared]
   );
 
   // -------------------------------------------------------------------------
@@ -2290,30 +2382,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         relativeY: event.y,
       });
 
-      // Check if dropping on board and snap scale immediately (before async runOnJS)
-      // This prevents a brief flash of rack-sized tile during the async gap
-      const boardLeft = boardLeftShared.value;
-      const boardTop = boardTopShared.value;
-      const cellSize = boardCellSizeShared.value;
-      const boardSize = boardSizeShared.value;
-
-      if (cellSize > 0) {
-        const boardWidth = boardSize * cellSize;
-        const boardHeight = boardSize * cellSize;
-        const tolerance = 2; // Match tolerance used in getBoardCellFromPosition
-
-        if (
-          screenX >= boardLeft - tolerance &&
-          screenX <= boardLeft + boardWidth + tolerance &&
-          screenY >= boardTop - tolerance &&
-          screenY <= boardTop + boardHeight + tolerance
-        ) {
-          // Dropping on board - snap scale immediately
-          scale.value = cellSize / TILE_SIZE;
-        }
-      }
-
-      // Call JS for final drop handling (this is needed for game state updates)
+      // Let JS handle the animation - this avoids mismatch between worklet's
+      // shared values and JS's ref values that was causing a "snap" effect.
+      // The JS animation uses boardLayoutRef which is the source of truth.
       runOnJS(onGestureEndWithPosition)(screenX, screenY);
     })
     .onFinalize((event) => {
@@ -2342,6 +2413,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       recallingRackIndices,
       recallingRackIndicesShared,
       recallingBoardPositions,
+      recallingBoardPositionsShared,
       boardLayout: boardLayoutRef.current,
       getLastRackDrop,
       clearLastRackDrop,
@@ -2358,16 +2430,20 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       getBoardCell,
       draggingRackIndexShared,
       draggingBoardPositionShared,
+      settlingTargetShared,
     }),
+    // NOTE: recallingRackIndices and recallingBoardPositions intentionally excluded
+    // from dependency array to prevent mass re-renders of all consumers during recall.
+    // The SharedValue versions (recallingRackIndicesShared, recallingBoardPositionsShared)
+    // are used for frame-perfect hiding on the UI thread instead.
     [
       isDragging,
       isSettling,
       dragSource,
       dragTile,
       settlingTarget,
-      recallingRackIndices,
       recallingRackIndicesShared,
-      recallingBoardPositions,
+      recallingBoardPositionsShared,
       getLastRackDrop,
       clearLastRackDrop,
       setBoardLayout,
@@ -2383,6 +2459,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       getBoardCell,
       draggingRackIndexShared,
       draggingBoardPositionShared,
+      settlingTargetShared,
     ]
   );
 
@@ -2523,6 +2600,46 @@ const styles = StyleSheet.create({
     width: TILE_SIZE,
     height: TILE_SIZE,
     zIndex: 1000,
+  },
+  floatingTileBase: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    zIndex: 1000,
+    // Width/height controlled via animatedStyle for pixel-perfect sizing
+  },
+  // Simple tile for recall animation (lightweight, no hooks)
+  // Background and border colors are animated - see RecallingTileItem
+  simpleTile: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderTopWidth: 2,
+    borderLeftWidth: 2,
+    borderBottomWidth: 2,
+    borderRightWidth: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 1, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  simpleTileLetter: {
+    fontSize: Math.round(TILE_SIZE * 0.65), // Match unified tile (34px)
+    fontWeight: '700',
+    color: '#333333',
+    textAlign: 'center',
+    marginRight: '15%',
+  },
+  simpleTilePoints: {
+    position: 'absolute',
+    bottom: '-4%',
+    right: 0,
+    fontSize: Math.round(TILE_SIZE * 0.38), // Match unified tile (20px)
+    fontWeight: '600',
+    color: '#333333',
   },
   // Debug overlay styles
   debugOverlay: {

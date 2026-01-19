@@ -1,6 +1,5 @@
 export interface TimeRemainingResult {
   hours: number;
-  isExpired: boolean;
   isUrgent: boolean; // < 4 hours
   isCritical: boolean; // < 1 hour
   displayText: string;
@@ -22,11 +21,10 @@ export function getTimeRemaining(
   if (diffMs <= 0) {
     return {
       hours: 0,
-      isExpired: true,
       isUrgent: true,
       isCritical: true,
-      displayText: 'Expired',
-      shortText: 'Expired',
+      displayText: '0h left to make the next move',
+      shortText: '0h left',
     };
   }
 
@@ -41,7 +39,6 @@ export function getTimeRemaining(
 
   return {
     hours: diffHours,
-    isExpired: false,
     isUrgent,
     isCritical,
     displayText,
