@@ -1,5 +1,9 @@
 import { useCallback } from 'react';
-import { useGameStore, usePendingTiles, useValidationResult } from '../stores/gameStore';
+import {
+  useGameStore,
+  usePendingTiles,
+  useValidationResult,
+} from '../stores/gameStore';
 import { useTilePlacement } from './useTilePlacement';
 import { useRackActions } from './useRackActions';
 import { useGameActions } from './useGameActions';
@@ -43,8 +47,8 @@ export function useGameInteractions({
   // Derived state
   const isMyTurn = game?.currentTurnUserUlid === userUlid;
   const canPlay =
-    isMyTurn && 
-    pendingTiles.length > 0 && 
+    isMyTurn &&
+    pendingTiles.length > 0 &&
     game?.status === 'active' &&
     validationResult?.placement_valid === true;
   const isGameActive = game?.status === 'active';

@@ -84,7 +84,10 @@ export function GameBoard({
 
   // Reset fade when game changes
   useEffect(() => {
-    if (prevGameUlid.current !== null && prevGameUlid.current !== currentGameUlid) {
+    if (
+      prevGameUlid.current !== null &&
+      prevGameUlid.current !== currentGameUlid
+    ) {
       fadeAnim.setValue(0);
     }
     prevGameUlid.current = currentGameUlid;

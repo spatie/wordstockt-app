@@ -56,11 +56,11 @@ export function BaseModal({
       // Set initial values before showing modal to prevent flicker
       scaleAnim.setValue(0.85);
       opacityAnim.setValue(0);
-      
+
       if (backdropBlur && Platform.OS === 'web') {
         blurAnim.setValue(8);
       }
-      
+
       setModalVisible(true);
 
       // Start animations immediately
@@ -141,7 +141,6 @@ export function BaseModal({
         }
       : undefined;
 
-
   const backdropStyle = [
     StyleSheet.absoluteFill,
     { backgroundColor: `rgba(0, 0, 0, ${getBackgroundOpacity()})` },
@@ -162,10 +161,7 @@ export function BaseModal({
             <Pressable style={backdropStyle} onPress={onClose} />
           </BlurView>
         ) : backdropBlur && Platform.OS === 'web' ? (
-          <Pressable
-            style={[backdropStyle, webBlurStyle]}
-            onPress={onClose}
-          />
+          <Pressable style={[backdropStyle, webBlurStyle]} onPress={onClose} />
         ) : (
           <Pressable style={backdropStyle} onPress={onClose} />
         )}
