@@ -1339,17 +1339,11 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           // SOLUTION: Call placement synchronously here, before starting the settle animation.
           // This ensures the tile is in pendingTiles before any callbacks fire. React will
           // batch the state updates naturally.
-          const startTime = Date.now();
-          console.warn(`[DragDrop] [${startTime}] Calling placement SYNCHRONOUSLY for board target`);
-
           onComplete?.(target);
           const placementSuccess = dragCallback?.(target, true) ?? true;
 
-          console.warn(`[DragDrop] [${Date.now()}] Placement result: ${placementSuccess}, took ${Date.now() - startTime}ms`);
-
           // If placement failed, animate back to rack immediately
           if (!placementSuccess && source?.type === 'rack') {
-            console.warn(`[DragDrop] [${Date.now()}] Placement failed, animating back to rack`);
             animateBackToRack(source.rackIndex, () => {
               isDraggingRef.current = false;
               isDraggingShared.value = false;
@@ -1382,15 +1376,6 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
             dragCallback: undefined, // Already called above
             placementSuccess: placementSuccess, // Already determined
           };
-
-          // Log animation destination
-          console.warn(`[DragDrop] [${Date.now()}] Animating to BOARD cell`, {
-            targetPosX: targetPos.x,
-            targetPosY: targetPos.y,
-            cellCenter,
-            cell: { x: cell.x, y: cell.y },
-            duration: SETTLE_DURATION,
-          });
 
           // Animate scale and position together
           scale.value = withTiming(cellSize / TILE_SIZE, {
@@ -1557,15 +1542,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   // Helper to animate tile back to rack slot
   const animateBackToRack = useCallback(
     (rackIndex: number, onComplete: () => void) => {
-      const timestamp = Date.now();
-      console.warn(`[DragDrop] [${timestamp}] animateBackToRack called for rackIndex: ${rackIndex}`);
-      console.warn(`[DragDrop] [${timestamp}] animateBackToRack stack:`, new Error().stack);
-
       const rackLayout = rackLayoutRef.current;
       const offset = containerOffsetRef.current;
 
       if (!rackLayout) {
-        console.warn(`[DragDrop] [${timestamp}] animateBackToRack - no rackLayout, completing immediately`);
         onComplete();
         return;
       }
@@ -1588,14 +1568,6 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       const targetX = slotCenter.x - offset.x;
       const targetY = slotCenter.y - offset.y;
 
-      console.warn(`[DragDrop] [${timestamp}] animateBackToRack - Animating to RACK slot`, {
-        visualSlot,
-        targetX,
-        targetY,
-        slotCenter,
-        offset,
-      });
-
       // Animate back to rack
       // NOTE: Don't set draggingRackIndexShared = -1 here!
       // resetState's setTimeout will do it AFTER React updates the rack tile visibility.
@@ -1617,23 +1589,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   // Stable settle completion handler that reads from ref (prevents GC issues on real devices)
   // Note: UI thread work (draggingRackIndexShared) is done in worklets before this is called
   const completeSettleFromRef = useCallback(() => {
-    const timestamp = Date.now();
-    console.warn(`[DragDrop] [${timestamp}] completeSettleFromRef called`);
     const pending = pendingSettleRef.current;
-    console.warn(`[DragDrop] [${timestamp}] pending:`, pending ? {
-      target: pending.target,
-      source: pending.source,
-      placementSuccess: pending.placementSuccess,
-    } : 'null');
-
-    // Check pendingTiles state RIGHT NOW
-    const state = useGameStore.getState();
-    const gameState = state.currentGameUlid ? state.gameStates[state.currentGameUlid] : null;
-    console.warn(`[DragDrop] [${timestamp}] pendingTiles at completeSettleFromRef:`, {
-      count: gameState?.pendingTiles.length,
-      tiles: gameState?.pendingTiles.map(t => `${t.letter}@${t.x},${t.y}`),
-    });
-
     pendingSettleRef.current = null;
 
     // Helper to reset all JS state
@@ -1687,13 +1643,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
     if (hasCallbacks) {
       // Non-board target - call callbacks now
-      console.warn('[DragDrop] calling onComplete and dragCallback (deferred)');
       pending.onComplete?.(pending.target);
       success = pending.dragCallback?.(pending.target, true) ?? true;
-      console.warn('[DragDrop] dragCallback returned:', success);
-    } else {
-      // Board target - callbacks already called via setTimeout
-      console.warn('[DragDrop] using deferred placement result:', success);
     }
 
     // Update debug info with placement result
@@ -1722,43 +1673,11 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
     if (!success && pending.source?.type === 'rack') {
       // Placement failed - animate back to rack
-      console.warn('[DragDrop] placement failed, animating back to rack');
       animateBackToRack(pending.source.rackIndex, resetState);
       return;
     }
 
     // Placement succeeded - reset state
-    console.warn('[DragDrop] placement succeeded, calling resetState');
-
-    // Verify tile was actually added to pendingTiles - IMMEDIATE
-    const stateNow = useGameStore.getState();
-    const gameStateNow = stateNow.currentGameUlid ? stateNow.gameStates[stateNow.currentGameUlid] : null;
-    console.warn('[DragDrop] VERIFICATION IMMEDIATE - pendingTiles:', {
-      count: gameStateNow?.pendingTiles.length,
-      tiles: gameStateNow?.pendingTiles.map(t => ({ letter: t.letter, x: t.x, y: t.y, rackIndex: t.rackIndex })),
-      target: pending.target,
-    });
-
-    // Verify tile was actually added to pendingTiles - AFTER 100ms
-    setTimeout(() => {
-      const state = useGameStore.getState();
-      const gameState = state.currentGameUlid ? state.gameStates[state.currentGameUlid] : null;
-      console.warn('[DragDrop] VERIFICATION 100ms - pendingTiles:', {
-        count: gameState?.pendingTiles.length,
-        tiles: gameState?.pendingTiles.map(t => ({ letter: t.letter, x: t.x, y: t.y, rackIndex: t.rackIndex })),
-      });
-    }, 100);
-
-    // Verify tile was actually added to pendingTiles - AFTER 500ms
-    setTimeout(() => {
-      const state = useGameStore.getState();
-      const gameState = state.currentGameUlid ? state.gameStates[state.currentGameUlid] : null;
-      console.warn('[DragDrop] VERIFICATION 500ms - pendingTiles:', {
-        count: gameState?.pendingTiles.length,
-        tiles: gameState?.pendingTiles.map(t => ({ letter: t.letter, x: t.x, y: t.y, rackIndex: t.rackIndex })),
-      });
-    }, 500);
-
     resetState();
   }, [
     boardFloatingOpacity,
@@ -1779,7 +1698,6 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
   // Stable wrapper for worklet callbacks (never changes reference)
   const onSettleComplete = useCallback(() => {
-    console.warn(`[DragDrop] [${Date.now()}] onSettleComplete called`);
     completeSettleRef.current();
   }, []);
 
