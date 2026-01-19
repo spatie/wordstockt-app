@@ -23,7 +23,7 @@ export function useRackActions({ game, pendingTiles }: UseRackActionsOptions) {
     console.warn(
       `[useRackActions] [${timestamp}] handleRecall called, pendingTiles:`,
       pendingTiles.length,
-      pendingTiles.map(t => `${t.letter}@${t.x},${t.y}`)
+      pendingTiles.map((t) => `${t.letter}@${t.x},${t.y}`)
     );
     if (pendingTiles.length > 0) {
       const tilesToRecall = pendingTiles.map((t) => ({

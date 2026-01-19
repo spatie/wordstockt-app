@@ -86,7 +86,9 @@ describe('formatTimeRemaining', () => {
 
   it('returns formatted text for valid date', () => {
     const futureDate = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString();
-    expect(formatTimeRemaining(futureDate)).toBe('24h left to make the next move');
+    expect(formatTimeRemaining(futureDate)).toBe(
+      '24h left to make the next move'
+    );
   });
 
   it('returns 0h left for past date', () => {

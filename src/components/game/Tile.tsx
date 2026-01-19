@@ -247,7 +247,11 @@ export function Tile({
   const getAnimatedStyles = () => {
     if (isPending) {
       if (showAnimatedBorder) {
-        return [tileStyles, animatedPendingBackgroundStyle, animatedBorderStyle];
+        return [
+          tileStyles,
+          animatedPendingBackgroundStyle,
+          animatedBorderStyle,
+        ];
       }
       return [tileStyles, animatedPendingBackgroundStyle];
     }
@@ -289,13 +293,13 @@ export function ScaledTile({ displaySize, ...tileProps }: ScaledTileProps) {
   const scale = displaySize / TILE_SIZE;
 
   return (
-    <View style={[styles.scaledContainer, { width: displaySize, height: displaySize }]}>
-      <View
-        style={[
-          styles.scaleWrapper,
-          { transform: [{ scale }] },
-        ]}
-      >
+    <View
+      style={[
+        styles.scaledContainer,
+        { width: displaySize, height: displaySize },
+      ]}
+    >
+      <View style={[styles.scaleWrapper, { transform: [{ scale }] }]}>
         <Tile {...tileProps} />
       </View>
     </View>

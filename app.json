@@ -1,13 +1,13 @@
 {
-    "expo": {
-        "ios": {
-            "buildNumber": "50",
-            "bundleIdentifier": "com.freekmurze.wordstockt-app"
-        },
-        "android": {
-            "versionCode": 3,
-            "package": "com.freekmurze.wordstocktapp"
-        },
-        "newArchEnabled": true
-    }
+  "expo": {
+    "ios": {
+      "buildNumber": "50",
+      "bundleIdentifier": "com.freekmurze.wordstockt-app"
+    },
+    "android": {
+      "versionCode": 3,
+      "package": "com.freekmurze.wordstocktapp"
+    },
+    "newArchEnabled": true
+  }
 }
