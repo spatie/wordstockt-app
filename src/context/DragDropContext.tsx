@@ -161,6 +161,19 @@ interface DragDropContextType {
 }
 
 // ============================================================================
+// Debug Logging (set to true to diagnose coordinate issues)
+// ============================================================================
+
+const DEBUG_DRAG = false;
+
+function debugLog(...args: unknown[]) {
+  'worklet';
+  if (DEBUG_DRAG) {
+    console.log('[DragDrop]', ...args);
+  }
+}
+
+// ============================================================================
 // Constants
 // ============================================================================
 
@@ -1803,10 +1816,23 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       const touch = event.allTouches[0];
       if (!touch) return;
 
-      // Use relative touch coordinates + container offset for consistent behavior across platforms
-      // On Android, absoluteY and measureInWindow may use different coordinate systems (status bar handling)
-      const touchY = touch.y + containerOffsetY.value;
-      const touchX = touch.x + containerOffsetX.value;
+      // Use absoluteX/absoluteY for reliable screen coordinates on real devices
+      // This bypasses measureInWindow issues with New Architecture (Fabric)
+      const touchX = touch.absoluteX;
+      const touchY = touch.absoluteY;
+
+      debugLog('onTouchesDown', {
+        absoluteX: touchX,
+        absoluteY: touchY,
+        relativeX: touch.x,
+        relativeY: touch.y,
+        rackBounds: {
+          top: rackTopShared.value,
+          bottom: rackBottomShared.value,
+          left: rackLeftShared.value,
+          width: rackWidthShared.value,
+        },
+      });
 
       // Check if touch is on the rack area (with tolerance for better hit detection)
       const rackLayoutMeasured = rackBottomShared.value > rackTopShared.value;
@@ -1879,9 +1905,22 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Use relative coordinates + container offset for consistent behavior across platforms
-      const screenX = event.x + containerOffsetX.value;
-      const screenY = event.y + containerOffsetY.value;
+      // Use absoluteX/absoluteY for reliable screen coordinates on real devices
+      // This bypasses measureInWindow issues with New Architecture (Fabric)
+      const screenX = event.absoluteX;
+      const screenY = event.absoluteY;
+
+      debugLog('onStart', {
+        absoluteX: screenX,
+        absoluteY: screenY,
+        relativeX: event.x,
+        relativeY: event.y,
+        boardBounds: {
+          left: boardLeftShared.value,
+          top: boardTopShared.value,
+          cellSize: boardCellSizeShared.value,
+        },
+      });
 
       // Try rack hit testing first (most common)
       let rackHit = findRackTileAtPositionWorklet(screenX, screenY);
@@ -1907,6 +1946,12 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (rackHit) {
+        debugLog('rackHit found', {
+          rackIndex: rackHit.rackIndex,
+          tile: rackHit.tile.letter,
+          hitArea: rackHit.hitArea,
+        });
+
         // Start rack drag on UI thread
         isDraggingShared.value = true;
         dragTileShared.value = [
@@ -1996,9 +2041,16 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       // Update shared drag end time for cooldown
       lastDragEndTimeShared.value = Date.now();
 
-      // Convert to screen coordinates for drop target calculation
-      const screenX = event.x + containerOffsetX.value;
-      const screenY = event.y + containerOffsetY.value;
+      // Use absoluteX/absoluteY for reliable screen coordinates on real devices
+      const screenX = event.absoluteX;
+      const screenY = event.absoluteY;
+
+      debugLog('onEnd', {
+        absoluteX: screenX,
+        absoluteY: screenY,
+        relativeX: event.x,
+        relativeY: event.y,
+      });
 
       // Check if dropping on board and snap scale immediately (before async runOnJS)
       // This prevents a brief flash of rack-sized tile during the async gap
@@ -2031,8 +2083,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       if (isDraggingShared.value) {
         isDraggingShared.value = false;
         lastDragEndTimeShared.value = Date.now();
-        const screenX = event.x + containerOffsetX.value;
-        const screenY = event.y + containerOffsetY.value;
+        // Use absoluteX/absoluteY for reliable screen coordinates on real devices
+        const screenX = event.absoluteX;
+        const screenY = event.absoluteY;
         runOnJS(onGestureEndWithPosition)(screenX, screenY);
       }
     });

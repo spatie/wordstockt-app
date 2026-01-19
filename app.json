@@ -7,7 +7,7 @@
         "icon": "./assets/icon.png",
         "userInterfaceStyle": "dark",
         "backgroundColor": "#0D1B2A",
-        "newArchEnabled": false,
+        "newArchEnabled": true,
         "scheme": "wordstockt",
         "runtimeVersion": {
             "policy": "appVersion"
@@ -24,7 +24,7 @@
             "supportsTablet": true,
             "bundleIdentifier": "com.wordstockt.app",
             "backgroundColor": "#0D1B2A",
-            "buildNumber": "28",
+            "buildNumber": "30",
             "associatedDomains": [
                 "webcredentials:wordstockt.com",
                 "applinks:wordstockt.com"
@@ -46,7 +46,7 @@
             }
         },
         "android": {
-            "versionCode": 24,
+            "versionCode": 26,
             "googleServicesFile": "./google-services.json",
             "adaptiveIcon": {
                 "foregroundImage": "./assets/adaptive-icon.png",
