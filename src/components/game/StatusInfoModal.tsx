@@ -86,13 +86,7 @@ export function StatusInfoModal({
           ))}
         </View>
 
-        <Button
-          label="Got it"
-          onPress={onClose}
-          fullWidth
-          rounded
-          size="lg"
-        />
+        <Button label="Got it" onPress={onClose} fullWidth rounded size="lg" />
       </View>
     </BaseModal>
   );

@@ -395,9 +395,14 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   );
 
   // Track board floating tile separately (for pending tiles dragged from board)
-  const [boardFloatingTile, setBoardFloatingTile] = useState<TileType | null>(null);
+  const [boardFloatingTile, setBoardFloatingTile] = useState<TileType | null>(
+    null
+  );
   const [boardFloatingShouldShow, setBoardFloatingShouldShow] = useState(false);
-  const [pendingBoardPosition, setPendingBoardPosition] = useState<{ x: number; y: number } | null>(null);
+  const [pendingBoardPosition, setPendingBoardPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const boardFloatingOpacity = useSharedValue(0);
 
   // -------------------------------------------------------------------------
@@ -464,7 +469,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const currentGameUlid = useGameStore((state) => state.currentGameUlid);
   const prevGameUlidRef = useRef<string | null>(null);
   useEffect(() => {
-    if (prevGameUlidRef.current !== null && prevGameUlidRef.current !== currentGameUlid) {
+    if (
+      prevGameUlidRef.current !== null &&
+      prevGameUlidRef.current !== currentGameUlid
+    ) {
       // Game changed - reset React state
       setDragStatus('idle');
       setDragTile(null);
@@ -493,7 +501,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     if (!gameState) return;
 
     // Update rack permutation
-    rackPermutationShared.value = gameState.rackPermutation || [0, 1, 2, 3, 4, 5, 6];
+    rackPermutationShared.value = gameState.rackPermutation || [
+      0, 1, 2, 3, 4, 5, 6,
+    ];
 
     // Update board tiles (pending tiles only)
     const newBoardTiles: Record<string, [string, number, boolean, number]> = {};
@@ -522,7 +532,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       if (!gameState) return;
 
       // Detect actual game switch (switching between two different games, not initial load)
-      const isGameSwitch = lastGameUlid !== null && currentGameUlid !== lastGameUlid;
+      const isGameSwitch =
+        lastGameUlid !== null && currentGameUlid !== lastGameUlid;
 
       // Always track the current game
       if (currentGameUlid !== lastGameUlid) {
@@ -577,7 +588,15 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     });
 
     return unsubscribe;
-  }, [rackPermutationShared, boardTilesShared, isDraggingShared, draggingRackIndexShared, draggingBoardPositionShared, dragTileShared, dragSourceShared]);
+  }, [
+    rackPermutationShared,
+    boardTilesShared,
+    isDraggingShared,
+    draggingRackIndexShared,
+    draggingBoardPositionShared,
+    dragTileShared,
+    dragSourceShared,
+  ]);
 
   // -------------------------------------------------------------------------
   // Refs (synchronous access, no re-renders)
@@ -750,11 +769,18 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
       // Check if within tile (with touch tolerance for gaps)
       const posInSlot = relativeX - visualSlot * slotWidth;
-      if (posInSlot > TILE_SIZE + TOUCH_TOLERANCE_PX || visualSlot < 0 || visualSlot >= SLOT_COUNT) {
+      if (
+        posInSlot > TILE_SIZE + TOUCH_TOLERANCE_PX ||
+        visualSlot < 0 ||
+        visualSlot >= SLOT_COUNT
+      ) {
         // If we're close to a slot boundary, try the adjacent slot
-        if (visualSlot >= 0 && visualSlot < SLOT_COUNT - 1 && 
-            posInSlot > TILE_SIZE - TOUCH_TOLERANCE_PX && 
-            posInSlot <= TILE_SIZE + GAP + TOUCH_TOLERANCE_PX) {
+        if (
+          visualSlot >= 0 &&
+          visualSlot < SLOT_COUNT - 1 &&
+          posInSlot > TILE_SIZE - TOUCH_TOLERANCE_PX &&
+          posInSlot <= TILE_SIZE + GAP + TOUCH_TOLERANCE_PX
+        ) {
           // Touch is in the gap, try next slot
           const nextSlot = visualSlot + 1;
           if (nextSlot < SLOT_COUNT) {
@@ -907,11 +933,18 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
       // Check if within tile (with touch tolerance for gaps)
       const posInSlot = relativeX - visualSlot * slotWidth;
-      if (posInSlot > TILE_SIZE + TOUCH_TOLERANCE_PX || visualSlot < 0 || visualSlot >= SLOT_COUNT) {
+      if (
+        posInSlot > TILE_SIZE + TOUCH_TOLERANCE_PX ||
+        visualSlot < 0 ||
+        visualSlot >= SLOT_COUNT
+      ) {
         // If we're close to a slot boundary, try the adjacent slot
-        if (visualSlot >= 0 && visualSlot < SLOT_COUNT - 1 && 
-            posInSlot > TILE_SIZE - TOUCH_TOLERANCE_PX && 
-            posInSlot <= TILE_SIZE + GAP + TOUCH_TOLERANCE_PX) {
+        if (
+          visualSlot >= 0 &&
+          visualSlot < SLOT_COUNT - 1 &&
+          posInSlot > TILE_SIZE - TOUCH_TOLERANCE_PX &&
+          posInSlot <= TILE_SIZE + GAP + TOUCH_TOLERANCE_PX
+        ) {
           // Touch is in the gap, try next slot
           const nextSlot = visualSlot + 1;
           const state = useGameStore.getState();
@@ -923,7 +956,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           const nextActualRackIndex = permutation[nextSlot];
           if (nextActualRackIndex !== undefined) {
             // Look up the registered draggable for next slot
-            const nextDraggable = draggablesRef.current.get(`rack-${nextActualRackIndex}`);
+            const nextDraggable = draggablesRef.current.get(
+              `rack-${nextActualRackIndex}`
+            );
             if (nextDraggable) {
               return {
                 ...nextDraggable,
@@ -1044,7 +1079,16 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         setBoardFloatingShouldShow(true);
       }
     },
-    [positionX, positionY, scale, isDraggingShared, draggingRackIndexShared, setBoardFloatingTile, setPendingBoardPosition, setBoardFloatingShouldShow]
+    [
+      positionX,
+      positionY,
+      scale,
+      isDraggingShared,
+      draggingRackIndexShared,
+      setBoardFloatingTile,
+      setPendingBoardPosition,
+      setBoardFloatingShouldShow,
+    ]
   );
 
   const updateDragJS = useCallback(
@@ -1112,13 +1156,21 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
       // Check board target
       if (boardLayoutRef.current) {
-        const cell = getBoardCellFromPosition(pos.x, pos.y, boardLayoutRef.current);
+        const cell = getBoardCellFromPosition(
+          pos.x,
+          pos.y,
+          boardLayoutRef.current
+        );
         if (cell) {
           const target: DropTarget = { type: 'board', ...cell };
           const cellSize = boardLayoutRef.current.cellSize;
 
           // Target = CENTER of the cell (simple!)
-          const cellCenter = getBoardCellCenter(cell.x, cell.y, boardLayoutRef.current);
+          const cellCenter = getBoardCellCenter(
+            cell.x,
+            cell.y,
+            boardLayoutRef.current
+          );
           const targetPos = toRelative(cellCenter);
 
           pendingSettleRef.current = {
@@ -1133,7 +1185,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           scale.value = cellSize / TILE_SIZE;
 
           // Animate to cell center
-          positionX.value = withTiming(targetPos.x, { duration: SETTLE_DURATION });
+          positionX.value = withTiming(targetPos.x, {
+            duration: SETTLE_DURATION,
+          });
           positionY.value = withTiming(
             targetPos.y,
             { duration: SETTLE_DURATION },
@@ -1150,7 +1204,11 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
       // Check rack target
       if (rackLayoutRef.current) {
-        const slotIndex = getRackSlotFromPosition(pos.x, pos.y, rackLayoutRef.current);
+        const slotIndex = getRackSlotFromPosition(
+          pos.x,
+          pos.y,
+          rackLayoutRef.current
+        );
         if (slotIndex !== null) {
           const target: DropTarget = { type: 'rack', slotIndex };
 
@@ -1168,11 +1226,16 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
             const state = useGameStore.getState();
             const currentGameUlid = state.currentGameUlid;
             const permutation = (currentGameUlid &&
-              state.gameStates[currentGameUlid]?.rackPermutation) || [0, 1, 2, 3, 4, 5, 6];
+              state.gameStates[currentGameUlid]?.rackPermutation) || [
+              0, 1, 2, 3, 4, 5, 6,
+            ];
             const visualSlot = permutation.indexOf(tileRackIndex);
 
             if (visualSlot !== -1) {
-              const slotCenter = getRackSlotCenter(visualSlot, rackLayoutRef.current);
+              const slotCenter = getRackSlotCenter(
+                visualSlot,
+                rackLayoutRef.current
+              );
               const targetPos = toRelative(slotCenter);
 
               pendingSettleRef.current = {
@@ -1183,7 +1246,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
                 dragCallback,
               };
 
-              positionX.value = withTiming(targetPos.x, { duration: SETTLE_DURATION });
+              positionX.value = withTiming(targetPos.x, {
+                duration: SETTLE_DURATION,
+              });
               positionY.value = withTiming(
                 targetPos.y,
                 { duration: SETTLE_DURATION },
@@ -1218,11 +1283,16 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           const state = useGameStore.getState();
           const currentGameUlid = state.currentGameUlid;
           const permutation = (currentGameUlid &&
-            state.gameStates[currentGameUlid]?.rackPermutation) || [0, 1, 2, 3, 4, 5, 6];
+            state.gameStates[currentGameUlid]?.rackPermutation) || [
+            0, 1, 2, 3, 4, 5, 6,
+          ];
           const visualSlot = permutation.indexOf(rackIndex);
 
           if (visualSlot !== -1) {
-            const slotCenter = getRackSlotCenter(visualSlot, rackLayoutRef.current);
+            const slotCenter = getRackSlotCenter(
+              visualSlot,
+              rackLayoutRef.current
+            );
             const targetPos = toRelative(slotCenter);
 
             pendingSettleRef.current = {
@@ -1233,7 +1303,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
               dragCallback,
             };
 
-            positionX.value = withTiming(targetPos.x, { duration: SETTLE_DURATION });
+            positionX.value = withTiming(targetPos.x, {
+              duration: SETTLE_DURATION,
+            });
             positionY.value = withTiming(
               targetPos.y,
               { duration: SETTLE_DURATION },
@@ -1255,7 +1327,17 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       finishDrag(null, false);
       return null;
     },
-    [positionX, positionY, scale, boardFloatingOpacity, draggingRackIndexShared, draggingBoardPositionShared, setBoardFloatingTile, setPendingBoardPosition, setBoardFloatingShouldShow]
+    [
+      positionX,
+      positionY,
+      scale,
+      boardFloatingOpacity,
+      draggingRackIndexShared,
+      draggingBoardPositionShared,
+      setBoardFloatingTile,
+      setPendingBoardPosition,
+      setBoardFloatingShouldShow,
+    ]
   );
 
   // Ref to hold completeSettleFromRef for stable worklet access
@@ -1275,7 +1357,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       const state = useGameStore.getState();
       const currentGameUlid = state.currentGameUlid;
       const permutation = (currentGameUlid &&
-        state.gameStates[currentGameUlid]?.rackPermutation) || [0, 1, 2, 3, 4, 5, 6];
+        state.gameStates[currentGameUlid]?.rackPermutation) || [
+        0, 1, 2, 3, 4, 5, 6,
+      ];
       const visualSlot = permutation.indexOf(rackIndex);
 
       if (visualSlot === -1) {
@@ -1363,7 +1447,17 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
     // Placement succeeded - reset state
     resetState();
-  }, [boardFloatingOpacity, scale, isDraggingShared, draggingBoardPositionShared, draggingRackIndexShared, animateBackToRack, setBoardFloatingTile, setPendingBoardPosition, setBoardFloatingShouldShow]);
+  }, [
+    boardFloatingOpacity,
+    scale,
+    isDraggingShared,
+    draggingBoardPositionShared,
+    draggingRackIndexShared,
+    animateBackToRack,
+    setBoardFloatingTile,
+    setPendingBoardPosition,
+    setBoardFloatingShouldShow,
+  ]);
 
   // Keep ref in sync
   useEffect(() => {
@@ -1452,7 +1546,12 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const startRecallAnimation = useCallback(
     (
       tiles: Array<
-        TileType & { x: number; y: number; rackIndex: number; visualSlot: number }
+        TileType & {
+          x: number;
+          y: number;
+          rackIndex: number;
+          visualSlot: number;
+        }
       >,
       onComplete: () => void
     ) => {
@@ -1491,7 +1590,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           startCenter = toRelative(getBoardCellCenter(t.x, t.y, boardLayout));
         }
 
-        const endCenter = toRelative(getRackSlotCenter(t.visualSlot, rackLayout));
+        const endCenter = toRelative(
+          getRackSlotCenter(t.visualSlot, rackLayout)
+        );
 
         return {
           tile: { letter: t.letter, points: t.points, isBlank: t.isBlank },
@@ -1600,7 +1701,14 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         useGameStore.getState().setRackDragging(true);
       }
     },
-    [setDragTile, setDragSource, setDragStatus, setBoardFloatingTile, setPendingBoardPosition, setBoardFloatingShouldShow]
+    [
+      setDragTile,
+      setDragSource,
+      setDragStatus,
+      setBoardFloatingTile,
+      setPendingBoardPosition,
+      setBoardFloatingShouldShow,
+    ]
   );
 
   // Sync handler refs for worklet access
@@ -1667,7 +1775,12 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     // Sync for 1 second to ensure we catch all layout changes
     setTimeout(() => clearInterval(timer), 1000);
     return () => clearInterval(timer);
-  }, [containerOffsetX, containerOffsetY, currentGameUlid, measureContainerOffset]);
+  }, [
+    containerOffsetX,
+    containerOffsetY,
+    currentGameUlid,
+    measureContainerOffset,
+  ]);
 
   // Edge threshold for iOS swipe-back gesture (in pixels from left edge)
   const EDGE_THRESHOLD = 20;
@@ -1702,7 +1815,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         touchY >= rackTopShared.value - TOUCH_TOLERANCE_PX &&
         touchY <= rackBottomShared.value + TOUCH_TOLERANCE_PX &&
         touchX >= rackLeftShared.value - TOUCH_TOLERANCE_PX &&
-        touchX <= rackLeftShared.value + rackWidthShared.value + TOUCH_TOLERANCE_PX;
+        touchX <=
+          rackLeftShared.value + rackWidthShared.value + TOUCH_TOLERANCE_PX;
       touchStartedOnRack.value = isOnRack;
 
       // Check if touch is below the rack (button area) - use original bounds for buttons
@@ -1776,9 +1890,12 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       if (!rackHit) {
         // Try slightly offset positions around the touch point
         const searchOffsets = [
-          [-TOUCH_TOLERANCE_PX, 0], [TOUCH_TOLERANCE_PX, 0],
-          [0, -TOUCH_TOLERANCE_PX], [0, TOUCH_TOLERANCE_PX],
-          [-TOUCH_TOLERANCE_PX, -TOUCH_TOLERANCE_PX], [TOUCH_TOLERANCE_PX, TOUCH_TOLERANCE_PX]
+          [-TOUCH_TOLERANCE_PX, 0],
+          [TOUCH_TOLERANCE_PX, 0],
+          [0, -TOUCH_TOLERANCE_PX],
+          [0, TOUCH_TOLERANCE_PX],
+          [-TOUCH_TOLERANCE_PX, -TOUCH_TOLERANCE_PX],
+          [TOUCH_TOLERANCE_PX, TOUCH_TOLERANCE_PX],
         ];
 
         for (const [dx, dy] of searchOffsets) {
