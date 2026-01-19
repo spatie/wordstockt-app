@@ -90,12 +90,30 @@ export function getBoardCellFromPosition(
   const relX = pageX - layout.x;
   const relY = pageY - layout.y;
 
-  if (relX < 0 || relY < 0 || relX > layout.width || relY > layout.height) {
+  // FIX (Jan 2026): Added tolerance for edge cases on real devices.
+  //
+  // PROBLEM: On real devices, drops very close to board edges would sometimes
+  // fail to detect a valid cell due to floating point precision issues and
+  // slight timing differences in layout measurements between simulator and device.
+  //
+  // SOLUTION: Allow a small 2px tolerance outside the strict bounds, then clamp
+  // coordinates to valid range before calculating the cell.
+  const tolerance = 2;
+  if (
+    relX < -tolerance ||
+    relY < -tolerance ||
+    relX > layout.width + tolerance ||
+    relY > layout.height + tolerance
+  ) {
     return null;
   }
 
-  const cellX = Math.floor(relX / layout.cellSize);
-  const cellY = Math.floor(relY / layout.cellSize);
+  // Clamp to valid range before calculating cell
+  const clampedX = Math.max(0, Math.min(relX, layout.width - 0.001));
+  const clampedY = Math.max(0, Math.min(relY, layout.height - 0.001));
+
+  const cellX = Math.floor(clampedX / layout.cellSize);
+  const cellY = Math.floor(clampedY / layout.cellSize);
 
   if (cellX < 0 || cellX >= BOARD_SIZE || cellY < 0 || cellY >= BOARD_SIZE) {
     return null;

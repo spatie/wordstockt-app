@@ -109,7 +109,9 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
       swappedTileIndices: [],
       blankTileSelection: null,
 
-      setCurrentGame: (gameUlid) =>
+      setCurrentGame: (gameUlid) => {
+        console.warn('[gameStore] setCurrentGame called', { gameUlid, timestamp: Date.now() });
+        console.warn('[gameStore] setCurrentGame stack:', new Error().stack);
         set({
           currentGameUlid: gameUlid,
           // Reset transient state when switching games
@@ -121,21 +123,31 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
           swapCompleted: false,
           swappedTileIndices: [],
           blankTileSelection: null,
-        }),
+        });
+      },
 
-      placeTile: (tile, x, y, rackIndex) =>
+      placeTile: (tile, x, y, rackIndex) => {
+        console.warn('[gameStore] placeTile called', {
+          tile: tile.letter,
+          x,
+          y,
+          rackIndex,
+        });
         set((state) => {
           const gameState = getCurrentGameState(state);
+          const newPendingTiles = [
+            ...gameState.pendingTiles,
+            { ...tile, x, y, rackIndex },
+          ];
+          console.warn('[gameStore] placeTile - new pendingTiles count:', newPendingTiles.length);
           return {
             ...updateCurrentGameState(state, {
-              pendingTiles: [
-                ...gameState.pendingTiles,
-                { ...tile, x, y, rackIndex },
-              ],
+              pendingTiles: newPendingTiles,
             }),
             selectedRackIndex: null,
           };
-        }),
+        });
+      },
 
       moveTile: (fromX, fromY, toX, toY) =>
         set((state) => {
@@ -148,7 +160,8 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
         }),
 
       removeTile: (x, y) => {
-        console.log('[gameStore] removeTile called', { x, y });
+        console.warn('[gameStore] removeTile called', { x, y });
+        console.warn('[gameStore] removeTile stack:', new Error().stack);
         set((state) => {
           const gameState = getCurrentGameState(state);
           return updateCurrentGameState(state, {
@@ -160,27 +173,33 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
       },
 
       recallAllTiles: () => {
-        console.log('[gameStore] recallAllTiles called');
+        console.warn('[gameStore] recallAllTiles called');
+        console.warn('[gameStore] recallAllTiles stack:', new Error().stack);
         set((state) => ({
           ...updateCurrentGameState(state, { pendingTiles: [] }),
           validationResult: null,
         }));
       },
 
-      clearPendingTiles: () =>
+      clearPendingTiles: () => {
+        console.warn('[gameStore] clearPendingTiles called');
+        console.warn('[gameStore] clearPendingTiles stack:', new Error().stack);
         set((state) => ({
           ...updateCurrentGameState(state, {
             pendingTiles: [],
             rackPermutation: [...DEFAULT_RACK_PERMUTATION],
           }),
           validationResult: null,
-        })),
+        }));
+      },
 
-      clearGameState: (gameUlid) =>
+      clearGameState: (gameUlid) => {
+        console.warn('[gameStore] clearGameState called', { gameUlid });
         set((state) => {
           const { [gameUlid]: _, ...remainingStates } = state.gameStates;
           return { gameStates: remainingStates };
-        }),
+        });
+      },
 
       setSelectedRackIndex: (index) => set({ selectedRackIndex: index }),
 

@@ -24,7 +24,16 @@ import React, {
   useEffect,
   useLayoutEffect,
 } from 'react';
-import { View, StyleSheet, Platform, LayoutChangeEvent } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Platform,
+  LayoutChangeEvent,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Clipboard,
+} from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -166,6 +175,23 @@ interface DragDropContextType {
 // ============================================================================
 
 const DEBUG_DRAG = false;
+const SHOW_DEBUG_OVERLAY = false; // Set to true to show on-screen debug info
+
+interface DebugInfo {
+  timestamp: string;
+  dropPosition: { x: number; y: number } | null;
+  boardLayout: BoardLayout | null;
+  containerOffset: { x: number; y: number } | null;
+  cellResult: { x: number; y: number } | null;
+  rackLayout: RackLayout | null;
+  sharedValues: {
+    boardLeft: number;
+    boardTop: number;
+    cellSize: number;
+  } | null;
+  placementResult?: 'pending' | 'success' | 'failed';
+  failReason?: string;
+}
 
 function debugLog(...args: unknown[]) {
   'worklet';
@@ -416,6 +442,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const [boardFloatingTile, setBoardFloatingTile] = useState<TileType | null>(
     null
   );
+
+  // Debug overlay state
+  const [debugInfo, setDebugInfo] = useState<DebugInfo[]>([]);
   const [boardFloatingShouldShow, setBoardFloatingShouldShow] = useState(false);
   const [pendingBoardPosition, setPendingBoardPosition] = useState<{
     x: number;
@@ -653,6 +682,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     tile: TileType | PendingTile;
     onComplete?: (target: DropTarget) => void;
     dragCallback?: (target: DropTarget, wasDragged: boolean) => boolean;
+    placementSuccess?: boolean; // Set by deferred placement callback
   } | null>(null);
   const pendingRecallCompleteRef = useRef<(() => void) | null>(null);
 
@@ -875,22 +905,25 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
       if (cellSize <= 0) return null;
 
-      // Check if within board bounds
+      // Check if within board bounds (with small tolerance for edge cases)
       const boardWidth = boardSize * cellSize;
       const boardHeight = boardSize * cellSize;
+      const tolerance = 2;
 
       if (
-        x < boardLeft ||
-        x > boardLeft + boardWidth ||
-        y < boardTop ||
-        y > boardTop + boardHeight
+        x < boardLeft - tolerance ||
+        x > boardLeft + boardWidth + tolerance ||
+        y < boardTop - tolerance ||
+        y > boardTop + boardHeight + tolerance
       ) {
         return null;
       }
 
-      // Calculate cell coordinates
-      const cellX = Math.floor((x - boardLeft) / cellSize);
-      const cellY = Math.floor((y - boardTop) / cellSize);
+      // Calculate cell coordinates (clamp to valid range)
+      const relX = Math.max(0, Math.min(x - boardLeft, boardWidth - 0.001));
+      const relY = Math.max(0, Math.min(y - boardTop, boardHeight - 0.001));
+      const cellX = Math.floor(relX / cellSize);
+      const cellY = Math.floor(relY / cellSize);
 
       // Ensure within valid range
       if (cellX < 0 || cellX >= boardSize || cellY < 0 || cellY >= boardSize) {
@@ -1130,6 +1163,30 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       const dragCallback = activeDragRef.current?.onDragEnd;
       const offset = containerOffsetRef.current;
 
+      // Capture debug info for on-screen overlay
+      const captureDebugInfo = (cellResult: { x: number; y: number } | null) => {
+        if (SHOW_DEBUG_OVERLAY) {
+          const info: DebugInfo = {
+            timestamp: new Date().toISOString().substr(11, 12),
+            dropPosition: { ...pos },
+            boardLayout: boardLayoutRef.current
+              ? { ...boardLayoutRef.current }
+              : null,
+            containerOffset: { ...offset },
+            cellResult,
+            rackLayout: rackLayoutRef.current
+              ? { ...rackLayoutRef.current }
+              : null,
+            sharedValues: {
+              boardLeft: boardLeftShared.value,
+              boardTop: boardTopShared.value,
+              cellSize: boardCellSizeShared.value,
+            },
+          };
+          setDebugInfo((prev) => [info, ...prev].slice(0, 5)); // Keep last 5
+        }
+      };
+
       // Helper to convert screen-absolute to container-relative
       const toRelative = (screenPos: { x: number; y: number }) => ({
         x: screenPos.x - offset.x,
@@ -1181,6 +1238,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           pos.y,
           boardLayoutRef.current
         );
+        // Always capture debug info for board drop attempts
+        captureDebugInfo(cell);
         if (cell) {
           const target: DropTarget = { type: 'board', ...cell };
           const cellSize = boardLayoutRef.current.cellSize;
@@ -1193,16 +1252,72 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           );
           const targetPos = toRelative(cellCenter);
 
+          // FIX (Jan 2026): Call placement logic SYNCHRONOUSLY to ensure it happens before animation completes.
+          //
+          // PROBLEM: On real devices (not simulator), tiles would visually snap back to the rack
+          // even though placement appeared successful. The issue was that deferring placement
+          // via setTimeout caused race conditions where the animation completion callback
+          // would run before the tile was added to pendingTiles, or stale closures would
+          // capture outdated state.
+          //
+          // SOLUTION: Call placement synchronously here, before starting the settle animation.
+          // This ensures the tile is in pendingTiles before any callbacks fire. React will
+          // batch the state updates naturally.
+          const startTime = Date.now();
+          console.warn(`[DragDrop] [${startTime}] Calling placement SYNCHRONOUSLY for board target`);
+
+          onComplete?.(target);
+          const placementSuccess = dragCallback?.(target, true) ?? true;
+
+          console.warn(`[DragDrop] [${Date.now()}] Placement result: ${placementSuccess}, took ${Date.now() - startTime}ms`);
+
+          // If placement failed, animate back to rack immediately
+          if (!placementSuccess && source?.type === 'rack') {
+            console.warn(`[DragDrop] [${Date.now()}] Placement failed, animating back to rack`);
+            animateBackToRack(source.rackIndex, () => {
+              isDraggingRef.current = false;
+              isDraggingShared.value = false;
+              const now = Date.now();
+              lastDragEndTimeRef.current = now;
+              lastDragEndTimeShared.value = now;
+              setDragStatus('idle');
+              setDragTile(null);
+              setDragSource(null);
+              activeDragRef.current = null;
+              setTimeout(() => {
+                draggingRackIndexShared.value = -1;
+                boardFloatingOpacity.value = 0;
+                scale.value = 1;
+                dragSourceShared.value = null;
+                setBoardFloatingTile(null);
+                setPendingBoardPosition(null);
+                setBoardFloatingShouldShow(false);
+              }, 50);
+            });
+            return null;
+          }
+
+          // Set up animation to cell center
           pendingSettleRef.current = {
             target,
             source: source!,
             tile: tile!,
-            onComplete,
-            dragCallback,
+            onComplete: undefined, // Already called above
+            dragCallback: undefined, // Already called above
+            placementSuccess: placementSuccess, // Already determined
           };
 
           // Snap scale immediately
           scale.value = cellSize / TILE_SIZE;
+
+          // Log animation destination
+          console.warn(`[DragDrop] [${Date.now()}] Animating to BOARD cell`, {
+            targetPosX: targetPos.x,
+            targetPosY: targetPos.y,
+            cellCenter,
+            cell: { x: cell.x, y: cell.y },
+            duration: SETTLE_DURATION,
+          });
 
           // Animate to cell center
           positionX.value = withTiming(targetPos.x, {
@@ -1366,10 +1481,15 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   // Helper to animate tile back to rack slot
   const animateBackToRack = useCallback(
     (rackIndex: number, onComplete: () => void) => {
+      const timestamp = Date.now();
+      console.warn(`[DragDrop] [${timestamp}] animateBackToRack called for rackIndex: ${rackIndex}`);
+      console.warn(`[DragDrop] [${timestamp}] animateBackToRack stack:`, new Error().stack);
+
       const rackLayout = rackLayoutRef.current;
       const offset = containerOffsetRef.current;
 
       if (!rackLayout) {
+        console.warn(`[DragDrop] [${timestamp}] animateBackToRack - no rackLayout, completing immediately`);
         onComplete();
         return;
       }
@@ -1392,6 +1512,14 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       const targetX = slotCenter.x - offset.x;
       const targetY = slotCenter.y - offset.y;
 
+      console.warn(`[DragDrop] [${timestamp}] animateBackToRack - Animating to RACK slot`, {
+        visualSlot,
+        targetX,
+        targetY,
+        slotCenter,
+        offset,
+      });
+
       // Animate back to rack
       // NOTE: Don't set draggingRackIndexShared = -1 here!
       // resetState's setTimeout will do it AFTER React updates the rack tile visibility.
@@ -1413,7 +1541,23 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   // Stable settle completion handler that reads from ref (prevents GC issues on real devices)
   // Note: UI thread work (draggingRackIndexShared) is done in worklets before this is called
   const completeSettleFromRef = useCallback(() => {
+    const timestamp = Date.now();
+    console.warn(`[DragDrop] [${timestamp}] completeSettleFromRef called`);
     const pending = pendingSettleRef.current;
+    console.warn(`[DragDrop] [${timestamp}] pending:`, pending ? {
+      target: pending.target,
+      source: pending.source,
+      placementSuccess: pending.placementSuccess,
+    } : 'null');
+
+    // Check pendingTiles state RIGHT NOW
+    const state = useGameStore.getState();
+    const gameState = state.currentGameUlid ? state.gameStates[state.currentGameUlid] : null;
+    console.warn(`[DragDrop] [${timestamp}] pendingTiles at completeSettleFromRef:`, {
+      count: gameState?.pendingTiles.length,
+      tiles: gameState?.pendingTiles.map(t => `${t.letter}@${t.x},${t.y}`),
+    });
+
     pendingSettleRef.current = null;
 
     // Helper to reset all JS state
@@ -1455,17 +1599,86 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Call the drag callback to see if placement succeeded
-    pending.onComplete?.(pending.target);
-    const success = pending.dragCallback?.(pending.target, true) ?? true;
+    // Check placement result
+    // For board targets, callbacks were called via setTimeout in endDragJS
+    // For other targets, we call them here
+    const hasCallbacks = pending.onComplete || pending.dragCallback;
+    let success = pending.placementSuccess ?? true; // Default to true if not set
+
+    if (hasCallbacks) {
+      // Non-board target - call callbacks now
+      console.warn('[DragDrop] calling onComplete and dragCallback (deferred)');
+      pending.onComplete?.(pending.target);
+      success = pending.dragCallback?.(pending.target, true) ?? true;
+      console.warn('[DragDrop] dragCallback returned:', success);
+    } else {
+      // Board target - callbacks already called via setTimeout
+      console.warn('[DragDrop] using deferred placement result:', success);
+    }
+
+    // Update debug info with placement result
+    if (SHOW_DEBUG_OVERLAY) {
+      setDebugInfo((prev) => {
+        if (prev.length === 0) return prev;
+        const first = prev[0];
+        if (!first) return prev;
+        const updated: DebugInfo[] = [
+          {
+            timestamp: first.timestamp,
+            dropPosition: first.dropPosition,
+            boardLayout: first.boardLayout,
+            containerOffset: first.containerOffset,
+            cellResult: first.cellResult,
+            rackLayout: first.rackLayout,
+            sharedValues: first.sharedValues,
+            placementResult: success ? 'success' : 'failed',
+            failReason: success ? undefined : 'placement callback returned false',
+          },
+          ...prev.slice(1),
+        ];
+        return updated;
+      });
+    }
 
     if (!success && pending.source?.type === 'rack') {
       // Placement failed - animate back to rack
+      console.warn('[DragDrop] placement failed, animating back to rack');
       animateBackToRack(pending.source.rackIndex, resetState);
       return;
     }
 
     // Placement succeeded - reset state
+    console.warn('[DragDrop] placement succeeded, calling resetState');
+
+    // Verify tile was actually added to pendingTiles - IMMEDIATE
+    const stateNow = useGameStore.getState();
+    const gameStateNow = stateNow.currentGameUlid ? stateNow.gameStates[stateNow.currentGameUlid] : null;
+    console.warn('[DragDrop] VERIFICATION IMMEDIATE - pendingTiles:', {
+      count: gameStateNow?.pendingTiles.length,
+      tiles: gameStateNow?.pendingTiles.map(t => ({ letter: t.letter, x: t.x, y: t.y, rackIndex: t.rackIndex })),
+      target: pending.target,
+    });
+
+    // Verify tile was actually added to pendingTiles - AFTER 100ms
+    setTimeout(() => {
+      const state = useGameStore.getState();
+      const gameState = state.currentGameUlid ? state.gameStates[state.currentGameUlid] : null;
+      console.warn('[DragDrop] VERIFICATION 100ms - pendingTiles:', {
+        count: gameState?.pendingTiles.length,
+        tiles: gameState?.pendingTiles.map(t => ({ letter: t.letter, x: t.x, y: t.y, rackIndex: t.rackIndex })),
+      });
+    }, 100);
+
+    // Verify tile was actually added to pendingTiles - AFTER 500ms
+    setTimeout(() => {
+      const state = useGameStore.getState();
+      const gameState = state.currentGameUlid ? state.gameStates[state.currentGameUlid] : null;
+      console.warn('[DragDrop] VERIFICATION 500ms - pendingTiles:', {
+        count: gameState?.pendingTiles.length,
+        tiles: gameState?.pendingTiles.map(t => ({ letter: t.letter, x: t.x, y: t.y, rackIndex: t.rackIndex })),
+      });
+    }, 500);
+
     resetState();
   }, [
     boardFloatingOpacity,
@@ -1486,6 +1699,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
   // Stable wrapper for worklet callbacks (never changes reference)
   const onSettleComplete = useCallback(() => {
+    console.warn(`[DragDrop] [${Date.now()}] onSettleComplete called`);
     completeSettleRef.current();
   }, []);
 
@@ -2086,12 +2300,13 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       if (cellSize > 0) {
         const boardWidth = boardSize * cellSize;
         const boardHeight = boardSize * cellSize;
+        const tolerance = 2; // Match tolerance used in getBoardCellFromPosition
 
         if (
-          screenX >= boardLeft &&
-          screenX <= boardLeft + boardWidth &&
-          screenY >= boardTop &&
-          screenY <= boardTop + boardHeight
+          screenX >= boardLeft - tolerance &&
+          screenX <= boardLeft + boardWidth + tolerance &&
+          screenY >= boardTop - tolerance &&
+          screenY <= boardTop + boardHeight + tolerance
         ) {
           // Dropping on board - snap scale immediately
           scale.value = cellSize / TILE_SIZE;
@@ -2175,6 +2390,63 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   // Render
   // -------------------------------------------------------------------------
 
+  // Debug overlay for TestFlight diagnosis
+  const handleCopyDebug = useCallback(() => {
+    const text = JSON.stringify(debugInfo, null, 2);
+    Clipboard.setString(text);
+  }, [debugInfo]);
+
+  const handleClearDebug = useCallback(() => {
+    setDebugInfo([]);
+  }, []);
+
+  const debugOverlay = SHOW_DEBUG_OVERLAY && debugInfo.length > 0 && (
+    <View style={styles.debugOverlay}>
+      <View style={styles.debugHeader}>
+        <Text style={styles.debugTitle}>Drop Debug ({debugInfo.length})</Text>
+        <View style={styles.debugButtons}>
+          <TouchableOpacity onPress={handleCopyDebug} style={styles.debugButton}>
+            <Text style={styles.debugButtonText}>Copy</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleClearDebug} style={styles.debugButton}>
+            <Text style={styles.debugButtonText}>Clear</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+      <ScrollView style={styles.debugScroll}>
+        {debugInfo.map((info, idx) => (
+          <View key={idx} style={styles.debugEntry}>
+            <Text style={[styles.debugText, { color: info.placementResult === 'success' ? '#4ecdc4' : info.placementResult === 'failed' ? '#ff6b6b' : '#ffff00' }]}>
+              [{info.timestamp}] cell={info.cellResult ? `${info.cellResult.x},${info.cellResult.y}` : 'NULL'} → {info.placementResult || 'pending'}
+            </Text>
+            {info.failReason && (
+              <Text style={[styles.debugText, { color: '#ff6b6b' }]}>
+                reason: {info.failReason}
+              </Text>
+            )}
+            <Text style={styles.debugText}>
+              drop: x={info.dropPosition?.x.toFixed(1)} y={info.dropPosition?.y.toFixed(1)}
+            </Text>
+            <Text style={styles.debugText}>
+              board: x={info.boardLayout?.x.toFixed(1)} y={info.boardLayout?.y.toFixed(1)} w={info.boardLayout?.width.toFixed(1)} cell={info.boardLayout?.cellSize.toFixed(2)}
+            </Text>
+            <Text style={styles.debugText}>
+              shared: L={info.sharedValues?.boardLeft.toFixed(1)} T={info.sharedValues?.boardTop.toFixed(1)} cs={info.sharedValues?.cellSize.toFixed(2)}
+            </Text>
+            <Text style={styles.debugText}>
+              offset: x={info.containerOffset?.x.toFixed(1)} y={info.containerOffset?.y.toFixed(1)}
+            </Text>
+            {info.boardLayout && info.dropPosition && (
+              <Text style={styles.debugText}>
+                relPos: x={((info.dropPosition.x - info.boardLayout.x)).toFixed(1)} y={((info.dropPosition.y - info.boardLayout.y)).toFixed(1)} (max: {info.boardLayout.width.toFixed(1)})
+              </Text>
+            )}
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  );
+
   // Per-tile floating approach: render one floating tile per rack slot.
   // Each knows its content at render time - no sync between worklet and React needed!
   // Visibility is controlled by worklet checking if this rackIndex is being dragged.
@@ -2224,6 +2496,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
             <Animated.View style={styles.container}>{children}</Animated.View>
           </GestureDetector>
           {floatingTiles}
+          {debugOverlay}
         </View>
       )}
     </DragDropContext.Provider>
@@ -2250,6 +2523,62 @@ const styles = StyleSheet.create({
     width: TILE_SIZE,
     height: TILE_SIZE,
     zIndex: 1000,
+  },
+  // Debug overlay styles
+  debugOverlay: {
+    position: 'absolute',
+    top: 50,
+    left: 10,
+    right: 10,
+    maxHeight: 300,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    borderRadius: 8,
+    padding: 8,
+    zIndex: 2000,
+  },
+  debugHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#444',
+    paddingBottom: 4,
+  },
+  debugTitle: {
+    color: '#ff6b6b',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  debugButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  debugButton: {
+    backgroundColor: '#333',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  debugButtonText: {
+    color: '#4ecdc4',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  debugScroll: {
+    maxHeight: 220,
+  },
+  debugEntry: {
+    marginBottom: 8,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  debugText: {
+    color: '#fff',
+    fontSize: 10,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    lineHeight: 14,
   },
 });
 

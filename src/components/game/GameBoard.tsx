@@ -130,10 +130,21 @@ export function GameBoard({
   }, [setBoardLayout]);
 
   // Measure board position after layout settles
+  // Re-measure when game changes (navigation may have moved the board)
   useEffect(() => {
-    const timer = setTimeout(measureBoard, 100);
-    return () => clearTimeout(timer);
-  }, [measureBoard, boardSize]);
+    if (boardSize > 0) {
+      // Multiple measurements to catch navigation animations
+      measureBoard();
+      const timer1 = setTimeout(measureBoard, 100);
+      const timer2 = setTimeout(measureBoard, 300);
+      const timer3 = setTimeout(measureBoard, 500);
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+        clearTimeout(timer3);
+      };
+    }
+  }, [measureBoard, boardSize, currentGameUlid]);
 
   // Re-measure when drag starts to ensure accurate positioning
   useEffect(() => {
