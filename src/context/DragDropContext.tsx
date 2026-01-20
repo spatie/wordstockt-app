@@ -2499,8 +2499,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
               <Text style={styles.debugText}>
                 relPos: x=
                 {(info.dropPosition.x - info.boardLayout.x).toFixed(1)} y=
-                {(info.dropPosition.y - info.boardLayout.y).toFixed(1)} (max:{' '}
-                {info.boardLayout.width.toFixed(1)})
+                {(info.dropPosition.y - info.boardLayout.y).toFixed(
+                  1
+                )} (max: {info.boardLayout.width.toFixed(1)})
               </Text>
             )}
           </View>

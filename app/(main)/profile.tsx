@@ -14,7 +14,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { Alert } from 'react-native';
 import { useAuthStore } from '../../src/stores/authStore';
 import { ROUTES } from '../../src/config/routes';
-import { useUpdateProfile, useResendVerification } from '../../src/api/queries/useAuth';
+import {
+  useUpdateProfile,
+  useResendVerification,
+} from '../../src/api/queries/useAuth';
 import { useUserStats } from '../../src/api/queries/useStats';
 import { getApiError } from '../../src/api/client';
 import { colors } from '../../src/config/theme';
@@ -77,7 +80,10 @@ export default function ProfileScreen() {
   const handleResendVerification = async () => {
     try {
       await resendVerification.mutateAsync();
-      Alert.alert('Email Sent', 'A verification email has been sent to your inbox.');
+      Alert.alert(
+        'Email Sent',
+        'A verification email has been sent to your inbox.'
+      );
     } catch (err) {
       const apiError = getApiError(err);
       Alert.alert('Error', apiError.message);
@@ -129,7 +135,9 @@ export default function ProfileScreen() {
               size={48}
               color={colors.primary}
             />
-            <Text style={styles.guestPromptTitle}>Create Your Free Account</Text>
+            <Text style={styles.guestPromptTitle}>
+              Create Your Free Account
+            </Text>
             <Text style={styles.guestPromptText}>
               100% free. No ads. Your data stays private.
             </Text>
@@ -157,7 +165,9 @@ export default function ProfileScreen() {
                   size={20}
                   color={colors.gameWon}
                 />
-                <Text style={styles.benefitText}>Track wins, stats & achievements</Text>
+                <Text style={styles.benefitText}>
+                  Track wins, stats & achievements
+                </Text>
               </View>
               <View style={styles.benefitRow}>
                 <Ionicons
@@ -165,7 +175,9 @@ export default function ProfileScreen() {
                   size={20}
                   color={colors.gameWon}
                 />
-                <Text style={styles.benefitText}>Add friends & send invites</Text>
+                <Text style={styles.benefitText}>
+                  Add friends & send invites
+                </Text>
               </View>
               <View style={styles.benefitRow}>
                 <Ionicons
@@ -173,7 +185,9 @@ export default function ProfileScreen() {
                   size={20}
                   color={colors.gameWon}
                 />
-                <Text style={styles.benefitText}>Compete on the leaderboard</Text>
+                <Text style={styles.benefitText}>
+                  Compete on the leaderboard
+                </Text>
               </View>
             </View>
 
@@ -227,7 +241,9 @@ export default function ProfileScreen() {
               style={styles.resendButton}
             >
               <Text style={styles.resendButtonText}>
-                {resendVerification.isPending ? 'Sending...' : 'Resend verification email'}
+                {resendVerification.isPending
+                  ? 'Sending...'
+                  : 'Resend verification email'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -256,7 +272,8 @@ export default function ProfileScreen() {
           />
           {hasEmailChanges && (
             <Text style={styles.warningHint}>
-              Your email will become unverified. A new verification link will be sent.
+              Your email will become unverified. A new verification link will be
+              sent.
             </Text>
           )}
         </View>

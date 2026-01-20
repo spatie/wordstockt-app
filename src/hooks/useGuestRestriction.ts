@@ -29,31 +29,28 @@ export function useGuestRestriction() {
     [isGuest]
   );
 
-  const showUpgradePrompt = useCallback(
-    (feature?: RestrictedFeature) => {
-      const featureText = feature
-        ? FEATURE_MESSAGES[feature]
-        : 'access this feature';
+  const showUpgradePrompt = useCallback((feature?: RestrictedFeature) => {
+    const featureText = feature
+      ? FEATURE_MESSAGES[feature]
+      : 'access this feature';
 
-      Alert.alert(
-        'Create a Free Account',
-        `To ${featureText}, create a free account. No ads, no spam, your data stays private.`,
-        [
-          { text: 'Not Now', style: 'cancel' },
-          {
-            text: 'Sign Up Free',
-            onPress: () => router.push(ROUTES.CONVERT_ACCOUNT),
-          },
-        ]
-      );
-    },
-    []
-  );
+    Alert.alert(
+      'Create a Free Account',
+      `To ${featureText}, create a free account. No ads, no spam, your data stays private.`,
+      [
+        { text: 'Not Now', style: 'cancel' },
+        {
+          text: 'Sign Up Free',
+          onPress: () => router.push(ROUTES.CONVERT_ACCOUNT),
+        },
+      ]
+    );
+  }, []);
 
   const showGameLimitPrompt = useCallback(() => {
     Alert.alert(
       "You're on a roll!",
-      'Guests can play up to 3 games at a time. Create a free account for unlimited games - it\'s quick and completely free!',
+      "Guests can play up to 3 games at a time. Create a free account for unlimited games - it's quick and completely free!",
       [
         { text: 'Got it', style: 'cancel' },
         {
