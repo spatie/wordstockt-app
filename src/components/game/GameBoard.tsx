@@ -126,7 +126,7 @@ export function GameBoard({
       const cellSize = innerWidth / BOARD_SIZE;
       // On Android, measureInWindow may not include status bar height, but touch events do
       const statusBarOffset =
-        Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0;
+        Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0;
       setBoardLayout({
         x: x + inset,
         y: y + statusBarOffset + inset,

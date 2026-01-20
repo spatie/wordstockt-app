@@ -137,7 +137,10 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
             ...gameState.pendingTiles,
             { ...tile, x, y, rackIndex },
           ];
-          console.warn('[gameStore] placeTile - new pendingTiles count:', newPendingTiles.length);
+          console.warn(
+            '[gameStore] placeTile - new pendingTiles count:',
+            newPendingTiles.length
+          );
           return {
             ...updateCurrentGameState(state, {
               pendingTiles: newPendingTiles,

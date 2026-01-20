@@ -445,11 +445,31 @@ const RecallingTileItem = React.memo(function RecallingTileItem({
     'worklet';
     const p = progress.value;
     return {
-      backgroundColor: interpolateColor(p, [0, 1], [PENDING_TILE_BG, RACK_TILE_BG]),
-      borderTopColor: interpolateColor(p, [0, 1], [PENDING_BORDER_LIGHT, RACK_BORDER_LIGHT]),
-      borderLeftColor: interpolateColor(p, [0, 1], [PENDING_BORDER_LIGHT, RACK_BORDER_LIGHT]),
-      borderBottomColor: interpolateColor(p, [0, 1], [PENDING_BORDER_DARK, RACK_BORDER_DARK]),
-      borderRightColor: interpolateColor(p, [0, 1], [PENDING_BORDER_DARK, RACK_BORDER_DARK]),
+      backgroundColor: interpolateColor(
+        p,
+        [0, 1],
+        [PENDING_TILE_BG, RACK_TILE_BG]
+      ),
+      borderTopColor: interpolateColor(
+        p,
+        [0, 1],
+        [PENDING_BORDER_LIGHT, RACK_BORDER_LIGHT]
+      ),
+      borderLeftColor: interpolateColor(
+        p,
+        [0, 1],
+        [PENDING_BORDER_LIGHT, RACK_BORDER_LIGHT]
+      ),
+      borderBottomColor: interpolateColor(
+        p,
+        [0, 1],
+        [PENDING_BORDER_DARK, RACK_BORDER_DARK]
+      ),
+      borderRightColor: interpolateColor(
+        p,
+        [0, 1],
+        [PENDING_BORDER_DARK, RACK_BORDER_DARK]
+      ),
     };
   });
 
@@ -607,7 +627,13 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       recallingBoardPositionsShared.value = [];
     }
     prevGameUlidRef.current = currentGameUlid;
-  }, [currentGameUlid, boardFloatingOpacity, scale, recallProgress, recallingBoardPositionsShared]);
+  }, [
+    currentGameUlid,
+    boardFloatingOpacity,
+    scale,
+    recallProgress,
+    recallingBoardPositionsShared,
+  ]);
 
   // Sync game state to shared values for worklet access
   // Re-runs when currentGameUlid changes (including after Zustand hydration)
@@ -853,7 +879,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     containerRef.current?.measureInWindow((x, y) => {
       // On Android, measureInWindow may not include status bar height, but touch events do
       const statusBarOffset =
-        Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0;
+        Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0;
       containerOffsetRef.current = { x, y: y + statusBarOffset };
     });
   }, []);
@@ -1236,7 +1262,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       const offset = containerOffsetRef.current;
 
       // Capture debug info for on-screen overlay
-      const captureDebugInfo = (cellResult: { x: number; y: number } | null) => {
+      const captureDebugInfo = (
+        cellResult: { x: number; y: number } | null
+      ) => {
         if (SHOW_DEBUG_OVERLAY) {
           const info: DebugInfo = {
             timestamp: new Date().toISOString().substr(11, 12),
@@ -1663,7 +1691,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
             rackLayout: first.rackLayout,
             sharedValues: first.sharedValues,
             placementResult: success ? 'success' : 'failed',
-            failReason: success ? undefined : 'placement callback returned false',
+            failReason: success
+              ? undefined
+              : 'placement callback returned false',
           },
           ...prev.slice(1),
         ];
@@ -1874,7 +1904,12 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         setRecallingBoardPositions(tiles.map((t) => ({ x: t.x, y: t.y })));
       });
     },
-    [recallProgress, onRecallComplete, recallingRackIndicesShared, recallingBoardPositionsShared]
+    [
+      recallProgress,
+      onRecallComplete,
+      recallingRackIndicesShared,
+      recallingBoardPositionsShared,
+    ]
   );
 
   // -------------------------------------------------------------------------
@@ -2400,10 +2435,16 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       <View style={styles.debugHeader}>
         <Text style={styles.debugTitle}>Drop Debug ({debugInfo.length})</Text>
         <View style={styles.debugButtons}>
-          <TouchableOpacity onPress={handleCopyDebug} style={styles.debugButton}>
+          <TouchableOpacity
+            onPress={handleCopyDebug}
+            style={styles.debugButton}
+          >
             <Text style={styles.debugButtonText}>Copy</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleClearDebug} style={styles.debugButton}>
+          <TouchableOpacity
+            onPress={handleClearDebug}
+            style={styles.debugButton}
+          >
             <Text style={styles.debugButtonText}>Clear</Text>
           </TouchableOpacity>
         </View>
@@ -2411,8 +2452,24 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       <ScrollView style={styles.debugScroll}>
         {debugInfo.map((info, idx) => (
           <View key={idx} style={styles.debugEntry}>
-            <Text style={[styles.debugText, { color: info.placementResult === 'success' ? '#4ecdc4' : info.placementResult === 'failed' ? '#ff6b6b' : '#ffff00' }]}>
-              [{info.timestamp}] cell={info.cellResult ? `${info.cellResult.x},${info.cellResult.y}` : 'NULL'} → {info.placementResult || 'pending'}
+            <Text
+              style={[
+                styles.debugText,
+                {
+                  color:
+                    info.placementResult === 'success'
+                      ? '#4ecdc4'
+                      : info.placementResult === 'failed'
+                        ? '#ff6b6b'
+                        : '#ffff00',
+                },
+              ]}
+            >
+              [{info.timestamp}] cell=
+              {info.cellResult
+                ? `${info.cellResult.x},${info.cellResult.y}`
+                : 'NULL'}{' '}
+              → {info.placementResult || 'pending'}
             </Text>
             {info.failReason && (
               <Text style={[styles.debugText, { color: '#ff6b6b' }]}>
@@ -2420,20 +2477,30 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
               </Text>
             )}
             <Text style={styles.debugText}>
-              drop: x={info.dropPosition?.x.toFixed(1)} y={info.dropPosition?.y.toFixed(1)}
+              drop: x={info.dropPosition?.x.toFixed(1)} y=
+              {info.dropPosition?.y.toFixed(1)}
             </Text>
             <Text style={styles.debugText}>
-              board: x={info.boardLayout?.x.toFixed(1)} y={info.boardLayout?.y.toFixed(1)} w={info.boardLayout?.width.toFixed(1)} cell={info.boardLayout?.cellSize.toFixed(2)}
+              board: x={info.boardLayout?.x.toFixed(1)} y=
+              {info.boardLayout?.y.toFixed(1)} w=
+              {info.boardLayout?.width.toFixed(1)} cell=
+              {info.boardLayout?.cellSize.toFixed(2)}
             </Text>
             <Text style={styles.debugText}>
-              shared: L={info.sharedValues?.boardLeft.toFixed(1)} T={info.sharedValues?.boardTop.toFixed(1)} cs={info.sharedValues?.cellSize.toFixed(2)}
+              shared: L={info.sharedValues?.boardLeft.toFixed(1)} T=
+              {info.sharedValues?.boardTop.toFixed(1)} cs=
+              {info.sharedValues?.cellSize.toFixed(2)}
             </Text>
             <Text style={styles.debugText}>
-              offset: x={info.containerOffset?.x.toFixed(1)} y={info.containerOffset?.y.toFixed(1)}
+              offset: x={info.containerOffset?.x.toFixed(1)} y=
+              {info.containerOffset?.y.toFixed(1)}
             </Text>
             {info.boardLayout && info.dropPosition && (
               <Text style={styles.debugText}>
-                relPos: x={((info.dropPosition.x - info.boardLayout.x)).toFixed(1)} y={((info.dropPosition.y - info.boardLayout.y)).toFixed(1)} (max: {info.boardLayout.width.toFixed(1)})
+                relPos: x=
+                {(info.dropPosition.x - info.boardLayout.x).toFixed(1)} y=
+                {(info.dropPosition.y - info.boardLayout.y).toFixed(1)} (max:{' '}
+                {info.boardLayout.width.toFixed(1)})
               </Text>
             )}
           </View>

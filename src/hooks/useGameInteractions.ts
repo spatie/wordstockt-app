@@ -70,11 +70,16 @@ export function useGameInteractions({
   // Handle blank tile modal dismiss - remove the tile from the board
   const handleBlankTileDismiss = useCallback(() => {
     const timestamp = Date.now();
-    console.warn(`[GameInteractions] [${timestamp}] handleBlankTileDismiss called`, {
-      blankTileSelection,
-    });
+    console.warn(
+      `[GameInteractions] [${timestamp}] handleBlankTileDismiss called`,
+      {
+        blankTileSelection,
+      }
+    );
     if (blankTileSelection) {
-      console.warn(`[GameInteractions] [${timestamp}] Removing blank tile at ${blankTileSelection.x},${blankTileSelection.y}`);
+      console.warn(
+        `[GameInteractions] [${timestamp}] Removing blank tile at ${blankTileSelection.x},${blankTileSelection.y}`
+      );
       removeTile(blankTileSelection.x, blankTileSelection.y);
     }
     cancelBlankTileSelection();

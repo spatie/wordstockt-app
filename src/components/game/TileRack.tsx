@@ -309,7 +309,7 @@ export function TileRack({ tiles, disabled, onTileDrop }: TileRackProps) {
       // Calculate the Y offset to get the actual tile position
       // On Android, measureInWindow may not include status bar height, but touch events do
       const statusBarOffset =
-        Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0;
+        Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0;
       const tileY = y + statusBarOffset + (height - TILE_SIZE) / 2;
       const layout: RackLayout = {
         x: startX,

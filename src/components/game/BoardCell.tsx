@@ -250,7 +250,10 @@ export function BoardCell({
   // For web: hide via React state since we don't use immediateHideStyle
   const shouldHideViaReactState =
     Platform.OS === 'web'
-      ? isThisDragging || isSettlingToThis || isSettlingFromThis || isBeingRecalled
+      ? isThisDragging ||
+        isSettlingToThis ||
+        isSettlingFromThis ||
+        isBeingRecalled
       : isThisDragging || isSettlingFromThis || isBeingRecalled; // Note: no isSettlingToThis for native
   const tile = placedTile ?? (shouldHideViaReactState ? null : pendingTile);
   const isPending =
@@ -403,7 +406,8 @@ function AnimatedWordHighlight({ highlight }: AnimatedWordHighlightProps) {
   const prevHighlight = useRef<'valid' | 'invalid' | null>(null);
 
   useEffect(() => {
-    const wasVisible = prevHighlight.current === 'valid' || prevHighlight.current === 'invalid';
+    const wasVisible =
+      prevHighlight.current === 'valid' || prevHighlight.current === 'invalid';
     const isNowVisible = highlight === 'valid' || highlight === 'invalid';
 
     if (isNowVisible && !wasVisible) {
@@ -411,7 +415,9 @@ function AnimatedWordHighlight({ highlight }: AnimatedWordHighlightProps) {
       prevHighlight.current = highlight;
       const timer = setTimeout(() => {
         setShouldRender(true);
-        opacity.value = withTiming(1, { duration: HIGHLIGHT_ANIMATION_DURATION });
+        opacity.value = withTiming(1, {
+          duration: HIGHLIGHT_ANIMATION_DURATION,
+        });
       }, HIGHLIGHT_ANIMATION_DELAY);
       return () => clearTimeout(timer);
     }
