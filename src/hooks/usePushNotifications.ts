@@ -146,7 +146,7 @@ export function usePushNotifications() {
         if (data?.type === 'invitation') {
           router.push('/(main)');
         } else if (data?.game_ulid) {
-          router.push(`/(main)/game/${data.game_ulid}`);
+          router.replace(`/(main)/game/${data.game_ulid}`);
         }
       });
 

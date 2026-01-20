@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,12 +9,12 @@ import {
   TouchableOpacity,
   Pressable,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Alert } from 'react-native';
 import { useAuthStore } from '../../src/stores/authStore';
 import { ROUTES } from '../../src/config/routes';
-import { useUpdateProfile, useResendVerification } from '../../src/api/queries/useAuth';
+import { useUpdateProfile, useResendVerification, useCurrentUser } from '../../src/api/queries/useAuth';
 import { useUserStats } from '../../src/api/queries/useStats';
 import { getApiError } from '../../src/api/client';
 import { colors } from '../../src/config/theme';
@@ -34,11 +34,20 @@ export default function ProfileScreen() {
   const isGuest = useAuthStore((s) => s.isGuest);
   const updateProfile = useUpdateProfile();
   const resendVerification = useResendVerification();
+  const { refetch: refetchUser } = useCurrentUser();
 
   const [username, setUsername] = useState(user?.username ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
   const [avatarColor, setAvatarColor] = useState(user?.avatarColor ?? null);
   const [error, setError] = useState<string | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isEmailVerified(user)) {
+        refetchUser();
+      }
+    }, [user, refetchUser])
+  );
 
   const { data: stats, isLoading: statsLoading } = useUserStats(
     user?.ulid ?? '',

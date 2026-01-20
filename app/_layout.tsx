@@ -18,6 +18,7 @@ import {
   useVerificationReminder,
   useOTAUpdates,
 } from '../src/hooks';
+import { useCurrentUser } from '../src/api/queries/useAuth';
 import { isGracePeriodExpired } from '../src/utils/emailVerification';
 import { initSentry } from '../src/config/sentry';
 
@@ -46,6 +47,7 @@ function RootLayoutNav() {
   useDeepLinks();
   useVerificationReminder();
   useOTAUpdates();
+  useCurrentUser();
 
   const inAuthGroup = segments[0] === '(auth)';
   const isOnVerifyScreen = segments[1] === 'verify-email';
