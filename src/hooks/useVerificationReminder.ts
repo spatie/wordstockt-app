@@ -13,11 +13,12 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 export function useVerificationReminder() {
   const user = useAuthStore((s) => s.user);
+  const isGuest = useAuthStore((s) => s.isGuest);
   const hasCheckedRef = useRef(false);
   const { mutate: resend } = useResendVerification();
 
   useEffect(() => {
-    if (!user || hasCheckedRef.current) {
+    if (!user || isGuest || hasCheckedRef.current) {
       return;
     }
 
@@ -60,5 +61,5 @@ export function useVerificationReminder() {
     }
 
     checkAndShowReminder();
-  }, [user, resend]);
+  }, [user, isGuest, resend]);
 }

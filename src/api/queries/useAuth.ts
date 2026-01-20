@@ -113,6 +113,56 @@ export function useRegister() {
   });
 }
 
+export function useGuestLogin() {
+  const setAuth = useAuthStore((s) => s.setAuth);
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await apiClient.post('/auth/guest');
+      const validated = safeParse(LoginResponseSchema, data, 'useGuestLogin');
+      return {
+        user: transformUser(validated.data),
+        token: validated.token,
+      };
+    },
+    onSuccess: ({ user, token }) => {
+      setAuth(user, token);
+      // Skip push token registration for guests
+    },
+  });
+}
+
+interface ConvertGuestParams {
+  username: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+}
+
+export function useConvertGuest() {
+  const setUser = useAuthStore((s) => s.setUser);
+  const token = useAuthStore((s) => s.token);
+
+  return useMutation({
+    mutationFn: async (params: ConvertGuestParams) => {
+      const { data } = await apiClient.post('/auth/convert-guest', params);
+      const validated = safeParse(
+        AuthUserResponseSchema,
+        data,
+        'useConvertGuest'
+      );
+      return transformUser(validated.data);
+    },
+    onSuccess: async (user) => {
+      setUser(user);
+      // Register push token after conversion
+      if (token) {
+        await registerPushTokenWithAuthToken(token).catch(() => {});
+      }
+    },
+  });
+}
+
 export function useLogout() {
   const logout = useAuthStore((s) => s.logout);
   const setLoggingOut = useAuthStore((s) => s.setLoggingOut);

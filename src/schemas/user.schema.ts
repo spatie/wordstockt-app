@@ -10,12 +10,13 @@ import type {
 export const UserSchema = z.object({
   ulid: z.string(),
   username: z.string(),
-  email: z.string().email().optional(),
+  email: z.string().email().nullish(),
   avatar: z.string().nullable(),
   avatarColor: z.string().nullish(),
   eloRating: z.number(),
   gamesPlayed: z.number(),
   gamesWon: z.number(),
+  isGuest: z.boolean(),
   emailVerifiedAt: z.string().nullable(),
   createdAt: z.string(),
 });
@@ -63,12 +64,13 @@ export function transformUser(data: UserResponse): User {
   return {
     ulid: data.ulid,
     username: data.username,
-    email: data.email,
+    email: data.email ?? undefined,
     avatar: data.avatar,
     avatarColor: data.avatarColor ?? null,
     eloRating: data.eloRating,
     gamesPlayed: data.gamesPlayed,
     gamesWon: data.gamesWon,
+    isGuest: data.isGuest,
     emailVerifiedAt: data.emailVerifiedAt,
     createdAt: data.createdAt,
   };

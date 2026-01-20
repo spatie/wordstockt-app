@@ -41,8 +41,19 @@ export function isTimeoutError(error: unknown): boolean {
 
 export function getApiError(error: unknown): ApiError {
   if (axios.isAxiosError(error)) {
+    const data = error.response?.data;
+    let message = data?.message ?? 'Network error';
+
+    // Extract first validation error if available
+    if (data?.errors && typeof data.errors === 'object') {
+      const firstField = Object.keys(data.errors)[0];
+      if (firstField && Array.isArray(data.errors[firstField])) {
+        message = data.errors[firstField][0];
+      }
+    }
+
     return {
-      message: error.response?.data?.message ?? 'Network error',
+      message,
       status: error.response?.status ?? 500,
     };
   }

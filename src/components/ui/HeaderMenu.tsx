@@ -3,6 +3,7 @@ import { Text, StyleSheet, Platform } from 'react-native';
 import { MenuView, MenuAction } from '@react-native-menu/menu';
 import { useRouter, Href } from 'expo-router';
 import { useLogout } from '../../api/queries/useAuth';
+import { useAuthStore } from '../../stores/authStore';
 import { showConfirm } from '../../utils/alerts';
 import { colors } from '../../config/theme';
 import { DIMENSIONS } from '../../config/constants';
@@ -11,6 +12,7 @@ import { ROUTES } from '../../config/routes';
 export function HeaderMenu() {
   const router = useRouter();
   const logout = useLogout();
+  const isGuest = useAuthStore((s) => s.isGuest);
 
   const handleMenuAction = (actionId: string) => {
     switch (actionId) {
@@ -28,6 +30,9 @@ export function HeaderMenu() {
         break;
       case 'change-password':
         router.push(ROUTES.CHANGE_PASSWORD);
+        break;
+      case 'create-account':
+        router.push(ROUTES.CONVERT_ACCOUNT);
         break;
       case 'rules':
         router.push(ROUTES.RULES);
@@ -59,6 +64,11 @@ export function HeaderMenu() {
       title: 'Change Password',
       image: 'key',
     },
+    createAccount: {
+      id: 'create-account',
+      title: 'Create Free Account',
+      image: 'person.badge.plus',
+    },
     rules: { id: 'rules', title: 'Rules', image: 'book' },
     about: { id: 'about', title: 'About', image: 'info.circle' },
   };
@@ -76,16 +86,19 @@ export function HeaderMenu() {
     ),
   });
 
+  const socialItems = isGuest
+    ? []
+    : [menuItems.leaderboard, menuItems.achievements, menuItems.friends];
+
+  const accountItems = isGuest
+    ? [menuItems.profile, menuItems.createAccount]
+    : [menuItems.profile, menuItems.changePassword];
+
   const actions: MenuAction[] = [
-    section('social-section', 'Social', [
-      menuItems.leaderboard,
-      menuItems.achievements,
-      menuItems.friends,
-    ]),
-    section('account-section', 'Account', [
-      menuItems.profile,
-      menuItems.changePassword,
-    ]),
+    ...(socialItems.length > 0
+      ? [section('social-section', 'Social', socialItems)]
+      : []),
+    section('account-section', 'Account', accountItems),
     section('info-section', 'Help', [menuItems.rules, menuItems.about]),
     {
       id: 'logout',

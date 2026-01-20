@@ -5,18 +5,17 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Link, router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
-import { useLogin } from '../../src/api/queries/useAuth';
+import { useLogin, useGuestLogin } from '../../src/api/queries/useAuth';
 import { getApiError } from '../../src/api/client';
 import { LogoTile } from '../../src/components/ui/LogoTile';
 import { FormInput } from '../../src/components/form/FormInput';
 import { PasswordInput } from '../../src/components/form/PasswordInput';
+import { MainLogo } from '../../src/components/ui/MainLogo';
 import { colors } from '../../src/config/theme';
 import { SPACING, RADIUS, DIMENSIONS } from '../../src/config/constants';
 import { ROUTES } from '../../src/config/routes';
@@ -33,57 +32,28 @@ function Header() {
   );
 }
 
-const LOGO_SIZE = 140;
-
-function MainLogo() {
-  return (
-    <View style={styles.mainLogoContainer}>
-      <View style={styles.mainLogoWrapper}>
-        <Image
-          source={require('../../assets/logo-source.png')}
-          style={styles.mainLogoImage}
-        />
-        {/* Fade overlays for smooth edge transition */}
-        <LinearGradient
-          colors={[colors.background, 'transparent']}
-          style={styles.fadeTop}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-        />
-        <LinearGradient
-          colors={['transparent', colors.background]}
-          style={styles.fadeBottom}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-        />
-        <LinearGradient
-          colors={[colors.background, 'transparent']}
-          style={styles.fadeLeft}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-        />
-        <LinearGradient
-          colors={['transparent', colors.background]}
-          style={styles.fadeRight}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-        />
-      </View>
-    </View>
-  );
-}
-
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const login = useLogin();
+  const guestLogin = useGuestLogin();
 
   const handleLogin = async () => {
     login.mutate({ email, password });
   };
 
-  const errorMessage = login.error ? getApiError(login.error).message : null;
-  const canSubmit = email.length > 0 && password.length > 0 && !login.isPending;
+  const handleGuestLogin = () => {
+    guestLogin.mutate();
+  };
+
+  const errorMessage = login.error
+    ? getApiError(login.error).message
+    : guestLogin.error
+      ? getApiError(guestLogin.error).message
+      : null;
+  const canSubmit =
+    email.length > 0 && password.length > 0 && !login.isPending && !guestLogin.isPending;
+  const isLoading = login.isPending || guestLogin.isPending;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -94,7 +64,7 @@ export default function LoginScreen() {
         extraScrollHeight={20}
       >
         <View style={styles.content}>
-          <Animated.View entering={FadeIn.duration(400)}>
+          <Animated.View entering={FadeIn.duration(400)} style={styles.logoContainer}>
             <MainLogo />
           </Animated.View>
 
@@ -161,10 +131,10 @@ export default function LoginScreen() {
             <TouchableOpacity
               style={[
                 styles.loginButton,
-                !canSubmit && styles.loginButtonDisabled,
+                (!canSubmit || isLoading) && styles.loginButtonDisabled,
               ]}
               onPress={handleLogin}
-              disabled={!canSubmit}
+              disabled={!canSubmit || isLoading}
             >
               {login.isPending ? (
                 <ActivityIndicator color="#FFF" />
@@ -184,6 +154,37 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               </Link>
             </View>
+          </Animated.View>
+
+          {/* Guest Login Section */}
+          <Animated.View
+            entering={FadeInDown.duration(300).delay(450)}
+            style={styles.guestSection}
+          >
+            <View style={styles.dividerContainer}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.guestButton,
+                isLoading && styles.guestButtonDisabled,
+              ]}
+              onPress={handleGuestLogin}
+              disabled={isLoading}
+            >
+              {guestLogin.isPending ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : (
+                <Text style={styles.guestButtonText}>Play as Guest</Text>
+              )}
+            </TouchableOpacity>
+
+            <Text style={styles.guestHelperText}>
+              Try the game first - no account needed
+            </Text>
           </Animated.View>
         </View>
       </KeyboardAwareScrollView>
@@ -225,51 +226,9 @@ const styles = StyleSheet.create({
     padding: SPACING.xxl,
     alignItems: 'center',
   },
-  mainLogoContainer: {
+  logoContainer: {
     marginTop: 40,
     marginBottom: SPACING.xxxl,
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mainLogoWrapper: {
-    width: LOGO_SIZE,
-    height: LOGO_SIZE,
-    borderRadius: LOGO_SIZE * 0.22,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  mainLogoImage: {
-    width: LOGO_SIZE,
-    height: LOGO_SIZE,
-  },
-  fadeTop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 25,
-  },
-  fadeBottom: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 25,
-  },
-  fadeLeft: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    width: 25,
-  },
-  fadeRight: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    right: 0,
-    width: 25,
   },
   title: {
     fontSize: 28,
@@ -334,5 +293,51 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: colors.primary,
+  },
+  guestSection: {
+    width: '100%',
+    marginTop: SPACING.xxl,
+    alignItems: 'center',
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: SPACING.xl,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    marginHorizontal: SPACING.md,
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  guestButton: {
+    width: '100%',
+    borderRadius: 30,
+    height: DIMENSIONS.inputHeight,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.primary,
+    backgroundColor: 'transparent',
+    marginBottom: SPACING.md,
+  },
+  guestButtonDisabled: {
+    opacity: 0.5,
+  },
+  guestButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  guestHelperText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
 });

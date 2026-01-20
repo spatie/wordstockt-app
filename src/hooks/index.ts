@@ -30,3 +30,6 @@ export { useVerificationReminder } from './useVerificationReminder';
 
 // OTA Updates
 export { useOTAUpdates } from './useOTAUpdates';
+
+// Guest restriction
+export { useGuestRestriction } from './useGuestRestriction';

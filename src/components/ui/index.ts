@@ -30,5 +30,6 @@ export { AvatarColorPicker, AVATAR_COLORS } from './AvatarColorPicker';
 // Brand
 export { LogoTile } from './LogoTile';
 
-// Verification
+// Banners
 export { VerificationBanner } from './VerificationBanner';
+export { GuestBanner } from './GuestBanner';

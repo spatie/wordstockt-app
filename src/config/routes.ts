@@ -14,6 +14,7 @@ export const ROUTES = {
   ABOUT: '/(main)/about',
   CHANGE_PASSWORD: '/(main)/change-password',
   DELETE_ACCOUNT: '/(main)/delete-account',
+  CONVERT_ACCOUNT: '/(main)/convert-account',
 
   // Game routes
   GAME: (ulid: string) => `/(main)/game/${ulid}` as const,

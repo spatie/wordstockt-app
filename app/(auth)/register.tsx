@@ -8,58 +8,23 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
-  Image,
   Linking,
 } from 'react-native';
 import { Link } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRegister } from '../../src/api/queries/useAuth';
 import { getApiError } from '../../src/api/client';
 import { FormInput } from '../../src/components/form/FormInput';
 import { PasswordInput } from '../../src/components/form/PasswordInput';
+import { MainLogo } from '../../src/components/ui/MainLogo';
 import { colors } from '../../src/config/theme';
 import { SPACING, RADIUS, DIMENSIONS } from '../../src/config/constants';
 import { ROUTES } from '../../src/config/routes';
-
-const LOGO_SIZE = 140;
-
-function MainLogo() {
-  return (
-    <View style={styles.mainLogoContainer}>
-      <View style={styles.mainLogoWrapper}>
-        <Image
-          source={require('../../assets/logo-source.png')}
-          style={styles.mainLogoImage}
-        />
-        {/* Fade overlays for smooth edge transition */}
-        <LinearGradient
-          colors={[colors.background, 'transparent']}
-          style={styles.fadeTop}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-        />
-        <LinearGradient
-          colors={['transparent', colors.background]}
-          style={styles.fadeBottom}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-        />
-        <LinearGradient
-          colors={[colors.background, 'transparent']}
-          style={styles.fadeLeft}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-        />
-        <LinearGradient
-          colors={['transparent', colors.background]}
-          style={styles.fadeRight}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-        />
-      </View>
-    </View>
-  );
-}
+import {
+  isValidUsername,
+  isValidEmail,
+  isValidPassword,
+  validationHints,
+} from '../../src/utils/validation';
 
 export default function RegisterScreen() {
   const [username, setUsername] = useState('');
@@ -80,18 +45,16 @@ export default function RegisterScreen() {
     ? getApiError(register.error).message
     : null;
 
-  // Validation
-  const isUsernameValid = username.length >= 3 && username.length <= 20;
-  const isEmailValid = email.includes('@') && email.includes('.');
-  const isPasswordValid = password.length >= 8;
+  const usernameValid = isValidUsername(username);
+  const emailValid = isValidEmail(email);
+  const passwordValid = isValidPassword(password);
 
   const canSubmit =
-    isUsernameValid && isEmailValid && isPasswordValid && !register.isPending;
+    usernameValid && emailValid && passwordValid && !register.isPending;
 
-  // Show validation hints only after user starts typing
-  const showUsernameHint = username.length > 0 && !isUsernameValid;
-  const showEmailHint = email.length > 0 && !isEmailValid;
-  const showPasswordHint = password.length > 0 && !isPasswordValid;
+  const showUsernameHint = username.length > 0 && !usernameValid;
+  const showEmailHint = email.length > 0 && !emailValid;
+  const showPasswordHint = password.length > 0 && !passwordValid;
 
   return (
     <View style={styles.container}>
@@ -105,7 +68,9 @@ export default function RegisterScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.content}>
-            <MainLogo />
+            <View style={styles.logoContainer}>
+              <MainLogo />
+            </View>
 
             <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>
@@ -118,7 +83,7 @@ export default function RegisterScreen() {
               placeholder="Username"
               autoCapitalize="none"
               autoComplete="username"
-              error={showUsernameHint ? '3-20 characters required' : undefined}
+              error={showUsernameHint ? validationHints.username : undefined}
             />
 
             <FormInput
@@ -128,7 +93,7 @@ export default function RegisterScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
-              error={showEmailHint ? 'Enter a valid email' : undefined}
+              error={showEmailHint ? validationHints.email : undefined}
             />
 
             <PasswordInput
@@ -136,7 +101,7 @@ export default function RegisterScreen() {
               onChangeText={setPassword}
               placeholder="Password"
               autoComplete="new-password"
-              error={showPasswordHint ? 'At least 8 characters' : undefined}
+              error={showPasswordHint ? validationHints.password : undefined}
             />
 
             {/* Error Message */}
@@ -210,51 +175,9 @@ const styles = StyleSheet.create({
     padding: SPACING.xxl,
     alignItems: 'center',
   },
-  mainLogoContainer: {
+  logoContainer: {
     marginTop: 20,
     marginBottom: SPACING.xl,
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mainLogoWrapper: {
-    width: LOGO_SIZE,
-    height: LOGO_SIZE,
-    borderRadius: LOGO_SIZE * 0.22,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  mainLogoImage: {
-    width: LOGO_SIZE,
-    height: LOGO_SIZE,
-  },
-  fadeTop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 25,
-  },
-  fadeBottom: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 25,
-  },
-  fadeLeft: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    width: 25,
-  },
-  fadeRight: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    right: 0,
-    width: 25,
   },
   title: {
     fontSize: 28,

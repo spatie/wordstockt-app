@@ -7,6 +7,7 @@ interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
+  isGuest: boolean;
   isLoading: boolean;
   isLoggingOut: boolean;
 }
@@ -25,19 +26,27 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       user: null,
       token: null,
       isAuthenticated: false,
+      isGuest: false,
       isLoading: true,
       isLoggingOut: false,
 
       setAuth: (user, token) =>
-        set({ user, token, isAuthenticated: true, isLoading: false }),
+        set({
+          user,
+          token,
+          isAuthenticated: true,
+          isGuest: user.isGuest,
+          isLoading: false,
+        }),
 
-      setUser: (user) => set({ user }),
+      setUser: (user) => set({ user, isGuest: user.isGuest }),
 
       logout: () =>
         set({
           user: null,
           token: null,
           isAuthenticated: false,
+          isGuest: false,
           isLoading: false,
           isLoggingOut: false,
         }),
@@ -52,10 +61,15 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       partialize: (state) => ({ token: state.token, user: state.user }),
       onRehydrateStorage: () => (state, error) => {
         if (error) {
-          useAuthStore.setState({ isLoading: false, isAuthenticated: false });
+          useAuthStore.setState({
+            isLoading: false,
+            isAuthenticated: false,
+            isGuest: false,
+          });
         } else if (state) {
           useAuthStore.setState({
             isAuthenticated: !!state.token,
+            isGuest: state.user?.isGuest ?? false,
             isLoading: false,
           });
         }

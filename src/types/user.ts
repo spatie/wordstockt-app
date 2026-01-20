@@ -7,6 +7,7 @@ export interface User {
   eloRating: number;
   gamesPlayed: number;
   gamesWon: number;
+  isGuest: boolean;
   emailVerifiedAt: string | null;
   createdAt: string;
 }

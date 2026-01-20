@@ -31,9 +31,10 @@ import {
 } from '../../src/api/queries/useInvitations';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useNavigationStore } from '../../src/stores/navigationStore';
-import { useFilteredGames } from '../../src/hooks/useFilteredGames';
+import { useFilteredGames, useGuestRestriction } from '../../src/hooks';
 import { ErrorView } from '../../src/components/ui/ErrorView';
 import { LoadingView } from '../../src/components/ui/LoadingView';
+import { GuestBanner } from '../../src/components/ui/GuestBanner';
 import {
   GameCard,
   CreateGameModal,
@@ -82,6 +83,7 @@ function SectionHeader({
 export default function HomeScreen() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const { isGuest, showGameLimitPrompt } = useGuestRestriction();
   const { data: games, isLoading, error, refetch } = useGames();
   const {
     data: invitations,
@@ -437,11 +439,14 @@ export default function HomeScreen() {
         )}
         keyExtractor={() => 'content'}
         ListHeaderComponent={
-          <TabBar
-            tabs={GAME_TABS}
-            value={activeTab}
-            onChange={handleTabChange}
-          />
+          <>
+            {isGuest && <GuestBanner />}
+            <TabBar
+              tabs={GAME_TABS}
+              value={activeTab}
+              onChange={handleTabChange}
+            />
+          </>
         }
         stickyHeaderIndices={[0]}
         contentContainerStyle={styles.listContent}
@@ -456,7 +461,13 @@ export default function HomeScreen() {
 
       <Animated.View style={styles.fabContainer}>
         <Pressable
-          onPress={() => setShowCreateModal(true)}
+          onPress={() => {
+            if (isGuest && activeGames.length >= 3) {
+              showGameLimitPrompt();
+              return;
+            }
+            setShowCreateModal(true);
+          }}
           style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
         >
           <View style={styles.fabInner}>
