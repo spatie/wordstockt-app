@@ -36,9 +36,11 @@ export default function ConvertAccountScreen() {
   const usernameValid = isValidUsername(username);
   const emailValid = isValidEmail(email);
   const passwordValid = isValidPassword(password);
-  const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
+  const passwordsMatch =
+    password === confirmPassword && confirmPassword.length > 0;
 
-  const canSubmit = usernameValid && emailValid && passwordValid && passwordsMatch;
+  const canSubmit =
+    usernameValid && emailValid && passwordValid && passwordsMatch;
 
   const showUsernameHint = username.length > 0 && !usernameValid;
   const showPasswordHint = password.length > 0 && !passwordValid;
@@ -114,7 +116,11 @@ export default function ConvertAccountScreen() {
               onChangeText={setConfirmPassword}
               placeholder="Confirm Password"
               autoComplete="new-password"
-              error={showConfirmPasswordHint ? validationHints.passwordMismatch : undefined}
+              error={
+                showConfirmPasswordHint
+                  ? validationHints.passwordMismatch
+                  : undefined
+              }
             />
           </View>
 

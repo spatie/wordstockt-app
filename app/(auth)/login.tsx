@@ -52,7 +52,10 @@ export default function LoginScreen() {
       ? getApiError(guestLogin.error).message
       : null;
   const canSubmit =
-    email.length > 0 && password.length > 0 && !login.isPending && !guestLogin.isPending;
+    email.length > 0 &&
+    password.length > 0 &&
+    !login.isPending &&
+    !guestLogin.isPending;
   const isLoading = login.isPending || guestLogin.isPending;
 
   return (
@@ -64,7 +67,10 @@ export default function LoginScreen() {
         extraScrollHeight={20}
       >
         <View style={styles.content}>
-          <Animated.View entering={FadeIn.duration(400)} style={styles.logoContainer}>
+          <Animated.View
+            entering={FadeIn.duration(400)}
+            style={styles.logoContainer}
+          >
             <MainLogo />
           </Animated.View>
 
