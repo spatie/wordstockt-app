@@ -24,7 +24,7 @@
             "supportsTablet": true,
             "bundleIdentifier": "com.wordstockt.app",
             "backgroundColor": "#0D1B2A",
-            "buildNumber": "55",
+            "buildNumber": "56",
             "associatedDomains": [
                 "webcredentials:wordstockt.com",
                 "applinks:wordstockt.com"
