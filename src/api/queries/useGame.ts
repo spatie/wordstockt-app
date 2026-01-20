@@ -44,9 +44,11 @@ export function useSubmitMove() {
       gameUlid,
       tiles,
     }: SubmitMoveParams): Promise<MoveResult> => {
-      const { data } = await apiClient.post(`/games/${gameUlid}/moves`, {
-        tiles: placedTilesToApi(tiles),
-      });
+      const { data } = await apiClient.post(
+        `/games/${gameUlid}/moves`,
+        { tiles: placedTilesToApi(tiles) },
+        { timeout: 7000 }
+      );
       const validated = safeParse(MoveResponseSchema, data, 'useSubmitMove');
       return {
         game: transformGame(validated.data),

@@ -7,6 +7,7 @@ import {
   useResignGame,
 } from '../api/queries/useGame';
 import { useApiError } from './useApiError';
+import { isTimeoutError } from '../api/client';
 import type { PendingTile, Tile } from '../types';
 
 interface UseGameActionsOptions {
@@ -39,7 +40,7 @@ export function useGameActions({
   const passTurn = usePassTurn();
   const swapTiles = useSwapTiles();
   const resignGame = useResignGame();
-  const { errorMessage, setError, clearError } = useApiError();
+  const { errorMessage, setError, setErrorMessage, clearError } = useApiError();
 
   // Submit the current move
   const handlePlay = useCallback(async (): Promise<PlayResult> => {
@@ -58,7 +59,13 @@ export function useGameActions({
         words,
       };
     } catch (err) {
-      setError(err);
+      if (isTimeoutError(err)) {
+        setErrorMessage(
+          "Your move couldn't be submitted right now. Please check your connection and try again."
+        );
+      } else {
+        setError(err);
+      }
       return { success: false };
     }
   }, [
@@ -68,6 +75,7 @@ export function useGameActions({
     submitMove,
     clearPendingTiles,
     setError,
+    setErrorMessage,
   ]);
 
   // Pass the current turn

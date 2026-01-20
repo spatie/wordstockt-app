@@ -4,6 +4,7 @@ import { getApiError } from '../api/client';
 interface UseApiErrorReturn {
   errorMessage: string | null;
   setError: (error: unknown) => void;
+  setErrorMessage: (message: string) => void;
   clearError: () => void;
 }
 
@@ -24,15 +25,19 @@ interface UseApiErrorReturn {
  * ```
  */
 export function useApiError(): UseApiErrorReturn {
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessageState] = useState<string | null>(null);
 
   const setError = useCallback((error: unknown) => {
-    setErrorMessage(getApiError(error).message);
+    setErrorMessageState(getApiError(error).message);
+  }, []);
+
+  const setErrorMessage = useCallback((message: string) => {
+    setErrorMessageState(message);
   }, []);
 
   const clearError = useCallback(() => {
-    setErrorMessage(null);
+    setErrorMessageState(null);
   }, []);
 
-  return { errorMessage, setError, clearError };
+  return { errorMessage, setError, setErrorMessage, clearError };
 }

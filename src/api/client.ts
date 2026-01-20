@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/authStore';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
@@ -32,6 +33,10 @@ apiClient.interceptors.response.use(
 export interface ApiError {
   message: string;
   status: number;
+}
+
+export function isTimeoutError(error: unknown): boolean {
+  return axios.isAxiosError(error) && error.code === 'ECONNABORTED';
 }
 
 export function getApiError(error: unknown): ApiError {
