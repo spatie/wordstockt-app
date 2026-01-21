@@ -7,54 +7,17 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
-  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
 import { useForgotPassword } from '../../src/api/queries/useAuth';
 import { getApiError } from '../../src/api/client';
 import { FormInput } from '../../src/components/form/FormInput';
+import { MainLogo } from '../../src/components/ui/MainLogo';
+import { FloatingTiles } from '../../src/components/ui/FloatingTiles';
 import { colors } from '../../src/config/theme';
 import { SPACING, RADIUS, DIMENSIONS } from '../../src/config/constants';
-
-const LOGO_SIZE = 140;
-
-function MainLogo() {
-  return (
-    <View style={styles.mainLogoContainer}>
-      <View style={styles.mainLogoWrapper}>
-        <Image
-          source={require('../../assets/logo-source.png')}
-          style={styles.mainLogoImage}
-        />
-        <LinearGradient
-          colors={[colors.background, 'transparent']}
-          style={styles.fadeTop}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-        />
-        <LinearGradient
-          colors={['transparent', colors.background]}
-          style={styles.fadeBottom}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-        />
-        <LinearGradient
-          colors={[colors.background, 'transparent']}
-          style={styles.fadeLeft}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-        />
-        <LinearGradient
-          colors={['transparent', colors.background]}
-          style={styles.fadeRight}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-        />
-      </View>
-    </View>
-  );
-}
 
 export default function ForgotPasswordScreen() {
   const [identifier, setIdentifier] = useState('');
@@ -81,8 +44,18 @@ export default function ForgotPasswordScreen() {
   if (submitted) {
     return (
       <View style={styles.container}>
+        <LinearGradient
+          colors={['#0D1B2A', '#152238', '#0D1B2A']}
+          locations={[0, 0.5, 1]}
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+        />
+        <FloatingTiles />
         <View style={styles.content}>
-          <MainLogo />
+          <View style={styles.logoContainer}>
+            <MainLogo />
+          </View>
 
           <View style={styles.successIcon}>
             <Text style={styles.successIconText}>✓</Text>
@@ -104,12 +77,22 @@ export default function ForgotPasswordScreen() {
 
   return (
     <View style={styles.container}>
+      <LinearGradient
+        colors={['#0D1B2A', '#152238', '#0D1B2A']}
+        locations={[0, 0.5, 1]}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+      />
+      <FloatingTiles />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
         <View style={styles.content}>
-          <MainLogo />
+          <View style={styles.logoContainer}>
+            <MainLogo />
+          </View>
 
           <Text style={styles.title}>Forgot Password?</Text>
           <Text style={styles.subtitle}>
@@ -163,51 +146,9 @@ const styles = StyleSheet.create({
     padding: SPACING.xxl,
     alignItems: 'center',
   },
-  mainLogoContainer: {
+  logoContainer: {
     marginTop: 20,
     marginBottom: SPACING.xl,
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mainLogoWrapper: {
-    width: LOGO_SIZE,
-    height: LOGO_SIZE,
-    borderRadius: LOGO_SIZE * 0.22,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  mainLogoImage: {
-    width: LOGO_SIZE,
-    height: LOGO_SIZE,
-  },
-  fadeTop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 25,
-  },
-  fadeBottom: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 25,
-  },
-  fadeLeft: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    width: 25,
-  },
-  fadeRight: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    right: 0,
-    width: 25,
   },
   title: {
     fontSize: 28,
@@ -250,7 +191,9 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '100%',
-    backgroundColor: colors.primary,
+    backgroundColor: 'rgba(74, 144, 217, 0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(74, 144, 217, 0.5)',
     borderRadius: 30,
     height: DIMENSIONS.inputHeight,
     flexDirection: 'row',

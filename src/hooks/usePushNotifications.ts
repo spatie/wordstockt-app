@@ -144,9 +144,14 @@ export function usePushNotifications() {
       Notifications.addNotificationResponseReceivedListener((response) => {
         const data = response.notification.request.content.data;
         if (data?.type === 'invitation') {
-          router.push('/(main)');
+          router.replace('/(main)');
         } else if (data?.game_ulid) {
-          router.replace(`/(main)/game/${data.game_ulid}`);
+          // Navigate to games list first, then push to game
+          // This ensures back button is always available
+          router.replace('/(main)');
+          setTimeout(() => {
+            router.push(`/(main)/game/${data.game_ulid}`);
+          }, 50);
         }
       });
 

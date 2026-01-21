@@ -414,7 +414,14 @@ function GameScreenContent() {
     }
   }, [validationResult, pendingTiles.length, setValidationResult]);
 
-  if (!USE_MOCK_DATA && isLoading) return <LoadingView />;
+  if (!USE_MOCK_DATA && isLoading) {
+    return (
+      <View style={styles.container}>
+        <LoadingView />
+      </View>
+    );
+  }
+
   if (!USE_MOCK_DATA && (error || !game)) {
     return (
       <View style={styles.container}>
@@ -639,7 +646,6 @@ export default function GameScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
     maxWidth: '100%',
     overflow: 'hidden',
   },

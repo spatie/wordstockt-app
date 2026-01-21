@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../client';
 import { gameKeys } from './useGames';
+import { useAuthStore } from '../../stores/authStore';
 import type { GameInvitation } from '../../types/invitation';
 
 export const invitationKeys = {
@@ -49,6 +50,8 @@ function transformInvitation(data: ApiGameInvitation): GameInvitation {
 }
 
 export function useInvitations() {
+  const isGuest = useAuthStore((s) => s.isGuest);
+
   return useQuery({
     queryKey: invitationKeys.lists(),
     queryFn: async () => {
@@ -59,6 +62,7 @@ export function useInvitations() {
     },
     staleTime: 10_000,
     refetchOnMount: 'always',
+    enabled: !isGuest,
   });
 }
 

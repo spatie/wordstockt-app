@@ -22,6 +22,9 @@ export { MenuModal } from './MenuModal';
 // Animation
 export { FadeSlideIn } from './FadeSlideIn';
 
+// Background
+export { GlowingBackground } from './GlowingBackground';
+
 // Avatars
 export { Avatar } from './Avatar';
 export { SmartAvatar } from './SmartAvatar';

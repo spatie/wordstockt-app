@@ -212,7 +212,8 @@ function debugLog(...args: unknown[]) {
 // ============================================================================
 
 const DRAG_ACTIVATION_DISTANCE = 0;
-const SETTLE_DURATION = 110;
+const SETTLE_DURATION = 360;
+const SETTLE_EASING = Easing.out(Easing.quad);
 const RECALL_DURATION = 500;
 // Reduced cooldown for Android due to touch event handling differences
 const DRAG_COOLDOWN_MS = Platform.OS === 'android' ? 25 : 50;
@@ -323,7 +324,7 @@ function RackFloatingTile({
 }
 
 // Board floating tile - for dragging pending tiles from board
-// We delay hiding the board tile until this component is ready to show
+// Uses shared values for immediate rendering without waiting for JS bridge
 interface BoardFloatingTileProps {
   tile: TileType | null;
   positionX: SharedValue<number>;
@@ -332,7 +333,8 @@ interface BoardFloatingTileProps {
   opacity: SharedValue<number>;
   shouldShow: boolean;
   draggingBoardPosition: SharedValue<{ x: number; y: number } | null>;
-  pendingBoardPosition: { x: number; y: number } | null; // Position to hide when ready
+  pendingBoardPosition: { x: number; y: number } | null;
+  boardTilesShared: SharedValue<Record<string, [string, number, boolean, number]>>;
 }
 
 function BoardFloatingTile({
@@ -344,14 +346,41 @@ function BoardFloatingTile({
   shouldShow,
   draggingBoardPosition,
   pendingBoardPosition,
+  boardTilesShared,
 }: BoardFloatingTileProps) {
-  // When tile is ready and shouldShow is true:
-  // 1. Show the floating tile (opacity = 1)
-  // 2. Hide the board tile (draggingBoardPosition = pendingBoardPosition)
-  // This ensures no gap where both tiles are invisible
+  // Track tile data from shared values for immediate rendering (no JS bridge delay)
+  const [immediateTile, setImmediateTile] = useState<{ letter: string; points: number; isBlank: boolean } | null>(null);
+
+  // React to dragging position changes - look up tile data from boardTilesShared
+  // This fires on UI thread immediately when draggingBoardPosition changes
+  useAnimatedReaction(
+    () => draggingBoardPosition.value,
+    (pos, prevPos) => {
+      if (pos && (!prevPos || pos.x !== prevPos.x || pos.y !== prevPos.y)) {
+        // Look up tile data from shared board tiles
+        const key = `${pos.x},${pos.y}`;
+        const tileData = boardTilesShared.value[key];
+        if (tileData) {
+          // Set opacity to 1 here on UI thread - fires in same frame as drag start
+          opacity.value = 1;
+          runOnJS(setImmediateTile)({
+            letter: tileData[0],
+            points: tileData[1],
+            isBlank: tileData[2],
+          });
+        }
+      } else if (!pos && prevPos) {
+        // Clear when dragging ends
+        runOnJS(setImmediateTile)(null);
+      }
+    },
+    []
+  );
+
+  // When tile is ready and shouldShow is true, ensure visibility is set
+  // (This is a fallback - worklet should have already set these)
   useLayoutEffect(() => {
     if (shouldShow && tile && pendingBoardPosition) {
-      // Show floating tile and hide board tile simultaneously
       opacity.value = 1;
       draggingBoardPosition.value = pendingBoardPosition;
     }
@@ -370,16 +399,19 @@ function BoardFloatingTile({
     };
   });
 
+  // Use immediate tile data from shared values, fall back to React state
+  const displayTile = immediateTile || tile;
+
   return (
     <Animated.View
       style={[styles.floatingTile, animatedStyle]}
       pointerEvents="none"
     >
-      {tile && (
+      {displayTile && (
         <Tile
-          letter={tile.letter}
-          points={tile.points}
-          isBlank={tile.isBlank}
+          letter={displayTile.letter}
+          points={displayTile.points}
+          isBlank={displayTile.isBlank}
         />
       )}
     </Animated.View>
@@ -1395,7 +1427,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
             return null;
           }
 
-          // Set up animation to cell center
+          // Set up pending settle ref for animation completion handler
+          // NOTE: Animation is already started in the worklet onEnd handler for immediate response
+          // We just need to set up the completion handler and state here
           pendingSettleRef.current = {
             target,
             source: source!,
@@ -1405,21 +1439,11 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
             placementSuccess: placementSuccess, // Already determined
           };
 
-          // Animate scale and position together
-          scale.value = withTiming(cellSize / TILE_SIZE, {
-            duration: SETTLE_DURATION,
-          });
-          positionX.value = withTiming(targetPos.x, {
-            duration: SETTLE_DURATION,
-          });
-          positionY.value = withTiming(
-            targetPos.y,
-            { duration: SETTLE_DURATION },
-            () => {
-              'worklet';
-              runOnJS(onSettleComplete)();
-            }
-          );
+          // Don't start animation here - worklet already started it
+          // Just set the settling target if not already set (worklet should have set it)
+          if (!settlingTargetShared.value) {
+            settlingTargetShared.value = { x: cell.x, y: cell.y };
+          }
 
           finishDrag(target, true);
           return target;
@@ -1472,15 +1496,16 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
               positionX.value = withTiming(targetPos.x, {
                 duration: SETTLE_DURATION,
+                easing: SETTLE_EASING,
               });
               positionY.value = withTiming(
                 targetPos.y,
-                { duration: SETTLE_DURATION },
-                (finished) => {
+                { duration: SETTLE_DURATION, easing: SETTLE_EASING },
+                () => {
                   'worklet';
-                  if (finished) {
-                    draggingRackIndexShared.value = -1;
-                  }
+                  // For board-to-rack: DON'T hide floating tile here
+                  // The rack tile is still "used" until React updates
+                  // Let onSettleComplete handle hiding after state updates
                   runOnJS(onSettleComplete)();
                 }
               );
@@ -1529,15 +1554,16 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
             positionX.value = withTiming(targetPos.x, {
               duration: SETTLE_DURATION,
+              easing: SETTLE_EASING,
             });
             positionY.value = withTiming(
               targetPos.y,
-              { duration: SETTLE_DURATION },
-              (finished) => {
+              { duration: SETTLE_DURATION, easing: SETTLE_EASING },
+              () => {
                 'worklet';
-                if (finished) {
-                  draggingRackIndexShared.value = -1;
-                }
+                // For returning to rack: DON'T hide floating tile here
+                // If source was board, rack tile is "used" until React updates
+                // Let onSettleComplete handle hiding after state updates
                 runOnJS(onSettleComplete)();
               }
             );
@@ -1558,6 +1584,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       boardFloatingOpacity,
       draggingRackIndexShared,
       draggingBoardPositionShared,
+      settlingTargetShared,
       setBoardFloatingTile,
       setPendingBoardPosition,
       setBoardFloatingShouldShow,
@@ -1600,11 +1627,11 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       // NOTE: Don't set draggingRackIndexShared = -1 here!
       // resetState's setTimeout will do it AFTER React updates the rack tile visibility.
       // This prevents a flash where neither floating tile nor rack tile is visible.
-      positionX.value = withTiming(targetX, { duration: SETTLE_DURATION });
-      scale.value = withTiming(1, { duration: SETTLE_DURATION });
+      positionX.value = withTiming(targetX, { duration: SETTLE_DURATION, easing: SETTLE_EASING });
+      scale.value = withTiming(1, { duration: SETTLE_DURATION, easing: SETTLE_EASING });
       positionY.value = withTiming(
         targetY,
-        { duration: SETTLE_DURATION },
+        { duration: SETTLE_DURATION, easing: SETTLE_EASING },
         () => {
           'worklet';
           runOnJS(onComplete)();
@@ -2291,9 +2318,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         positionY.value = event.y + offsetY;
         scale.value = 1;
 
-        // NOTE: Don't hide board tile here! We pass the position to JS,
-        // and BoardFloatingTile will hide it in useLayoutEffect AFTER
-        // the floating tile is ready. This prevents flash of invisible tile.
+        // Hide board tile AND show floating tile immediately on UI thread
+        // Use RackFloatingTile (which is pre-rendered with content) via the tile's rackIndex
+        draggingBoardPositionShared.value = { x: boardHit.x, y: boardHit.y };
+        draggingRackIndexShared.value = boardHit.tile.rackIndex;
 
         // Update JS state asynchronously (non-blocking)
         runOnJS(onWorkletDragStart)(
@@ -2335,9 +2363,61 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         relativeY: event.y,
       });
 
-      // Let JS handle the animation - this avoids mismatch between worklet's
-      // shared values and JS's ref values that was causing a "snap" effect.
-      // The JS animation uses boardLayoutRef which is the source of truth.
+      // Start animation immediately on UI thread to eliminate bridge delay
+      // Calculate board cell target using shared values
+      const boardLeft = boardLeftShared.value;
+      const boardTop = boardTopShared.value;
+      const cellSize = boardCellSizeShared.value;
+      const boardSize = boardSizeShared.value;
+
+      if (cellSize > 0) {
+        const boardWidth = boardSize * cellSize;
+        const boardHeight = boardSize * cellSize;
+
+        // Check if drop is within board bounds
+        if (
+          screenX >= boardLeft &&
+          screenX <= boardLeft + boardWidth &&
+          screenY >= boardTop &&
+          screenY <= boardTop + boardHeight
+        ) {
+          // Calculate cell coordinates
+          const cellX = Math.floor((screenX - boardLeft) / cellSize);
+          const cellY = Math.floor((screenY - boardTop) / cellSize);
+
+          // Calculate cell center (target position)
+          const targetX = boardLeft + cellX * cellSize + cellSize / 2 - containerOffsetX.value;
+          const targetY = boardTop + cellY * cellSize + cellSize / 2 - containerOffsetY.value;
+
+          // Hide target cell during animation (prevents flash/double tile)
+          settlingTargetShared.value = { x: cellX, y: cellY };
+
+          // Start animation immediately (no bridge delay!)
+          positionX.value = withTiming(targetX, {
+            duration: SETTLE_DURATION,
+            easing: SETTLE_EASING,
+          });
+          scale.value = withTiming(cellSize / TILE_SIZE, {
+            duration: SETTLE_DURATION,
+            easing: SETTLE_EASING,
+          });
+          // Add completion callback to Y animation
+          positionY.value = withTiming(
+            targetY,
+            { duration: SETTLE_DURATION, easing: SETTLE_EASING },
+            () => {
+              'worklet';
+              // Hide floating tile and show board tile immediately on UI thread
+              settlingTargetShared.value = null;
+              draggingRackIndexShared.value = -1;
+              boardFloatingOpacity.value = 0;
+              runOnJS(onSettleComplete)();
+            }
+          );
+        }
+      }
+
+      // Let JS handle state updates and callbacks
       runOnJS(onGestureEndWithPosition)(screenX, screenY);
     })
     .onFinalize((event) => {
@@ -2537,6 +2617,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         shouldShow={boardFloatingShouldShow}
         draggingBoardPosition={draggingBoardPositionShared}
         pendingBoardPosition={pendingBoardPosition}
+        boardTilesShared={boardTilesShared}
       />
       <RecallingTiles tiles={recallingTiles} progress={recallProgress} />
     </View>

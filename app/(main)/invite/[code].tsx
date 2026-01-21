@@ -131,7 +131,6 @@ export default function InviteConfirmScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
     justifyContent: 'center',
     padding: SPACING.xl,
   },

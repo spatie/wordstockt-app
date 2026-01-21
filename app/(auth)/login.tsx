@@ -9,25 +9,23 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Link, router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useLogin, useGuestLogin } from '../../src/api/queries/useAuth';
 import { getApiError } from '../../src/api/client';
-import { LogoTile } from '../../src/components/ui/LogoTile';
 import { FormInput } from '../../src/components/form/FormInput';
 import { PasswordInput } from '../../src/components/form/PasswordInput';
 import { MainLogo } from '../../src/components/ui/MainLogo';
-import { colors } from '../../src/config/theme';
+import { FloatingTiles } from '../../src/components/ui/FloatingTiles';
+import { colors, shadows } from '../../src/config/theme';
 import { SPACING, RADIUS, DIMENSIONS } from '../../src/config/constants';
 import { ROUTES } from '../../src/config/routes';
 
-function Header() {
+function GlowingLogo() {
   return (
-    <View style={styles.header}>
-      <View style={styles.headerLogo}>
-        <LogoTile letter="W" size="small" />
-        <LogoTile letter="S" size="small" />
-        <Text style={styles.headerTitle}>WordStockt</Text>
-      </View>
+    <View style={styles.logoWrapper}>
+      <MainLogo />
     </View>
   );
 }
@@ -59,142 +57,148 @@ export default function LoginScreen() {
   const isLoading = login.isPending || guestLogin.isPending;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAwareScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        extraScrollHeight={20}
-      >
-        <View style={styles.content}>
-          <Animated.View
-            entering={FadeIn.duration(400)}
-            style={styles.logoContainer}
-          >
-            <MainLogo />
-          </Animated.View>
-
-          <Animated.View entering={FadeInDown.duration(300).delay(100)}>
-            <Text style={styles.title}>Welcome to WordStockt</Text>
-          </Animated.View>
-          <Animated.View entering={FadeInDown.duration(300).delay(150)}>
-            <Text style={styles.subtitle}>
-              Enter your details to play WordStockt.
-            </Text>
-          </Animated.View>
-
-          <Animated.View
-            entering={FadeInDown.duration(300).delay(200)}
-            style={styles.fullWidth}
-          >
-            <FormInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Email or Username"
-              keyboardType="default"
-              autoCapitalize="none"
-              autoComplete="username"
-            />
-          </Animated.View>
-
-          <Animated.View
-            entering={FadeInDown.duration(300).delay(250)}
-            style={styles.fullWidth}
-          >
-            <PasswordInput
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Password"
-              autoComplete="password"
-            />
-          </Animated.View>
-
-          {/* Forgot Password */}
-          <Animated.View entering={FadeInDown.duration(300).delay(300)}>
-            <TouchableOpacity
-              style={styles.forgotPassword}
-              onPress={() => router.push(ROUTES.FORGOT_PASSWORD)}
-            >
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-            </TouchableOpacity>
-          </Animated.View>
-
-          {/* Error Message */}
-          {errorMessage && (
+    <View style={styles.container}>
+      <LinearGradient
+        colors={['#0D1B2A', '#152238', '#0D1B2A']}
+        locations={[0, 0.5, 1]}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+      />
+      <FloatingTiles />
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAwareScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          extraScrollHeight={20}
+        >
+          <View style={styles.content}>
             <Animated.View
-              entering={FadeInDown.duration(200)}
-              style={styles.errorContainer}
+              entering={FadeIn.duration(600)}
+              style={styles.logoContainer}
             >
-              <Text style={styles.errorText}>{errorMessage}</Text>
+              <GlowingLogo />
             </Animated.View>
-          )}
 
-          {/* Login Button */}
-          <Animated.View
-            entering={FadeInDown.duration(300).delay(350)}
-            style={styles.fullWidth}
-          >
-            <TouchableOpacity
-              style={[
-                styles.loginButton,
-                (!canSubmit || isLoading) && styles.loginButtonDisabled,
-              ]}
-              onPress={handleLogin}
-              disabled={!canSubmit || isLoading}
+            <Animated.View entering={FadeInDown.duration(400).delay(150)}>
+              <Text style={styles.title}>WordStockt</Text>
+            </Animated.View>
+
+            <Animated.View
+              entering={FadeInDown.duration(400).delay(200)}
+              style={styles.formContainer}
             >
-              {login.isPending ? (
-                <ActivityIndicator color="#FFF" />
-              ) : (
-                <Text style={styles.loginButtonText}>Log In</Text>
+              <View style={styles.inputWrapper}>
+                <FormInput
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="Email or Username"
+                  keyboardType="default"
+                  autoCapitalize="none"
+                  autoComplete="username"
+                />
+              </View>
+
+              <View style={styles.inputWrapper}>
+                <PasswordInput
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Password"
+                  autoComplete="password"
+                />
+              </View>
+
+              <TouchableOpacity
+                style={styles.forgotPassword}
+                onPress={() => router.push(ROUTES.FORGOT_PASSWORD)}
+              >
+                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              </TouchableOpacity>
+
+              {errorMessage && (
+                <Animated.View
+                  entering={FadeInDown.duration(200)}
+                  style={styles.errorContainer}
+                >
+                  <Text style={styles.errorText}>{errorMessage}</Text>
+                </Animated.View>
               )}
-            </TouchableOpacity>
-          </Animated.View>
 
-          {/* Sign Up Link */}
-          <Animated.View entering={FadeInDown.duration(300).delay(400)}>
-            <View style={styles.signUpContainer}>
-              <Text style={styles.signUpText}>Don't have an account? </Text>
-              <Link href={ROUTES.REGISTER} asChild>
-                <TouchableOpacity>
-                  <Text style={styles.signUpLink}>Sign Up</Text>
-                </TouchableOpacity>
-              </Link>
-            </View>
-          </Animated.View>
+              <TouchableOpacity
+                style={[
+                  styles.loginButtonOuter,
+                  (!canSubmit || isLoading) && styles.loginButtonDisabled,
+                ]}
+                onPress={handleLogin}
+                disabled={!canSubmit || isLoading}
+                activeOpacity={0.8}
+              >
+                <BlurView intensity={30} tint="dark" style={styles.loginButton}>
+                  {login.isPending ? (
+                    <ActivityIndicator color="#FFF" />
+                  ) : (
+                    <Text style={styles.loginButtonText}>Log In</Text>
+                  )}
+                </BlurView>
+              </TouchableOpacity>
 
-          {/* Guest Login Section */}
-          <Animated.View
-            entering={FadeInDown.duration(300).delay(450)}
-            style={styles.guestSection}
-          >
-            <View style={styles.dividerContainer}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.dividerLine} />
-            </View>
+              <View style={styles.signUpContainer}>
+                <Text style={styles.signUpText}>Don't have an account? </Text>
+                <Link href={ROUTES.REGISTER} asChild>
+                  <TouchableOpacity>
+                    <Text style={styles.signUpLink}>Sign Up</Text>
+                  </TouchableOpacity>
+                </Link>
+              </View>
+            </Animated.View>
 
-            <TouchableOpacity
-              style={[
-                styles.guestButton,
-                isLoading && styles.guestButtonDisabled,
-              ]}
-              onPress={handleGuestLogin}
-              disabled={isLoading}
+            <Animated.View
+              entering={FadeInDown.duration(400).delay(350)}
+              style={styles.guestSection}
             >
-              {guestLogin.isPending ? (
-                <ActivityIndicator color={colors.primary} />
-              ) : (
-                <Text style={styles.guestButtonText}>Play as Guest</Text>
-              )}
-            </TouchableOpacity>
+              <View style={styles.dividerContainer}>
+                <LinearGradient
+                  colors={['transparent', colors.border]}
+                  style={styles.dividerGradient}
+                  start={{ x: 0, y: 0.5 }}
+                  end={{ x: 1, y: 0.5 }}
+                />
+                <Text style={styles.dividerText}>or</Text>
+                <LinearGradient
+                  colors={[colors.border, 'transparent']}
+                  style={styles.dividerGradient}
+                  start={{ x: 0, y: 0.5 }}
+                  end={{ x: 1, y: 0.5 }}
+                />
+              </View>
 
-            <Text style={styles.guestHelperText}>
-              Try the game first - no account needed
-            </Text>
-          </Animated.View>
-        </View>
-      </KeyboardAwareScrollView>
-    </SafeAreaView>
+              <TouchableOpacity
+                style={[
+                  styles.guestButtonOuter,
+                  isLoading && styles.guestButtonDisabled,
+                ]}
+                onPress={handleGuestLogin}
+                disabled={isLoading}
+                activeOpacity={0.7}
+              >
+                <BlurView intensity={25} tint="dark" style={styles.guestButton}>
+                  {guestLogin.isPending ? (
+                    <ActivityIndicator color={colors.textSecondary} />
+                  ) : (
+                    <Text style={styles.guestButtonText}>Play as Guest</Text>
+                  )}
+                </BlurView>
+              </TouchableOpacity>
+
+              <Text style={styles.guestHelperText}>
+                Try the game first - no account needed
+              </Text>
+            </Animated.View>
+          </View>
+        </KeyboardAwareScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -203,58 +207,50 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  fullWidth: {
-    width: '100%',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-  },
-  headerLogo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginLeft: SPACING.sm,
+  safeArea: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
   },
   content: {
     flex: 1,
-    padding: SPACING.xxl,
+    paddingHorizontal: SPACING.xxl,
+    paddingTop: 20,
     alignItems: 'center',
   },
   logoContainer: {
     marginTop: 40,
-    marginBottom: SPACING.xxxl,
+    marginBottom: SPACING.xl,
+  },
+  logoWrapper: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '700',
     color: colors.textPrimary,
-    marginBottom: SPACING.sm,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
+    letterSpacing: 0.5,
     marginBottom: 40,
+  },
+  formContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  inputWrapper: {
+    width: '100%',
   },
   forgotPassword: {
     alignSelf: 'flex-end',
-    marginBottom: SPACING.xxl,
+    marginBottom: SPACING.xl,
     marginTop: -SPACING.sm,
   },
   forgotPasswordText: {
     fontSize: 14,
     color: colors.primary,
+    fontWeight: '500',
   },
   errorContainer: {
     width: '100%',
@@ -262,30 +258,36 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     padding: SPACING.md,
     marginBottom: SPACING.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.2)',
   },
   errorText: {
     color: '#EF4444',
     fontSize: 14,
     textAlign: 'center',
   },
-  loginButton: {
+  loginButtonOuter: {
     width: '100%',
-    backgroundColor: colors.primary,
-    borderRadius: 30,
+    borderRadius: 28,
+    marginBottom: SPACING.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(74, 144, 217, 0.5)',
+    overflow: 'hidden',
+  },
+  loginButton: {
     height: DIMENSIONS.inputHeight,
-    flexDirection: 'row',
+    backgroundColor: 'rgba(74, 144, 217, 0.25)',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: SPACING.sm,
-    marginBottom: SPACING.xxl,
   },
   loginButtonDisabled: {
     opacity: 0.5,
   },
   loginButtonText: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
     color: '#FFF',
+    letterSpacing: 0.3,
   },
   signUpContainer: {
     flexDirection: 'row',
@@ -302,7 +304,7 @@ const styles = StyleSheet.create({
   },
   guestSection: {
     width: '100%',
-    marginTop: SPACING.xxl,
+    marginTop: 36,
     alignItems: 'center',
   },
   dividerContainer: {
@@ -311,39 +313,43 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: SPACING.xl,
   },
-  dividerLine: {
+  dividerGradient: {
     flex: 1,
     height: 1,
-    backgroundColor: colors.border,
   },
   dividerText: {
-    marginHorizontal: SPACING.md,
-    fontSize: 14,
-    color: colors.textSecondary,
+    marginHorizontal: SPACING.lg,
+    fontSize: 13,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  guestButtonOuter: {
+    width: '100%',
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    overflow: 'hidden',
+    marginBottom: SPACING.md,
   },
   guestButton: {
-    width: '100%',
-    borderRadius: 30,
     height: DIMENSIONS.inputHeight,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: colors.primary,
-    backgroundColor: 'transparent',
-    marginBottom: SPACING.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   guestButtonDisabled: {
     opacity: 0.5,
   },
   guestButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.primary,
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.textSecondary,
   },
   guestHelperText: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: colors.textMuted,
     textAlign: 'center',
   },
 });

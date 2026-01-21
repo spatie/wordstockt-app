@@ -1,12 +1,13 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { Platform } from 'react-native';
+import { Platform, View, StyleSheet } from 'react-native';
 import { colors } from '../../src/config/theme';
 import { useUserWebSocket } from '../../src/hooks/useUserWebSocket';
 import { useInvitationStore } from '../../src/stores/invitationStore';
 import { HeaderLogo } from '../../src/components/ui/HeaderLogo';
 import { HeaderMenu } from '../../src/components/ui/HeaderMenu';
 import { InvitationDialog } from '../../src/components/game/InvitationDialog';
+import { GlowingBackground } from '../../src/components/ui/GlowingBackground';
 
 export default function MainLayout() {
   // Subscribe to user channel for real-time updates (invitations, etc.)
@@ -18,7 +19,8 @@ export default function MainLayout() {
   );
 
   return (
-    <>
+    <View style={styles.container}>
+      <GlowingBackground />
       <InvitationDialog
         invitation={pendingInvitation}
         onClose={clearPendingInvitation}
@@ -26,11 +28,11 @@ export default function MainLayout() {
       <Stack
         screenOptions={{
           headerStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: 'transparent',
           },
           headerTintColor: colors.textPrimary,
           contentStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: 'transparent',
           },
           // Use platform-appropriate animations
           animation: Platform.OS === 'ios' ? 'default' : 'slide_from_right',
@@ -59,6 +61,13 @@ export default function MainLayout() {
         <Stack.Screen name="invite/[code]" />
         <Stack.Screen name="achievements" />
       </Stack>
-    </>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+});

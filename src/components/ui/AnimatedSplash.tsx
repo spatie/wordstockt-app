@@ -1,19 +1,17 @@
 import React, { useEffect, useCallback } from 'react';
-import { View, StyleSheet, Image, Dimensions } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  withRepeat,
   withTiming,
-  withSequence,
-  withSpring,
-  withDelay,
   runOnJS,
   Easing,
 } from 'react-native-reanimated';
 import { colors } from '../../config/theme';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const LOGO_SIZE = SCREEN_WIDTH * 0.4;
+const SPINNER_SIZE = 40;
+const SPINNER_THICKNESS = 4;
 
 interface AnimatedSplashProps {
   onAnimationComplete: () => void;
@@ -24,8 +22,7 @@ export function AnimatedSplash({
   onAnimationComplete,
   isReady,
 }: AnimatedSplashProps) {
-  const logoScale = useSharedValue(1);
-  const logoOpacity = useSharedValue(1);
+  const rotation = useSharedValue(0);
   const containerOpacity = useSharedValue(1);
 
   const finishAnimation = useCallback(() => {
@@ -33,47 +30,27 @@ export function AnimatedSplash({
   }, [onAnimationComplete]);
 
   useEffect(() => {
+    rotation.value = withRepeat(
+      withTiming(360, { duration: 800, easing: Easing.linear }),
+      -1,
+      false
+    );
+  }, [rotation]);
+
+  useEffect(() => {
     if (!isReady) {
       return;
     }
 
-    const HOLD_DELAY = 100;
-    const POP_DURATION = 150;
-    const FADE_DURATION = 300;
-    const CONTAINER_FADE = 200;
+    containerOpacity.value = withTiming(0, { duration: 200 }, (finished) => {
+      if (finished) {
+        runOnJS(finishAnimation)();
+      }
+    });
+  }, [isReady, containerOpacity, finishAnimation]);
 
-    logoScale.value = withDelay(
-      HOLD_DELAY,
-      withSequence(
-        withSpring(1.08, { damping: 12, stiffness: 400 }),
-        withTiming(1.2, {
-          duration: FADE_DURATION,
-          easing: Easing.out(Easing.ease),
-        })
-      )
-    );
-
-    logoOpacity.value = withDelay(
-      HOLD_DELAY + POP_DURATION,
-      withTiming(0, {
-        duration: FADE_DURATION,
-        easing: Easing.out(Easing.ease),
-      })
-    );
-
-    containerOpacity.value = withDelay(
-      HOLD_DELAY + POP_DURATION + FADE_DURATION - 100,
-      withTiming(0, { duration: CONTAINER_FADE }, (finished) => {
-        if (finished) {
-          runOnJS(finishAnimation)();
-        }
-      })
-    );
-  }, [isReady, logoScale, logoOpacity, containerOpacity, finishAnimation]);
-
-  const logoAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: logoScale.value }],
-    opacity: logoOpacity.value,
+  const spinnerStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
   }));
 
   const containerAnimatedStyle = useAnimatedStyle(() => ({
@@ -82,13 +59,7 @@ export function AnimatedSplash({
 
   return (
     <Animated.View style={[styles.container, containerAnimatedStyle]}>
-      <Animated.View style={logoAnimatedStyle}>
-        <Image
-          source={require('../../../assets/splash-icon.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </Animated.View>
+      <Animated.View style={[styles.spinner, spinnerStyle]} />
     </Animated.View>
   );
 }
@@ -100,8 +71,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  logo: {
-    width: LOGO_SIZE,
-    height: LOGO_SIZE,
+  spinner: {
+    width: SPINNER_SIZE,
+    height: SPINNER_SIZE,
+    borderRadius: SPINNER_SIZE / 2,
+    borderWidth: SPINNER_THICKNESS,
+    borderColor: colors.backgroundLight,
+    borderTopColor: colors.primary,
   },
 });

@@ -24,6 +24,9 @@ export function useScoreBubble({
   const opacity = useRef(new Animated.Value(0)).current;
   const prevScoreRef = useRef<number | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  // Track whether we should be visible to prevent race conditions
+  // when fade-out callbacks fire after a new score has arrived
+  const shouldBeVisibleRef = useRef(false);
 
   // Treat 0 or null as "no score"
   const displayScore = score && score > 0 ? score : null;
@@ -37,6 +40,7 @@ export function useScoreBubble({
 
     if (displayScore !== null && prevDisplayScore === null) {
       // Score appeared - show and fade in
+      shouldBeVisibleRef.current = true;
       setIsVisible(true);
       opacity.setValue(0);
       Animated.timing(opacity, {
@@ -46,12 +50,17 @@ export function useScoreBubble({
       }).start();
     } else if (displayScore === null && prevDisplayScore !== null) {
       // Score disappeared - fade out then hide
+      shouldBeVisibleRef.current = false;
       Animated.timing(opacity, {
         toValue: 0,
         duration: 300,
         useNativeDriver,
       }).start(() => {
-        setIsVisible(false);
+        // Only hide if we still should be hidden (prevents race condition
+        // when a new score arrives while fade-out is still animating)
+        if (!shouldBeVisibleRef.current) {
+          setIsVisible(false);
+        }
       });
     } else if (
       displayScore !== null &&

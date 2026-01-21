@@ -6,6 +6,7 @@ import {
   StyleSheet,
   LayoutChangeEvent,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -65,36 +66,40 @@ export function TabBar<T extends string>({
   }));
 
   return (
-    <View style={styles.tabBar}>
-      {tabs.map((tab) => (
-        <TouchableOpacity
-          key={tab.value}
-          style={styles.tab}
-          onPress={() => onChange(tab.value)}
-          onLayout={(e) => handleTabLayout(tab.value, e)}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              value === tab.value && styles.tabTextActive,
-            ]}
+    <BlurView intensity={40} tint="dark" style={styles.tabBarBlur}>
+      <View style={styles.tabBar}>
+        {tabs.map((tab) => (
+          <TouchableOpacity
+            key={tab.value}
+            style={styles.tab}
+            onPress={() => onChange(tab.value)}
+            onLayout={(e) => handleTabLayout(tab.value, e)}
           >
-            {tab.label}
-          </Text>
-        </TouchableOpacity>
-      ))}
-      <Animated.View style={[styles.indicator, indicatorStyle]} />
-    </View>
+            <Text
+              style={[
+                styles.tabText,
+                value === tab.value && styles.tabTextActive,
+              ]}
+            >
+              {tab.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+        <Animated.View style={[styles.indicator, indicatorStyle]} />
+      </View>
+    </BlurView>
   );
 }
 
 const styles = StyleSheet.create({
+  tabBarBlur: {
+    backgroundColor: 'rgba(27, 40, 56, 0.5)',
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
   tabBar: {
     flexDirection: 'row',
     paddingHorizontal: SPACING.xl,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.background,
   },
   tab: {
     paddingVertical: SPACING.md,

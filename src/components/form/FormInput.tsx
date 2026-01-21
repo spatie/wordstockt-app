@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TextInputProps,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { colors } from '../../config/theme';
 import { DIMENSIONS, RADIUS, SPACING } from '../../config/constants';
 
@@ -21,13 +22,17 @@ export function FormInput({
 }: FormInputProps) {
   return (
     <View style={styles.wrapper}>
-      <View style={[styles.container, error && styles.containerError]}>
-        <TextInput
-          style={styles.input}
-          placeholderTextColor={colors.textMuted}
-          {...inputProps}
-        />
-        {rightElement}
+      <View style={[styles.containerOuter, error && styles.containerError]}>
+        <BlurView intensity={25} tint="dark" style={styles.blur}>
+          <View style={styles.container}>
+            <TextInput
+              style={styles.input}
+              placeholderTextColor={colors.textMuted}
+              {...inputProps}
+            />
+            {rightElement}
+          </View>
+        </BlurView>
       </View>
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
@@ -39,13 +44,18 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: SPACING.lg,
   },
+  containerOuter: {
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    overflow: 'hidden',
+  },
+  blur: {
+    backgroundColor: 'rgba(27, 40, 56, 0.7)',
+  },
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.backgroundLight,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
     paddingHorizontal: SPACING.lg,
     height: DIMENSIONS.inputHeight,
   },

@@ -7,6 +7,7 @@ import {
   Platform,
   TouchableOpacity,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import ReAnimated, {
   useSharedValue,
   useAnimatedStyle,
@@ -269,8 +270,9 @@ export function ScoreBar({
   }, [showBonus, bonusOpacity]);
 
   return (
-    <View style={styles.container}>
-      {/* Left player section */}
+    <View style={styles.containerWrapper}>
+      <BlurView intensity={40} tint="dark" style={styles.container}>
+        {/* Left player section */}
       <View style={styles.playerSection}>
         <PlayerAvatar player={myPlayer} isActive={isMyTurn} />
         <View style={styles.playerInfo}>
@@ -412,6 +414,7 @@ export function ScoreBar({
           </>
         )}
       </View>
+      </BlurView>
 
       <StatusInfoModal
         visible={statusModalPlayer !== null}
@@ -432,21 +435,24 @@ export function ScoreBar({
 }
 
 const styles = StyleSheet.create({
+  containerWrapper: {
+    marginHorizontal: 12,
+    marginTop: 8,
+    marginBottom: 8,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
   container: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
     paddingHorizontal: 10,
-    backgroundColor: colors.backgroundLight,
-    marginHorizontal: 12,
-    marginTop: 8,
-    marginBottom: 8,
-    borderRadius: 12,
+    backgroundColor: 'rgba(27, 40, 56, 0.5)',
   },
   playerSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    flex: 1.3,
   },
   playerSectionRight: {
     justifyContent: 'flex-end',
@@ -520,7 +526,7 @@ const styles = StyleSheet.create({
   centerSection: {
     alignItems: 'center',
     paddingHorizontal: 4,
-    flex: 2,
+    flex: 2.4,
   },
   tilesBadge: {
     backgroundColor: colors.primary,
@@ -541,14 +547,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontStyle: 'italic',
     textAlign: 'center',
-    maxWidth: 200,
   },
   bonusText: {
     color: colors.textSecondary,
     fontSize: 10,
     fontStyle: 'italic',
     textAlign: 'center',
-    maxWidth: 200,
   },
   bonusNoLastMove: {
     marginTop: 4,

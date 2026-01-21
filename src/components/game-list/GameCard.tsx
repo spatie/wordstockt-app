@@ -97,7 +97,7 @@ export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
   return (
     <Card
       onPress={onPress}
-      showAccent={game.isMyTurn}
+      showAccent={!isCompleted && game.isMyTurn}
       style={[!game.isMyTurn && styles.opponentTurnCard]}
     >
       <View style={styles.cardTop}>
@@ -355,7 +355,6 @@ const styles = StyleSheet.create({
   opponentTurnCard: {
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.backgroundLight,
   },
   viewButton: {
     backgroundColor: colors.backgroundLight,

@@ -11,11 +11,14 @@ import {
   Linking,
 } from 'react-native';
 import { Link } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { useRegister } from '../../src/api/queries/useAuth';
 import { getApiError } from '../../src/api/client';
 import { FormInput } from '../../src/components/form/FormInput';
 import { PasswordInput } from '../../src/components/form/PasswordInput';
 import { MainLogo } from '../../src/components/ui/MainLogo';
+import { FloatingTiles } from '../../src/components/ui/FloatingTiles';
 import { colors } from '../../src/config/theme';
 import { SPACING, RADIUS, DIMENSIONS } from '../../src/config/constants';
 import { ROUTES } from '../../src/config/routes';
@@ -58,6 +61,14 @@ export default function RegisterScreen() {
 
   return (
     <View style={styles.container}>
+      <LinearGradient
+        colors={['#0D1B2A', '#152238', '#0D1B2A']}
+        locations={[0, 0.5, 1]}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+      />
+      <FloatingTiles />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -215,7 +226,9 @@ const styles = StyleSheet.create({
   },
   registerButton: {
     width: '100%',
-    backgroundColor: colors.primary,
+    backgroundColor: 'rgba(74, 144, 217, 0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(74, 144, 217, 0.5)',
     borderRadius: 30,
     height: DIMENSIONS.inputHeight,
     flexDirection: 'row',

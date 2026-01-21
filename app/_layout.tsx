@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Stack, Redirect, useSegments } from 'expo-router';
+import { Stack, Redirect, useSegments, useRouter } from 'expo-router';
 import { PaperProvider } from 'react-native-paper';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -26,8 +26,11 @@ initSentry();
 
 SplashScreen.preventAutoHideAsync();
 
-// Track splash completion at module level to prevent showing on navigation
+// Track splash completion at module level - once true, never show splash again this session
 let hasSplashCompleted = false;
+
+// Track if we've ever had auth loaded - helps distinguish cold start from logout
+let hasEverLoadedAuth = false;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,6 +45,7 @@ function RootLayoutNav() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const user = useAuthStore((s) => s.user);
   const segments = useSegments();
+  const router = useRouter();
 
   usePushNotifications();
   useDeepLinks();
@@ -52,16 +56,18 @@ function RootLayoutNav() {
   const inAuthGroup = segments[0] === '(auth)';
   const isOnVerifyScreen = segments[1] === 'verify-email';
 
+  useEffect(() => {
+    if (isAuthenticated && inAuthGroup && !isOnVerifyScreen) {
+      router.replace('/(main)');
+    }
+  }, [isAuthenticated, inAuthGroup, isOnVerifyScreen, router]);
+
   if (!isAuthenticated && !inAuthGroup) {
     return <Redirect href="/(auth)/login" />;
   }
 
   if (isAuthenticated && isGracePeriodExpired(user) && !isOnVerifyScreen) {
     return <Redirect href="/(auth)/verify-email" />;
-  }
-
-  if (isAuthenticated && inAuthGroup && !isOnVerifyScreen) {
-    return <Redirect href="/(main)" />;
   }
 
   return (
@@ -71,6 +77,7 @@ function RootLayoutNav() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.background },
+          animation: 'none',
         }}
       >
         <Stack.Screen name="(auth)" />
@@ -89,6 +96,13 @@ export default function RootLayout() {
 
   const isAppReady = !isLoading && isNavigationHydrated;
 
+  // Track when auth has loaded at least once (distinguishes cold start from logout)
+  useEffect(() => {
+    if (!isLoading) {
+      hasEverLoadedAuth = true;
+    }
+  }, [isLoading]);
+
   useEffect(() => {
     SplashScreen.hideAsync();
   }, []);
@@ -98,6 +112,10 @@ export default function RootLayout() {
     setSplashAnimationComplete(true);
   }, []);
 
+  // Only show splash on true cold start (first load, auth still loading)
+  // Never show splash if auth has previously loaded (e.g., after logout)
+  const shouldShowSplash = !splashAnimationComplete && !hasEverLoadedAuth;
+
   return (
     <GestureHandlerRootView
       style={{ flex: 1, backgroundColor: colors.background }}
@@ -106,13 +124,13 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <PaperProvider theme={theme}>
             <SnackbarProvider>
-              {splashAnimationComplete ? (
-                <RootLayoutNav />
-              ) : (
+              {shouldShowSplash ? (
                 <AnimatedSplash
                   isReady={isAppReady}
                   onAnimationComplete={handleAnimationComplete}
                 />
+              ) : (
+                <RootLayoutNav />
               )}
             </SnackbarProvider>
           </PaperProvider>

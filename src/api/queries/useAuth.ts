@@ -209,7 +209,23 @@ export function useCurrentUser() {
         'useCurrentUser'
       );
       const user = transformUser(validated.data);
-      setUser(user);
+
+      // Only update store if user data actually changed to prevent unnecessary re-renders
+      const currentUser = useAuthStore.getState().user;
+      const hasChanged =
+        !currentUser ||
+        currentUser.ulid !== user.ulid ||
+        currentUser.username !== user.username ||
+        currentUser.email !== user.email ||
+        currentUser.isGuest !== user.isGuest ||
+        currentUser.emailVerifiedAt !== user.emailVerifiedAt ||
+        currentUser.avatar !== user.avatar ||
+        currentUser.avatarColor !== user.avatarColor;
+
+      if (hasChanged) {
+        setUser(user);
+      }
+
       return user;
     },
     enabled: isAuthenticated,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   FlatList,
@@ -16,6 +16,9 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   withDelay,
+  withRepeat,
+  withSequence,
+  Easing,
 } from 'react-native-reanimated';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -56,6 +59,28 @@ const GAME_TABS = [
   { value: 'completed' as const, label: 'Completed' },
 ];
 
+// Stable reference for FlatList to prevent unnecessary re-renders
+const FLATLIST_DATA = [1] as const;
+
+function PulsingDot() {
+  const pulse = useSharedValue(1);
+
+  useEffect(() => {
+    pulse.value = withRepeat(
+      withTiming(0.4, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+  }, [pulse]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: pulse.value,
+    transform: [{ scale: 0.9 + pulse.value * 0.1 }],
+  }));
+
+  return <Animated.View style={[styles.greenDot, animatedStyle]} />;
+}
+
 function SectionHeader({
   title,
   count,
@@ -68,7 +93,7 @@ function SectionHeader({
   return (
     <View style={styles.sectionHeader}>
       <View style={styles.sectionHeaderLeft}>
-        {isYourTurn && <View style={styles.greenDot} />}
+        {isYourTurn && <PulsingDot />}
         <Text style={styles.sectionTitle}>{title}</Text>
       </View>
       {count !== undefined && count > 0 && (
@@ -100,9 +125,11 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       refetch();
-      refetchInvitations();
+      if (!isGuest) {
+        refetchInvitations();
+      }
       refetchPublicGames();
-    }, [refetch, refetchInvitations, refetchPublicGames])
+    }, [refetch, refetchInvitations, refetchPublicGames, isGuest])
   );
 
   // Track which invitation is being declined
@@ -160,9 +187,27 @@ export default function HomeScreen() {
     awaitingOpponentGames,
   } = useFilteredGames(games);
 
+  // Memoize FlatList components to prevent unnecessary re-renders
+  // Must be before any conditional returns to satisfy React hooks rules
+  const listHeader = useMemo(
+    () => (
+      <>
+        {isGuest && <GuestBanner />}
+        <TabBar tabs={GAME_TABS} value={activeTab} onChange={handleTabChange} />
+      </>
+    ),
+    [isGuest, activeTab, handleTabChange]
+  );
+
+  const keyExtractor = useCallback(() => 'content', []);
+
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([refetch(), refetchInvitations(), refetchPublicGames()]);
+    if (isGuest) {
+      await Promise.all([refetch(), refetchPublicGames()]);
+    } else {
+      await Promise.all([refetch(), refetchInvitations(), refetchPublicGames()]);
+    }
     setRefreshing(false);
   };
 
@@ -429,7 +474,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <FlatList
-        data={[1]}
+        data={FLATLIST_DATA}
         renderItem={() => (
           <Animated.View style={[styles.content, tabContentStyle]}>
             {activeTab === 'active' && renderActiveContent()}
@@ -437,17 +482,8 @@ export default function HomeScreen() {
             {activeTab === 'completed' && renderCompletedContent()}
           </Animated.View>
         )}
-        keyExtractor={() => 'content'}
-        ListHeaderComponent={
-          <>
-            {isGuest && <GuestBanner />}
-            <TabBar
-              tabs={GAME_TABS}
-              value={activeTab}
-              onChange={handleTabChange}
-            />
-          </>
-        }
+        keyExtractor={keyExtractor}
+        ListHeaderComponent={listHeader}
         stickyHeaderIndices={[0]}
         contentContainerStyle={styles.listContent}
         refreshControl={
@@ -489,7 +525,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   listContent: {
     flexGrow: 1,
