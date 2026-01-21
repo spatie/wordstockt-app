@@ -84,19 +84,28 @@ function GlowOrb({
   useEffect(() => {
     const startAnimation = () => {
       moveProgress.value = withRepeat(
-        withTiming(1, { duration: moveDuration, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, {
+          duration: moveDuration,
+          easing: Easing.inOut(Easing.ease),
+        }),
         -1,
         true
       );
 
       scaleProgress.value = withRepeat(
-        withTiming(1, { duration: scaleDuration, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, {
+          duration: scaleDuration,
+          easing: Easing.inOut(Easing.ease),
+        }),
         -1,
         true
       );
 
       colorProgress.value = withRepeat(
-        withTiming(1, { duration: colorDuration, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, {
+          duration: colorDuration,
+          easing: Easing.inOut(Easing.ease),
+        }),
         -1,
         true
       );
@@ -108,7 +117,15 @@ function GlowOrb({
     }
 
     startAnimation();
-  }, [moveDuration, scaleDuration, colorDuration, moveProgress, scaleProgress, colorProgress, initialDelay]);
+  }, [
+    moveDuration,
+    scaleDuration,
+    colorDuration,
+    moveProgress,
+    scaleProgress,
+    colorProgress,
+    initialDelay,
+  ]);
 
   const animatedStyle = useAnimatedStyle(() => {
     const scale = interpolate(
@@ -123,14 +140,28 @@ function GlowOrb({
           translateX: interpolate(
             moveProgress.value,
             [0, 0.2, 0.4, 0.6, 0.8, 1],
-            [0, moveRangeX * 0.6, moveRangeX, moveRangeX * 0.4, -moveRangeX * 0.2, 0]
+            [
+              0,
+              moveRangeX * 0.6,
+              moveRangeX,
+              moveRangeX * 0.4,
+              -moveRangeX * 0.2,
+              0,
+            ]
           ),
         },
         {
           translateY: interpolate(
             moveProgress.value,
             [0, 0.2, 0.4, 0.6, 0.8, 1],
-            [0, moveRangeY * 0.4, moveRangeY, moveRangeY * 0.7, moveRangeY * 0.3, 0]
+            [
+              0,
+              moveRangeY * 0.4,
+              moveRangeY,
+              moveRangeY * 0.7,
+              moveRangeY * 0.3,
+              0,
+            ]
           ),
         },
         { scale },
@@ -226,7 +257,9 @@ export function GlowingBackground() {
         size={orbSize1}
         colors={randomValues.colors[0]}
         opacity={0.4}
-        initialX={SCREEN_WIDTH - orbSize1 * 0.3 + randomValues.positionOffsets[0].x}
+        initialX={
+          SCREEN_WIDTH - orbSize1 * 0.3 + randomValues.positionOffsets[0].x
+        }
         initialY={-orbSize1 * 0.4 + randomValues.positionOffsets[0].y}
         moveRangeX={-80}
         moveRangeY={100}
@@ -263,7 +296,9 @@ export function GlowingBackground() {
         colors={randomValues.colors[2]}
         opacity={0.3}
         initialX={SCREEN_WIDTH * 0.2 + randomValues.positionOffsets[2].x}
-        initialY={SCREEN_HEIGHT - orbSize3 * 0.15 + randomValues.positionOffsets[2].y}
+        initialY={
+          SCREEN_HEIGHT - orbSize3 * 0.15 + randomValues.positionOffsets[2].y
+        }
         moveRangeX={70}
         moveRangeY={-90}
         moveDuration={35000}

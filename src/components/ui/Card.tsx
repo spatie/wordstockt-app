@@ -72,7 +72,13 @@ function splitStyles(style: StyleProp<ViewStyle>): {
   return { wrapperStyles, contentStyles };
 }
 
-function AccentBar({ color, borderRadius }: { color: string; borderRadius: number }) {
+function AccentBar({
+  color,
+  borderRadius,
+}: {
+  color: string;
+  borderRadius: number;
+}) {
   return (
     <View
       style={{
@@ -129,7 +135,9 @@ export function Card({
         <BlurView intensity={40} tint="dark" style={blurContentStyle}>
           {children}
         </BlurView>
-        {showAccent && <AccentBar color={accentColor} borderRadius={radiusValue} />}
+        {showAccent && (
+          <AccentBar color={accentColor} borderRadius={radiusValue} />
+        )}
       </TouchableOpacity>
     );
   }
@@ -139,7 +147,9 @@ export function Card({
       <BlurView intensity={40} tint="dark" style={blurContentStyle}>
         {children}
       </BlurView>
-      {showAccent && <AccentBar color={accentColor} borderRadius={radiusValue} />}
+      {showAccent && (
+        <AccentBar color={accentColor} borderRadius={radiusValue} />
+      )}
     </View>
   );
 }
