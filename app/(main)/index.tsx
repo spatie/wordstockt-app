@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from 'react';
 import {
   View,
   FlatList,
@@ -206,7 +212,11 @@ export default function HomeScreen() {
     if (isGuest) {
       await Promise.all([refetch(), refetchPublicGames()]);
     } else {
-      await Promise.all([refetch(), refetchInvitations(), refetchPublicGames()]);
+      await Promise.all([
+        refetch(),
+        refetchInvitations(),
+        refetchPublicGames(),
+      ]);
     }
     setRefreshing(false);
   };

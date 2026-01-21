@@ -273,147 +273,152 @@ export function ScoreBar({
     <View style={styles.containerWrapper}>
       <BlurView intensity={40} tint="dark" style={styles.container}>
         {/* Left player section */}
-      <View style={styles.playerSection}>
-        <PlayerAvatar player={myPlayer} isActive={isMyTurn} />
-        <View style={styles.playerInfo}>
-          <Text
-            style={[styles.playerName, isMyTurn && styles.activeName]}
-            numberOfLines={1}
-          >
-            You
-          </Text>
-          <View style={styles.scoreRow}>
-            <AnimatedScore score={myPlayer?.score ?? 0} />
-            {showRackCount && (
-              <Text style={styles.rackCount}>({myPlayer?.rackCount ?? 0})</Text>
-            )}
-          </View>
-          <StatusDots
-            hasFreeSwap={myPlayer?.hasFreeSwap}
-            hasReceivedBlank={myPlayer?.hasReceivedBlank}
-            onPress={() => setStatusModalPlayer('me')}
-          />
-          {myPlayerGotEmptyRackBonus && (
-            <Text style={styles.emptyRackBonus}>+25</Text>
-          )}
-        </View>
-      </View>
-
-      {/* Center section */}
-      <View style={styles.centerSection}>
-        <TilesBadge count={game.tilesRemaining} />
-        {lastMoveText && (
-          <Text style={styles.lastMoveText} numberOfLines={1}>
-            {lastMoveText}
-          </Text>
-        )}
-        {/* Long word bonus - same styling as lastMoveText */}
-        <Animated.Text
-          style={[
-            styles.bonusText,
-            !lastMoveText && styles.bonusNoLastMove,
-            { opacity: bonusOpacity },
-          ]}
-        >
-          +{bonus} long word bonus
-        </Animated.Text>
-        {game.status === 'finished' && (
-          <View
-            style={[
-              styles.statusChip,
-              game.winnerUlid === currentUserUlid
-                ? styles.winChip
-                : styles.loseChip,
-            ]}
-          >
-            <Text style={styles.statusText}>
-              {game.winnerUlid === currentUserUlid ? 'Won' : 'Lost'}
+        <View style={styles.playerSection}>
+          <PlayerAvatar player={myPlayer} isActive={isMyTurn} />
+          <View style={styles.playerInfo}>
+            <Text
+              style={[styles.playerName, isMyTurn && styles.activeName]}
+              numberOfLines={1}
+            >
+              You
             </Text>
-          </View>
-        )}
-        {game.status === 'active' && isMyTurn && game.turnExpiresAt && (
-          <TurnTimer expiresAt={game.turnExpiresAt} isMyTurn={isMyTurn} />
-        )}
-      </View>
-
-      {/* Right player section */}
-      <View style={[styles.playerSection, styles.playerSectionRight]}>
-        {canInvite ? (
-          <View style={styles.inviteContainer}>
-            <Text style={styles.invitePrompt}>Invite opponent</Text>
-            <Pressable
-              style={({ pressed }) => [
-                styles.inviteButton,
-                pressed && { opacity: 0.5 },
-              ]}
-              onPressOut={onInvite}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Text style={styles.inviteText}>+</Text>
-            </Pressable>
-          </View>
-        ) : hasPendingInvitation ? (
-          <View style={styles.pendingInviteSection}>
-            <View style={[styles.playerInfo, styles.playerInfoRight]}>
-              <Text style={styles.playerName} numberOfLines={1}>
-                {game.pendingInvitation!.invitee.username}
-              </Text>
-              <Text style={styles.pendingLabel}>Invited</Text>
-            </View>
-            <Pressable
-              style={({ pressed }) => [
-                styles.pendingAvatarContainer,
-                pressed && { opacity: 0.7 },
-              ]}
-              onPressOut={() =>
-                onRevokeInvitation?.(game.pendingInvitation!.ulid)
-              }
-            >
-              <SmartAvatar
-                userUlid={game.pendingInvitation!.invitee.ulid}
-                uri={game.pendingInvitation!.invitee.avatar}
-                name={game.pendingInvitation!.invitee.username}
-                size={AVATAR_SIZE}
-                disabled
-                backgroundColor={
-                  game.pendingInvitation!.invitee.avatarColor ?? undefined
-                }
-              />
-              <View style={styles.revokeOverlay}>
-                <Text style={styles.revokeIcon}>×</Text>
-              </View>
-            </Pressable>
-          </View>
-        ) : (
-          <>
-            <View style={[styles.playerInfo, styles.playerInfoRight]}>
-              <Text
-                style={[styles.playerName, isOpponentTurn && styles.activeName]}
-                numberOfLines={1}
-              >
-                {opponent?.username ?? 'Opponent'}
-              </Text>
-              <View style={styles.scoreRow}>
-                {showRackCount && (
-                  <Text style={styles.rackCount}>
-                    ({opponent?.rackCount ?? 0})
-                  </Text>
-                )}
-                <AnimatedScore score={opponent?.score ?? 0} />
-              </View>
-              <StatusDots
-                hasFreeSwap={opponent?.hasFreeSwap}
-                hasReceivedBlank={opponent?.hasReceivedBlank}
-                onPress={() => setStatusModalPlayer('opponent')}
-              />
-              {opponentGotEmptyRackBonus && (
-                <Text style={styles.emptyRackBonus}>+25</Text>
+            <View style={styles.scoreRow}>
+              <AnimatedScore score={myPlayer?.score ?? 0} />
+              {showRackCount && (
+                <Text style={styles.rackCount}>
+                  ({myPlayer?.rackCount ?? 0})
+                </Text>
               )}
             </View>
-            <PlayerAvatar player={opponent} isActive={isOpponentTurn} />
-          </>
-        )}
-      </View>
+            <StatusDots
+              hasFreeSwap={myPlayer?.hasFreeSwap}
+              hasReceivedBlank={myPlayer?.hasReceivedBlank}
+              onPress={() => setStatusModalPlayer('me')}
+            />
+            {myPlayerGotEmptyRackBonus && (
+              <Text style={styles.emptyRackBonus}>+25</Text>
+            )}
+          </View>
+        </View>
+
+        {/* Center section */}
+        <View style={styles.centerSection}>
+          <TilesBadge count={game.tilesRemaining} />
+          {lastMoveText && (
+            <Text style={styles.lastMoveText} numberOfLines={1}>
+              {lastMoveText}
+            </Text>
+          )}
+          {/* Long word bonus - same styling as lastMoveText */}
+          <Animated.Text
+            style={[
+              styles.bonusText,
+              !lastMoveText && styles.bonusNoLastMove,
+              { opacity: bonusOpacity },
+            ]}
+          >
+            +{bonus} long word bonus
+          </Animated.Text>
+          {game.status === 'finished' && (
+            <View
+              style={[
+                styles.statusChip,
+                game.winnerUlid === currentUserUlid
+                  ? styles.winChip
+                  : styles.loseChip,
+              ]}
+            >
+              <Text style={styles.statusText}>
+                {game.winnerUlid === currentUserUlid ? 'Won' : 'Lost'}
+              </Text>
+            </View>
+          )}
+          {game.status === 'active' && isMyTurn && game.turnExpiresAt && (
+            <TurnTimer expiresAt={game.turnExpiresAt} isMyTurn={isMyTurn} />
+          )}
+        </View>
+
+        {/* Right player section */}
+        <View style={[styles.playerSection, styles.playerSectionRight]}>
+          {canInvite ? (
+            <View style={styles.inviteContainer}>
+              <Text style={styles.invitePrompt}>Invite opponent</Text>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.inviteButton,
+                  pressed && { opacity: 0.5 },
+                ]}
+                onPressOut={onInvite}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={styles.inviteText}>+</Text>
+              </Pressable>
+            </View>
+          ) : hasPendingInvitation ? (
+            <View style={styles.pendingInviteSection}>
+              <View style={[styles.playerInfo, styles.playerInfoRight]}>
+                <Text style={styles.playerName} numberOfLines={1}>
+                  {game.pendingInvitation!.invitee.username}
+                </Text>
+                <Text style={styles.pendingLabel}>Invited</Text>
+              </View>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.pendingAvatarContainer,
+                  pressed && { opacity: 0.7 },
+                ]}
+                onPressOut={() =>
+                  onRevokeInvitation?.(game.pendingInvitation!.ulid)
+                }
+              >
+                <SmartAvatar
+                  userUlid={game.pendingInvitation!.invitee.ulid}
+                  uri={game.pendingInvitation!.invitee.avatar}
+                  name={game.pendingInvitation!.invitee.username}
+                  size={AVATAR_SIZE}
+                  disabled
+                  backgroundColor={
+                    game.pendingInvitation!.invitee.avatarColor ?? undefined
+                  }
+                />
+                <View style={styles.revokeOverlay}>
+                  <Text style={styles.revokeIcon}>×</Text>
+                </View>
+              </Pressable>
+            </View>
+          ) : (
+            <>
+              <View style={[styles.playerInfo, styles.playerInfoRight]}>
+                <Text
+                  style={[
+                    styles.playerName,
+                    isOpponentTurn && styles.activeName,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {opponent?.username ?? 'Opponent'}
+                </Text>
+                <View style={styles.scoreRow}>
+                  {showRackCount && (
+                    <Text style={styles.rackCount}>
+                      ({opponent?.rackCount ?? 0})
+                    </Text>
+                  )}
+                  <AnimatedScore score={opponent?.score ?? 0} />
+                </View>
+                <StatusDots
+                  hasFreeSwap={opponent?.hasFreeSwap}
+                  hasReceivedBlank={opponent?.hasReceivedBlank}
+                  onPress={() => setStatusModalPlayer('opponent')}
+                />
+                {opponentGotEmptyRackBonus && (
+                  <Text style={styles.emptyRackBonus}>+25</Text>
+                )}
+              </View>
+              <PlayerAvatar player={opponent} isActive={isOpponentTurn} />
+            </>
+          )}
+        </View>
       </BlurView>
 
       <StatusInfoModal

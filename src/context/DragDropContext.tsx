@@ -334,7 +334,9 @@ interface BoardFloatingTileProps {
   shouldShow: boolean;
   draggingBoardPosition: SharedValue<{ x: number; y: number } | null>;
   pendingBoardPosition: { x: number; y: number } | null;
-  boardTilesShared: SharedValue<Record<string, [string, number, boolean, number]>>;
+  boardTilesShared: SharedValue<
+    Record<string, [string, number, boolean, number]>
+  >;
 }
 
 function BoardFloatingTile({
@@ -349,7 +351,11 @@ function BoardFloatingTile({
   boardTilesShared,
 }: BoardFloatingTileProps) {
   // Track tile data from shared values for immediate rendering (no JS bridge delay)
-  const [immediateTile, setImmediateTile] = useState<{ letter: string; points: number; isBlank: boolean } | null>(null);
+  const [immediateTile, setImmediateTile] = useState<{
+    letter: string;
+    points: number;
+    isBlank: boolean;
+  } | null>(null);
 
   // React to dragging position changes - look up tile data from boardTilesShared
   // This fires on UI thread immediately when draggingBoardPosition changes
@@ -1627,8 +1633,14 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       // NOTE: Don't set draggingRackIndexShared = -1 here!
       // resetState's setTimeout will do it AFTER React updates the rack tile visibility.
       // This prevents a flash where neither floating tile nor rack tile is visible.
-      positionX.value = withTiming(targetX, { duration: SETTLE_DURATION, easing: SETTLE_EASING });
-      scale.value = withTiming(1, { duration: SETTLE_DURATION, easing: SETTLE_EASING });
+      positionX.value = withTiming(targetX, {
+        duration: SETTLE_DURATION,
+        easing: SETTLE_EASING,
+      });
+      scale.value = withTiming(1, {
+        duration: SETTLE_DURATION,
+        easing: SETTLE_EASING,
+      });
       positionY.value = withTiming(
         targetY,
         { duration: SETTLE_DURATION, easing: SETTLE_EASING },
@@ -2386,8 +2398,13 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           const cellY = Math.floor((screenY - boardTop) / cellSize);
 
           // Calculate cell center (target position)
-          const targetX = boardLeft + cellX * cellSize + cellSize / 2 - containerOffsetX.value;
-          const targetY = boardTop + cellY * cellSize + cellSize / 2 - containerOffsetY.value;
+          const targetX =
+            boardLeft +
+            cellX * cellSize +
+            cellSize / 2 -
+            containerOffsetX.value;
+          const targetY =
+            boardTop + cellY * cellSize + cellSize / 2 - containerOffsetY.value;
 
           // Hide target cell during animation (prevents flash/double tile)
           settlingTargetShared.value = { x: cellX, y: cellY };
