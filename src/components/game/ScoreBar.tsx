@@ -1,9 +1,8 @@
-import React, { useEffect, useRef, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import {
   View,
   StyleSheet,
   Pressable,
-  Animated,
   Platform,
   TouchableOpacity,
 } from 'react-native';
@@ -100,7 +99,7 @@ function TilesBadge({ count }: { count: number }) {
     <TouchableOpacity onPress={handlePress} activeOpacity={1}>
       <ReAnimated.View style={[styles.tilesBadge, animatedStyle]}>
         <AnimatedTilesCount count={count} />
-        <Text style={styles.tilesLabel}>tiles</Text>
+        <Text style={styles.tilesLabel}>{count === 1 ? 'tile' : 'tiles'}</Text>
       </ReAnimated.View>
     </TouchableOpacity>
   );
@@ -245,29 +244,18 @@ export function ScoreBar({
   const bonus = calculateTilesPlayedBonus(tilesPlayed);
   const showBonus = bonus > 0;
 
-  // Animation value for bonus display - simple fade
-  const bonusOpacity = useRef(new Animated.Value(0)).current;
-  const prevShowBonus = useRef(false);
+  // Animation for bonus display using Reanimated for consistent behavior
+  const bonusOpacity = useSharedValue(0);
 
   useEffect(() => {
-    const useNativeDriver = Platform.OS !== 'web';
-
-    if (showBonus && !prevShowBonus.current) {
-      Animated.timing(bonusOpacity, {
-        toValue: 1,
-        duration: ANIMATION_DURATION,
-        useNativeDriver,
-      }).start();
-    } else if (!showBonus && prevShowBonus.current) {
-      Animated.timing(bonusOpacity, {
-        toValue: 0,
-        duration: ANIMATION_DURATION,
-        useNativeDriver,
-      }).start();
-    }
-
-    prevShowBonus.current = showBonus;
+    bonusOpacity.value = withTiming(showBonus ? 1 : 0, {
+      duration: ANIMATION_DURATION,
+    });
   }, [showBonus, bonusOpacity]);
+
+  const bonusAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: bonusOpacity.value,
+  }));
 
   return (
     <View style={styles.containerWrapper}>
@@ -310,15 +298,15 @@ export function ScoreBar({
             </Text>
           )}
           {/* Long word bonus - same styling as lastMoveText */}
-          <Animated.Text
+          <ReAnimated.Text
             style={[
               styles.bonusText,
               !lastMoveText && styles.bonusNoLastMove,
-              { opacity: bonusOpacity },
+              bonusAnimatedStyle,
             ]}
           >
             +{bonus} long word bonus
-          </Animated.Text>
+          </ReAnimated.Text>
           {game.status === 'finished' && (
             <View
               style={[

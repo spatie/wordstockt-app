@@ -45,8 +45,13 @@ export default function UserProfileScreen() {
   const removeFriend = useRemoveFriend();
 
   const { data: stats, isLoading: statsLoading } = useUserStats(userUlid);
-  const { data: headToHead = [], isLoading: h2hLoading } =
+  const { data: headToHeadData = [], isLoading: h2hLoading } =
     useHeadToHead(userUlid);
+
+  // Filter head-to-head to only show the record against the current user
+  const myHeadToHead = currentUserUlid
+    ? headToHeadData.find((record) => record.opponentUlid === currentUserUlid)
+    : null;
 
   // If viewing own profile, redirect to profile screen
   React.useEffect(() => {
@@ -78,10 +83,6 @@ export default function UserProfileScreen() {
     } catch (err) {
       showError(err);
     }
-  };
-
-  const handleOpponentPress = (opponentUlid: string) => {
-    router.push(`/user/${opponentUlid}`);
   };
 
   if (isLoading) {
@@ -169,16 +170,10 @@ export default function UserProfileScreen() {
             {/* Overview Card */}
             <StatsOverviewCard stats={stats} />
 
-            {/* Head to Head - shown second */}
-            {headToHead.length > 0 && (
+            {/* Head to Head - only show stats against the current user */}
+            {myHeadToHead && (
               <StatsSection title="Head to Head">
-                {headToHead.map((record) => (
-                  <HeadToHeadCard
-                    key={record.opponentUlid}
-                    record={record}
-                    onPress={() => handleOpponentPress(record.opponentUlid)}
-                  />
-                ))}
+                <HeadToHeadCard record={myHeadToHead} />
               </StatsSection>
             )}
 

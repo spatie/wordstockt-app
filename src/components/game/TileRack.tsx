@@ -39,6 +39,7 @@ import {
   SLOT_COUNT,
   GAP,
   SPRING_CONFIG,
+  SPRING_CONFIG_FAST,
 } from '../../config/constants';
 import { colors } from '../../config/theme';
 import type { Tile as TileType } from '../../types';
@@ -102,7 +103,7 @@ function AnimatedTileSlot({
     isSettling,
     settlingTarget,
     recallingRackIndicesShared,
-    dragSource,
+    draggingRackIndexShared,
     getLastRackDrop,
     clearLastRackDrop,
   } = useDragDrop();
@@ -130,22 +131,24 @@ function AnimatedTileSlot({
     prevWasLifted.current = isLifted;
   }, [isSwapMode, isLifted, exitLiftY]);
 
-  // Check if this rack tile's floating version is currently animating
-  const isThisRackTileAnimating =
-    dragSource?.type === 'rack' && dragSource.rackIndex === actualRackIndex;
+  // Check if this rack tile's floating version is currently visible (shared value for atomic UI updates)
+  // This uses the same shared value that controls floating tile visibility,
+  // ensuring rack tile and floating tile visibility are always in sync (no flash)
+  const isDraggingThisShared = useDerivedValue(() => {
+    'worklet';
+    return draggingRackIndexShared.value === actualRackIndex;
+  }, [actualRackIndex]);
 
-  // Only show empty slot for board placements, not rack swaps
-  // For rack-to-rack drops, we swap positions - no empty slot needed
-  const isSettlingToThis =
-    isSettling && settlingTarget?.type === 'board' && isThisRackTileAnimating;
+  // Note: Tile visibility during drag/settle is handled via opacity in animatedStyle
+  // using isDraggingThisShared. The empty slot background is always visible behind tiles.
 
-  // Hide tile while floating version is settling (to board or rack)
-  // For rack-to-rack drops, keep the tile visible so the spring animation can run
-  // (the floating tile will briefly overlap, then disappear when settling completes)
-  const isSettlingToBoard = isSettling && settlingTarget?.type === 'board';
-  const isSettlingToRack = isSettling && settlingTarget?.type === 'rack';
-  const isFloatingTileAnimating =
-    isThisRackTileAnimating && (isSettlingToBoard || isSettlingToRack);
+  // DEBUG: Log state for this tile (avoid reading shared values during render)
+  console.log(`[TileSlot ${actualRackIndex}] render:`, {
+    letter: tile?.letter,
+    visualSlot,
+    isSettling,
+    settlingTargetType: settlingTarget?.type,
+  });
 
   // NOTE: We use isBeingRecalledShared (worklet) for hiding instead of React state
   // to prevent re-render cascades during recall animation. The opacity-based hiding
@@ -160,9 +163,22 @@ function AnimatedTileSlot({
     const lastRackDrop = getLastRackDrop();
     const justBecameVisible = prevIsUsed.current && !isUsed;
 
+    // Check if this tile is currently being dragged (read shared value)
+    const isDraggingThis = draggingRackIndexShared.value === actualRackIndex;
+
+    console.log(`[TileSlot ${actualRackIndex}] useLayoutEffect[main]:`, {
+      visualSlot,
+      targetX,
+      prevVisualSlot: prevVisualSlot.current,
+      isDraggingThis,
+      lastRackDrop,
+      justBecameVisible,
+    });
+
     // On game change, snap to position without animation
     // This prevents the "shuffle animation" when entering or switching games
     if (prevGameUlid.current !== currentGameUlid) {
+      console.log(`[TileSlot ${actualRackIndex}] SNAP: game change`);
       prevGameUlid.current = currentGameUlid;
       animatedX.value = targetX;
       prevVisualSlot.current = visualSlot;
@@ -170,19 +186,33 @@ function AnimatedTileSlot({
       return;
     }
 
+    // When tile is hidden (being dragged), snap animatedX to target position immediately
+    // This ensures that when the tile becomes visible, it's already at the correct position (no flash)
+    if (isDraggingThis) {
+      console.log(`[TileSlot ${actualRackIndex}] SNAP: tile hidden (being dragged), updating animatedX to target`);
+      animatedX.value = targetX;
+      prevVisualSlot.current = visualSlot;
+      prevIsUsed.current = isUsed;
+      return;
+    }
+
     // Check if this tile was just dropped/returned (matches our rackIndex)
-    // This handles: rack-to-rack drops, board-to-rack drops, and drops in empty area
+    // This handles: board-to-rack drops and drops in empty area
     if (lastRackDrop?.rackIndex === actualRackIndex) {
+      console.log(`[TileSlot ${actualRackIndex}] ANIMATE: from drop position`);
       clearLastRackDrop();
       // Set to drop position, then spring animate to target
       animatedX.value = lastRackDrop.dropX;
       animatedX.value = withSpring(targetX, SPRING_CONFIG);
       prevVisualSlot.current = visualSlot;
     } else if (prevVisualSlot.current !== visualSlot) {
+      console.log(`[TileSlot ${actualRackIndex}] ANIMATE: visualSlot changed ${prevVisualSlot.current} -> ${visualSlot}`);
       // Visual slot changed (e.g., shuffle/swap) - animate to new position
-      animatedX.value = withSpring(targetX, SPRING_CONFIG);
+      // Use fast spring to match floating tile animation speed
+      animatedX.value = withSpring(targetX, SPRING_CONFIG_FAST);
       prevVisualSlot.current = visualSlot;
     } else if (justBecameVisible) {
+      console.log(`[TileSlot ${actualRackIndex}] SNAP: just became visible`);
       // Tile just returned to rack but no drop position recorded - snap to correct position
       animatedX.value = targetX;
     }
@@ -196,6 +226,7 @@ function AnimatedTileSlot({
     clearLastRackDrop,
     isUsed,
     currentGameUlid,
+    draggingRackIndexShared,
   ]);
 
   const handleDragEnd = useCallback(
@@ -217,8 +248,9 @@ function AnimatedTileSlot({
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: animatedX.value }],
-    // Hide immediately via shared value (prevents flash during recall)
-    opacity: isBeingRecalledShared.value ? 0 : 1,
+    // Hide immediately via shared value (prevents flash during recall or drag)
+    // isDraggingThisShared syncs with floating tile visibility for atomic hide/show
+    opacity: isBeingRecalledShared.value || isDraggingThisShared.value ? 0 : 1,
   }));
 
   // Style with exit lift animation (for DraggableTile after exiting swap mode)
@@ -227,19 +259,27 @@ function AnimatedTileSlot({
       { translateX: animatedX.value },
       { translateY: exitLiftY.value },
     ],
-    // Hide immediately via shared value (prevents flash during recall)
-    opacity: isBeingRecalledShared.value ? 0 : 1,
+    // Hide immediately via shared value (prevents flash during recall or drag)
+    // isDraggingThisShared syncs with floating tile visibility for atomic hide/show
+    opacity: isBeingRecalledShared.value || isDraggingThisShared.value ? 0 : 1,
   }));
 
   // Don't render if:
   // - No tile data
   // - Tile is placed on board (isUsed)
   // - Tile is animating back from board (handled by opacity via isBeingRecalledShared)
-  // - This tile's floating version is currently being dragged/settling (isFloatingTileAnimating)
-  // NOTE: isBeingRecalledForRender is always false - hiding handled by worklet opacity
-  if (!tile || isUsed || isBeingRecalledForRender || isFloatingTileAnimating) {
+  // NOTE: Dragging visibility is handled via opacity in animatedStyle (isDraggingThisShared),
+  //       NOT by returning null - this ensures atomic visibility changes on UI thread
+  const shouldHide = !tile || isUsed || isBeingRecalledForRender;
+  if (shouldHide) {
+    console.log(`[TileSlot ${actualRackIndex}] HIDDEN:`, {
+      noTile: !tile,
+      isUsed,
+      isBeingRecalledForRender,
+    });
     return null;
   }
+  console.log(`[TileSlot ${actualRackIndex}] RENDERED at visualSlot=${visualSlot}`);
 
   // Render SelectableTile in swap mode, DraggableTile otherwise
   if (isSwapMode) {
@@ -263,7 +303,7 @@ function AnimatedTileSlot({
         rackIndex={actualRackIndex}
         visualSlot={visualSlot}
         rackLayout={rackLayout}
-        isUsed={isSettlingToThis}
+        isUsed={false}
         disabled={disabled}
         onDragEnd={handleDragEnd}
       />

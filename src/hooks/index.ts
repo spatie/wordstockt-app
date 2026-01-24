@@ -33,3 +33,6 @@ export { useOTAUpdates } from './useOTAUpdates';
 
 // Guest restriction
 export { useGuestRestriction } from './useGuestRestriction';
+
+// Rematch
+export { useRematch } from './useRematch';

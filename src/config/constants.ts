@@ -10,6 +10,11 @@ export const SPRING_CONFIG = {
   damping: 50,
   stiffness: 500,
 };
+// Faster spring for rack-to-rack swaps (more snappy)
+export const SPRING_CONFIG_FAST = {
+  damping: 100,
+  stiffness: 2000,
+};
 
 // Interaction
 export const CLICK_THRESHOLD = 5; // pixels - movement below this is considered a click

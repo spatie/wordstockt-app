@@ -144,8 +144,12 @@ export function usePushNotifications() {
       Notifications.addNotificationResponseReceivedListener((response) => {
         const data = response.notification.request.content.data;
         if (data?.type === 'invitation') {
+          useNavigationStore.getState().clearLastGameUlid();
           router.replace('/(main)');
         } else if (data?.game_ulid) {
+          // Clear app resume state to prevent race condition with HomeScreen's
+          // app resume logic (both use 50ms setTimeout to navigate to a game)
+          useNavigationStore.getState().clearLastGameUlid();
           // Navigate to games list first, then push to game
           // This ensures back button is always available
           router.replace('/(main)');

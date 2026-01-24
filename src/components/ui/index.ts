@@ -18,6 +18,7 @@ export { BaseModal } from './BaseModal';
 export { ConfirmModal } from './ConfirmModal';
 export { FeedbackModal } from './FeedbackModal';
 export { MenuModal } from './MenuModal';
+export { RematchModal } from './RematchModal';
 
 // Animation
 export { FadeSlideIn } from './FadeSlideIn';

@@ -29,6 +29,7 @@ import {
 import { useWebSocket } from '../../../src/hooks/useWebSocket';
 import { useGameInteractions } from '../../../src/hooks/useGameInteractions';
 import { useConflictingTilesRecall } from '../../../src/hooks/useConflictingTilesRecall';
+import { useRematch } from '../../../src/hooks/useRematch';
 import { DragDropProvider } from '../../../src/context/DragDropContext';
 import { GameBoard } from '../../../src/components/game/GameBoard';
 import { TileRack } from '../../../src/components/game/TileRack';
@@ -44,6 +45,7 @@ import { WordInfoModal } from '../../../src/components/game/WordInfoModal';
 import { LoadingView } from '../../../src/components/ui/LoadingView';
 import { FeedbackModal } from '../../../src/components/ui/FeedbackModal';
 import { AchievementModal } from '../../../src/components/ui/AchievementModal';
+import { RematchModal } from '../../../src/components/ui/RematchModal';
 import { Button } from '../../../src/components/ui/Button';
 import { showConfirm } from '../../../src/utils/alerts';
 import { colors } from '../../../src/config/theme';
@@ -114,6 +116,7 @@ function GameScreenContent() {
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
   const [lastMoveWarningShown, setLastMoveWarningShown] = useState(false);
   const [gameEndModalDismissed, setGameEndModalDismissed] = useState(false);
+  const [rematchDismissed, setRematchDismissed] = useState(false);
   const [isSwapExiting, setIsSwapExiting] = useState(false);
 
   // Achievement state
@@ -414,6 +417,20 @@ function GameScreenContent() {
     }
   }, [validationResult, pendingTiles.length, setValidationResult]);
 
+  // Get opponent info for rematch (needs to be before early returns)
+  const opponent = apiGame?.players.find((p) => p.ulid !== userUlid);
+
+  // Rematch functionality (must be called before conditional returns)
+  const {
+    createRematch,
+    isCreating: isCreatingRematch,
+    error: rematchError,
+    clearError: clearRematchError,
+  } = useRematch({
+    game: apiGame,
+    opponentUsername: opponent?.username,
+  });
+
   if (!USE_MOCK_DATA && isLoading) {
     return (
       <View style={styles.container}>
@@ -464,8 +481,27 @@ function GameScreenContent() {
 
   // Calculate final scores for game end modal
   const myScore = currentPlayer?.score ?? 0;
-  const opponent = gameData.players.find((p) => p.ulid !== userUlid);
   const opponentScore = opponent?.score ?? 0;
+
+  // Show rematch modal after game end modal and achievements are dismissed
+  const showRematchModal =
+    gameJustEnded &&
+    gameEndModalDismissed &&
+    currentAchievement === null &&
+    !rematchDismissed &&
+    opponent !== undefined;
+
+  const handleRematch = async () => {
+    const newGameUlid = await createRematch();
+    if (newGameUlid) {
+      router.replace(ROUTES.GAME(newGameUlid));
+    }
+  };
+
+  const handleRematchDismiss = () => {
+    clearRematchError();
+    setRematchDismissed(true);
+  };
 
   return (
     <View style={styles.container}>
@@ -630,6 +666,22 @@ function GameScreenContent() {
         }
         achievement={currentAchievement}
         onDismiss={dismissAchievement}
+      />
+      <RematchModal
+        visible={showRematchModal}
+        opponent={
+          opponent
+            ? {
+                username: opponent.username,
+                avatar: opponent.avatar,
+                avatarColor: opponent.avatarColor,
+              }
+            : null
+        }
+        onRematch={handleRematch}
+        onDismiss={handleRematchDismiss}
+        isLoading={isCreatingRematch}
+        error={rematchError}
       />
     </View>
   );
