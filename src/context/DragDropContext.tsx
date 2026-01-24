@@ -952,7 +952,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         x > rackLeftShared.value + rackWidthShared.value + TOUCH_TOLERANCE_PX
       ) {
         console.log('[findRackTile] OUT OF BOUNDS:', {
-          x, y,
+          x,
+          y,
           rackTop: rackTopShared.value,
           rackBottom: rackBottomShared.value,
           rackLeft: rackLeftShared.value,
@@ -1011,7 +1012,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       const permutation = rackPermutationShared.value;
       const actualRackIndex = permutation[visualSlot];
       if (actualRackIndex === undefined) {
-        console.log('[findRackTile] NO RACK INDEX:', { visualSlot, permutation });
+        console.log('[findRackTile] NO RACK INDEX:', {
+          visualSlot,
+          permutation,
+        });
         return null;
       }
 
@@ -1723,7 +1727,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     // If so, don't reset isDraggingShared (it belongs to the new drag)
     const pendingSessionId = pending?.sessionId ?? -1;
     const currentSessionId = dragSessionIdShared.value;
-    const isStaleCallback = pendingSessionId !== currentSessionId && currentSessionId > 0;
+    const isStaleCallback =
+      pendingSessionId !== currentSessionId && currentSessionId > 0;
 
     console.log('[DragDrop] completeSettleFromRef called:', {
       pendingSessionId,
@@ -1735,7 +1740,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     // If this is a stale callback (new drag already started), skip ALL cleanup
     // The new drag has taken ownership of all shared values
     if (isStaleCallback) {
-      console.log('[DragDrop] completeSettleFromRef - SKIPPING (stale callback, new drag in progress)');
+      console.log(
+        '[DragDrop] completeSettleFromRef - SKIPPING (stale callback, new drag in progress)'
+      );
       return;
     }
 
@@ -1855,9 +1862,12 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Trigger rack swap immediately from worklet (so tile A starts animating at same time as tile B)
-  const triggerRackSwap = useCallback((sourceRackIndex: number, targetSlot: number) => {
-    useGameStore.getState().swapByActualIndex(sourceRackIndex, targetSlot);
-  }, []);
+  const triggerRackSwap = useCallback(
+    (sourceRackIndex: number, targetSlot: number) => {
+      useGameStore.getState().swapByActualIndex(sourceRackIndex, targetSlot);
+    },
+    []
+  );
 
   // -------------------------------------------------------------------------
   // Web API (for pointer events)
@@ -2351,8 +2361,12 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       // This bypasses measureInWindow issues with New Architecture (Fabric)
       // IMPORTANT: When activated immediately in onTouchesDown, use stored touch coordinates
       // because pan gesture's absoluteX/Y can differ from the original touch position
-      const screenX = activatedImmediately.value ? touchDownX.value : event.absoluteX;
-      const screenY = activatedImmediately.value ? touchDownY.value : event.absoluteY;
+      const screenX = activatedImmediately.value
+        ? touchDownX.value
+        : event.absoluteX;
+      const screenY = activatedImmediately.value
+        ? touchDownY.value
+        : event.absoluteY;
 
       debugLog('onStart', {
         absoluteX: screenX,
@@ -2413,10 +2427,15 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         });
 
         // Start rack drag on UI thread
-        console.log('[DragDrop] onStart - ENTERING rackHit block, setting isDraggingShared = true');
+        console.log(
+          '[DragDrop] onStart - ENTERING rackHit block, setting isDraggingShared = true'
+        );
         dragSessionIdShared.value = dragSessionIdShared.value + 1; // New drag session
         isDraggingShared.value = true;
-        console.log('[DragDrop] onStart - isDraggingShared after set:', isDraggingShared.value);
+        console.log(
+          '[DragDrop] onStart - isDraggingShared after set:',
+          isDraggingShared.value
+        );
         dragTileShared.value = [
           rackHit.tile.letter,
           rackHit.tile.points,
@@ -2442,11 +2461,16 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           { type: 'rack', rackIndex: rackHit.rackIndex },
           rackHit.tile
         );
-        console.log('[DragDrop] onStart - rackHit block COMPLETE, returning. isDraggingShared:', isDraggingShared.value);
+        console.log(
+          '[DragDrop] onStart - rackHit block COMPLETE, returning. isDraggingShared:',
+          isDraggingShared.value
+        );
         return;
       }
 
-      console.log('[DragDrop] onStart - NO rackHit block entered, trying board hit');
+      console.log(
+        '[DragDrop] onStart - NO rackHit block entered, trying board hit'
+      );
       // Try board hit testing
       const boardHit = findBoardCellAtPositionWorklet(screenX, screenY);
       if (boardHit) {
@@ -2607,11 +2631,19 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           // Calculate target slot
           const slotWidth = TILE_SIZE + GAP;
           const relativeX = screenX - rackLeft;
-          const targetSlot = Math.max(0, Math.min(SLOT_COUNT - 1, Math.floor(relativeX / slotWidth)));
+          const targetSlot = Math.max(
+            0,
+            Math.min(SLOT_COUNT - 1, Math.floor(relativeX / slotWidth))
+          );
 
           // Calculate target slot center position (relative to container)
-          const targetCenterX = rackLeft + targetSlot * slotWidth + TILE_SIZE / 2 - containerOffsetX.value;
-          const targetCenterY = rackTop + (rackBottom - rackTop) / 2 - containerOffsetY.value;
+          const targetCenterX =
+            rackLeft +
+            targetSlot * slotWidth +
+            TILE_SIZE / 2 -
+            containerOffsetX.value;
+          const targetCenterY =
+            rackTop + (rackBottom - rackTop) / 2 - containerOffsetY.value;
 
           // Mark that animation started in worklet (JS side should skip animation)
           animationStartedInWorklet.value = true;
@@ -2624,13 +2656,17 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
           // Start animation immediately (no bridge delay!)
           positionX.value = withSpring(targetCenterX, SPRING_CONFIG_FAST);
-          positionY.value = withSpring(targetCenterY, SPRING_CONFIG_FAST, () => {
-            'worklet';
-            // Animation complete - hide floating tile
-            draggingRackIndexShared.value = -1;
-            animationStartedInWorklet.value = false;
-            runOnJS(onSettleComplete)();
-          });
+          positionY.value = withSpring(
+            targetCenterY,
+            SPRING_CONFIG_FAST,
+            () => {
+              'worklet';
+              // Animation complete - hide floating tile
+              draggingRackIndexShared.value = -1;
+              animationStartedInWorklet.value = false;
+              runOnJS(onSettleComplete)();
+            }
+          );
         }
       }
 

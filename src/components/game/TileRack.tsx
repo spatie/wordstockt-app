@@ -189,7 +189,9 @@ function AnimatedTileSlot({
     // When tile is hidden (being dragged), snap animatedX to target position immediately
     // This ensures that when the tile becomes visible, it's already at the correct position (no flash)
     if (isDraggingThis) {
-      console.log(`[TileSlot ${actualRackIndex}] SNAP: tile hidden (being dragged), updating animatedX to target`);
+      console.log(
+        `[TileSlot ${actualRackIndex}] SNAP: tile hidden (being dragged), updating animatedX to target`
+      );
       animatedX.value = targetX;
       prevVisualSlot.current = visualSlot;
       prevIsUsed.current = isUsed;
@@ -206,7 +208,9 @@ function AnimatedTileSlot({
       animatedX.value = withSpring(targetX, SPRING_CONFIG);
       prevVisualSlot.current = visualSlot;
     } else if (prevVisualSlot.current !== visualSlot) {
-      console.log(`[TileSlot ${actualRackIndex}] ANIMATE: visualSlot changed ${prevVisualSlot.current} -> ${visualSlot}`);
+      console.log(
+        `[TileSlot ${actualRackIndex}] ANIMATE: visualSlot changed ${prevVisualSlot.current} -> ${visualSlot}`
+      );
       // Visual slot changed (e.g., shuffle/swap) - animate to new position
       // Use fast spring to match floating tile animation speed
       animatedX.value = withSpring(targetX, SPRING_CONFIG_FAST);
@@ -279,7 +283,9 @@ function AnimatedTileSlot({
     });
     return null;
   }
-  console.log(`[TileSlot ${actualRackIndex}] RENDERED at visualSlot=${visualSlot}`);
+  console.log(
+    `[TileSlot ${actualRackIndex}] RENDERED at visualSlot=${visualSlot}`
+  );
 
   // Render SelectableTile in swap mode, DraggableTile otherwise
   if (isSwapMode) {
