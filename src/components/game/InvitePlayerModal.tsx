@@ -278,14 +278,9 @@ export function InvitePlayerModal({
 
   const renderShareTab = () => (
     <View style={styles.shareContainer}>
-      <View style={styles.shareIconContainer}>
-        <Ionicons name="share-outline" size={48} color={colors.primary} />
-      </View>
-
-      <Text style={styles.shareTitle}>Share Invite Link</Text>
+      <Text style={styles.shareTitle}>Invite anyone to join</Text>
       <Text style={styles.shareDescription}>
-        Share a link via WhatsApp, Messages, Email, or any other app. Anyone
-        with the link can join your game.
+        Share via WhatsApp, Messages, Email, or any other app
       </Text>
 
       {linkErrorMessage && (
@@ -482,28 +477,19 @@ const styles = StyleSheet.create({
   },
   shareContainer: {
     alignItems: 'center',
-    paddingVertical: SPACING.md,
-  },
-  shareIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primary + '20',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: SPACING.lg,
+    paddingVertical: SPACING.lg,
   },
   shareTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: colors.textPrimary,
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.xs,
   },
   shareDescription: {
     fontSize: 14,
     color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: SPACING.xxl,
+    marginBottom: SPACING.xl,
   },
 });
