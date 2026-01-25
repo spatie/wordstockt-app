@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useAnimatedReaction } from 'react-native-reanimated';
 import { Tile } from './Tile';
 import { useDragDrop } from '../../context/DragDropContext';
 import { usePointerDrag } from '../../hooks/usePointerDrag';
@@ -12,7 +12,6 @@ import type { DropTarget, RackLayout } from '../../context/DragDropContext';
 interface DraggableTileProps {
   tile: TileType;
   rackIndex: number;
-  visualSlot: number;
   rackLayout: RackLayout | null;
   isUsed: boolean;
   disabled: boolean;
@@ -22,7 +21,6 @@ interface DraggableTileProps {
 export function DraggableTile({
   tile,
   rackIndex,
-  visualSlot,
   rackLayout,
   isUsed,
   disabled,
@@ -37,7 +35,22 @@ export function DraggableTile({
     registerDraggable,
     unregisterDraggable,
     draggingRackIndexShared,
+    rackPermutationShared,
   } = useDragDrop();
+
+  // Track visualSlot via ref, updated by useAnimatedReaction
+  const visualSlotRef = useRef(rackIndex);
+  useAnimatedReaction(
+    () => {
+      'worklet';
+      const idx = rackPermutationShared.value.indexOf(rackIndex);
+      return idx === -1 ? rackIndex : idx;
+    },
+    (visualSlot) => {
+      visualSlotRef.current = visualSlot;
+    },
+    [rackIndex]
+  );
 
   const registrationId = `rack-${rackIndex}`;
 
@@ -81,7 +94,7 @@ export function DraggableTile({
   // current animated position. This is correct because:
   // 1. Users typically wait for shuffle animation to complete before dragging
   // 2. If they tap during animation, they hit the destination position (intuitive)
-  // The hit area re-registers whenever visualSlot changes (after shuffle/swap).
+  // The hit area re-registers when tile/rackLayout changes. visualSlot is read from ref.
   useEffect(() => {
     if (Platform.OS === 'web' || isUsed || disabled || !rackLayout) {
       unregisterDraggable(registrationId);
@@ -92,7 +105,7 @@ export function DraggableTile({
     // rackLayout.x is the start of the rack slots area
     // Each slot is TILE_SIZE wide with GAP between them
     const slotWidth = TILE_SIZE + GAP;
-    const x = rackLayout.x + visualSlot * slotWidth;
+    const x = rackLayout.x + visualSlotRef.current * slotWidth;
     const y = rackLayout.y;
 
     registerDraggable(
@@ -109,7 +122,6 @@ export function DraggableTile({
   }, [
     tile,
     rackIndex,
-    visualSlot,
     rackLayout,
     isUsed,
     disabled,
@@ -127,7 +139,7 @@ export function DraggableTile({
       if (rackLayout) {
         const slotWidth = TILE_SIZE + GAP;
         const tileCenterX =
-          rackLayout.x + visualSlot * slotWidth + TILE_SIZE / 2;
+          rackLayout.x + visualSlotRef.current * slotWidth + TILE_SIZE / 2;
         const tileCenterY = rackLayout.y + TILE_SIZE / 2;
         startDragFromRack(tile, rackIndex, tileCenterX, tileCenterY);
       } else {
@@ -135,7 +147,7 @@ export function DraggableTile({
         startDragFromRack(tile, rackIndex, _pageX, _pageY);
       }
     },
-    [tile, rackIndex, visualSlot, rackLayout, startDragFromRack]
+    [tile, rackIndex, rackLayout, startDragFromRack]
   );
 
   const handleDragEnd = useCallback(

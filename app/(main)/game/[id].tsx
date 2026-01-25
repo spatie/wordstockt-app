@@ -491,6 +491,20 @@ function GameScreenContent() {
     !rematchDismissed &&
     opponent !== undefined;
 
+  // Debug: Log rematch conditions when game is finished
+  if (isGameFinished) {
+    console.log('[RematchDebug]', {
+      isGameFinished,
+      gameJustEnded,
+      wasFinishedOnLoadRef: wasFinishedOnLoadRef.current,
+      gameEndModalDismissed,
+      currentAchievement: currentAchievement?.name ?? null,
+      rematchDismissed,
+      opponentDefined: opponent !== undefined,
+      showRematchModal,
+    });
+  }
+
   const handleRematch = async () => {
     const newGameUlid = await createRematch();
     if (newGameUlid) {

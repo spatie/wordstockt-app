@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useGameStore, useRackPermutation } from '../stores/gameStore';
+import { useGameStore } from '../stores/gameStore';
 import { useDragDrop } from '../context/DragDropContext';
 import type { Game, PendingTile } from '../types';
 
@@ -12,23 +12,16 @@ interface UseRackActionsOptions {
  * Hook for rack-related actions like recall and shuffle.
  */
 export function useRackActions({ game, pendingTiles }: UseRackActionsOptions) {
-  const rackPermutation = useRackPermutation();
   const recallAllTiles = useGameStore((s) => s.recallAllTiles);
-  const shuffleRack = useGameStore((s) => s.shuffleRack);
-  const { startRecallAnimation } = useDragDrop();
+  const { startRecallAnimation, rackPermutationShared, setRackPermutation } = useDragDrop();
 
   // Recall all pending tiles back to rack with animation
   const handleRecall = useCallback(() => {
-    const timestamp = Date.now();
-    console.warn(
-      `[useRackActions] [${timestamp}] handleRecall called, pendingTiles:`,
-      pendingTiles.length,
-      pendingTiles.map((t) => `${t.letter}@${t.x},${t.y}`)
-    );
     if (pendingTiles.length > 0) {
+      const currentPerm = rackPermutationShared.value;
       const tilesToRecall = pendingTiles.map((t) => ({
         ...t,
-        visualSlot: rackPermutation.indexOf(t.rackIndex),
+        visualSlot: currentPerm.indexOf(t.rackIndex),
       }));
       // Start animation - onStart clears game state after shared values hide tiles
       startRecallAnimation(
@@ -43,11 +36,17 @@ export function useRackActions({ game, pendingTiles }: UseRackActionsOptions) {
         }
       );
     }
-  }, [pendingTiles, rackPermutation, recallAllTiles, startRecallAnimation]);
+  }, [pendingTiles, rackPermutationShared, recallAllTiles, startRecallAnimation]);
 
   // Shuffle available tiles in rack
+  // Updates shared value for instant animation, syncs to Zustand for persistence
   const handleMix = useCallback(() => {
     if (!game) return;
+
+    // Get current permutation from shared value
+    const currentPerm = [...rackPermutationShared.value];
+
+    // Determine which indices have tiles in rack (not on board)
     const filledIndices = game.myRack
       .map((tile, index) =>
         tile && tile.letter && !pendingTiles.some((p) => p.rackIndex === index)
@@ -55,8 +54,23 @@ export function useRackActions({ game, pendingTiles }: UseRackActionsOptions) {
           : -1
       )
       .filter((idx) => idx !== -1);
-    shuffleRack(filledIndices);
-  }, [game, pendingTiles, shuffleRack]);
+
+    if (filledIndices.length <= 1) return; // Nothing to shuffle
+
+    // Fisher-Yates shuffle only the filled positions
+    const shuffled = [...filledIndices];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
+    }
+
+    // Build new permutation: shuffled filled indices first, then empty positions
+    const emptyIndices = currentPerm.filter((idx) => !filledIndices.includes(idx));
+    const newPerm = [...shuffled, ...emptyIndices];
+
+    // Update shared value for instant animation, sync to Zustand for persistence
+    setRackPermutation(newPerm);
+  }, [game, pendingTiles, rackPermutationShared, setRackPermutation]);
 
   return {
     handleRecall,

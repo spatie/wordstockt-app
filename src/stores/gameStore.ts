@@ -48,6 +48,7 @@ interface GameUIActions {
     actualRackIndex: number,
     targetVisualSlot: number
   ) => void;
+  setRackPermutation: (permutation: number[]) => void;
   shuffleRack: (filledIndices?: number[]) => void;
   resetRackPermutation: () => void;
   setRackDragging: (isDragging: boolean) => void;
@@ -125,22 +126,12 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
       },
 
       placeTile: (tile, x, y, rackIndex) => {
-        console.warn('[gameStore] placeTile called', {
-          tile: tile.letter,
-          x,
-          y,
-          rackIndex,
-        });
         set((state) => {
           const gameState = getCurrentGameState(state);
           const newPendingTiles = [
             ...gameState.pendingTiles,
             { ...tile, x, y, rackIndex },
           ];
-          console.warn(
-            '[gameStore] placeTile - new pendingTiles count:',
-            newPendingTiles.length
-          );
           return {
             ...updateCurrentGameState(state, {
               pendingTiles: newPendingTiles,
@@ -161,8 +152,6 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
         }),
 
       removeTile: (x, y) => {
-        console.warn('[gameStore] removeTile called', { x, y });
-        console.warn('[gameStore] removeTile stack:', new Error().stack);
         set((state) => {
           const gameState = getCurrentGameState(state);
           return updateCurrentGameState(state, {
@@ -174,8 +163,6 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
       },
 
       recallAllTiles: () => {
-        console.warn('[gameStore] recallAllTiles called');
-        console.warn('[gameStore] recallAllTiles stack:', new Error().stack);
         set((state) => ({
           ...updateCurrentGameState(state, { pendingTiles: [] }),
           validationResult: null,
@@ -183,8 +170,6 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
       },
 
       clearPendingTiles: () => {
-        console.warn('[gameStore] clearPendingTiles called');
-        console.warn('[gameStore] clearPendingTiles stack:', new Error().stack);
         set((state) => ({
           ...updateCurrentGameState(state, {
             pendingTiles: [],
@@ -195,7 +180,6 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
       },
 
       clearGameState: (gameUlid) => {
-        console.warn('[gameStore] clearGameState called', { gameUlid });
         set((state) => {
           const { [gameUlid]: _, ...remainingStates } = state.gameStates;
           return { gameStates: remainingStates };
@@ -230,6 +214,11 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
           newPerm[targetVisualSlot] = temp;
           return updateCurrentGameState(state, { rackPermutation: newPerm });
         }),
+
+      setRackPermutation: (permutation) =>
+        set((state) =>
+          updateCurrentGameState(state, { rackPermutation: permutation })
+        ),
 
       setRackDragging: (isDragging) => set({ isRackDragging: isDragging }),
 
