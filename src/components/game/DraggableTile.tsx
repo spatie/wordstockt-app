@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
-import Animated, { useAnimatedStyle, useAnimatedReaction } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useAnimatedReaction,
+} from 'react-native-reanimated';
 import { Tile } from './Tile';
 import { useDragDrop } from '../../context/DragDropContext';
 import { usePointerDrag } from '../../hooks/usePointerDrag';
