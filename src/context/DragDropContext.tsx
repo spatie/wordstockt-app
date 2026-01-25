@@ -179,7 +179,10 @@ interface DragDropContextType {
 
   // Rack permutation (UI-thread source of truth during gameplay)
   rackPermutationShared: SharedValue<number[]>;
-  swapRackTilesWorklet: (sourceActualIndex: number, targetVisualSlot: number) => void;
+  swapRackTilesWorklet: (
+    sourceActualIndex: number,
+    targetVisualSlot: number
+  ) => void;
   shuffleRackWorklet: () => void;
   // JS-callable function to update permutation (for shuffle with filledIndices)
   setRackPermutation: (permutation: number[]) => void;
@@ -1716,7 +1719,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     // If so, don't reset isDraggingShared (it belongs to the new drag)
     const pendingSessionId = pending?.sessionId ?? -1;
     const currentSessionId = dragSessionIdShared.value;
-    const isStaleCallback = pendingSessionId !== currentSessionId && currentSessionId > 0;
+    const isStaleCallback =
+      pendingSessionId !== currentSessionId && currentSessionId > 0;
 
     // If this is a stale callback (new drag already started), skip ALL cleanup
     // The new drag has taken ownership of all shared values
@@ -1726,7 +1730,6 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
     // Helper to reset all JS state
     const resetState = () => {
-
       isDraggingRef.current = false;
       isDraggingShared.value = false;
       draggingRackIndexShared.value = -1;
@@ -1844,22 +1847,26 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Worklet function to swap rack tiles - runs entirely on UI thread for instant animation
-  const swapRackTilesWorklet = useCallback((sourceActualIndex: number, targetVisualSlot: number) => {
-    'worklet';
-    const perm = [...rackPermutationShared.value];
-    const sourceVisualSlot = perm.indexOf(sourceActualIndex);
-    if (sourceVisualSlot === -1 || sourceVisualSlot === targetVisualSlot) return;
+  const swapRackTilesWorklet = useCallback(
+    (sourceActualIndex: number, targetVisualSlot: number) => {
+      'worklet';
+      const perm = [...rackPermutationShared.value];
+      const sourceVisualSlot = perm.indexOf(sourceActualIndex);
+      if (sourceVisualSlot === -1 || sourceVisualSlot === targetVisualSlot)
+        return;
 
-    // Swap in permutation
-    const temp = perm[sourceVisualSlot]!;
-    perm[sourceVisualSlot] = perm[targetVisualSlot]!;
-    perm[targetVisualSlot] = temp;
+      // Swap in permutation
+      const temp = perm[sourceVisualSlot]!;
+      perm[sourceVisualSlot] = perm[targetVisualSlot]!;
+      perm[targetVisualSlot] = temp;
 
-    rackPermutationShared.value = perm;
+      rackPermutationShared.value = perm;
 
-    // Sync to Zustand for persistence (deferred to JS thread)
-    runOnJS(syncPermutationToZustand)(perm);
-  }, [rackPermutationShared, syncPermutationToZustand]);
+      // Sync to Zustand for persistence (deferred to JS thread)
+      runOnJS(syncPermutationToZustand)(perm);
+    },
+    [rackPermutationShared, syncPermutationToZustand]
+  );
 
   // Worklet function to shuffle rack tiles - runs entirely on UI thread for instant animation
   const shuffleRackWorklet = useCallback(() => {
@@ -1880,10 +1887,13 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
   // JS-callable function to update permutation (for shuffle with filledIndices)
   // Updates shared value immediately for instant animation, then syncs to Zustand
-  const setRackPermutation = useCallback((permutation: number[]) => {
-    rackPermutationShared.value = permutation;
-    syncPermutationToZustand(permutation);
-  }, [rackPermutationShared, syncPermutationToZustand]);
+  const setRackPermutation = useCallback(
+    (permutation: number[]) => {
+      rackPermutationShared.value = permutation;
+      syncPermutationToZustand(permutation);
+    },
+    [rackPermutationShared, syncPermutationToZustand]
+  );
 
   // -------------------------------------------------------------------------
   // Web API (for pointer events)
@@ -2459,7 +2469,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
         for (const [dx, dy] of searchOffsets) {
           if (dx !== undefined && dy !== undefined) {
-            boardHit = findBoardCellAtPositionWorklet(screenX + dx, screenY + dy);
+            boardHit = findBoardCellAtPositionWorklet(
+              screenX + dx,
+              screenY + dy
+            );
             if (boardHit) break;
           }
         }
@@ -2614,11 +2627,19 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           // Calculate target slot
           const slotWidth = TILE_SIZE + GAP;
           const relativeX = screenX - rackLeft;
-          const targetSlot = Math.max(0, Math.min(SLOT_COUNT - 1, Math.floor(relativeX / slotWidth)));
+          const targetSlot = Math.max(
+            0,
+            Math.min(SLOT_COUNT - 1, Math.floor(relativeX / slotWidth))
+          );
 
           // Calculate target slot center position (relative to container)
-          const targetCenterX = rackLeft + targetSlot * slotWidth + TILE_SIZE / 2 - containerOffsetX.value;
-          const targetCenterY = rackTop + (rackBottom - rackTop) / 2 - containerOffsetY.value;
+          const targetCenterX =
+            rackLeft +
+            targetSlot * slotWidth +
+            TILE_SIZE / 2 -
+            containerOffsetX.value;
+          const targetCenterY =
+            rackTop + (rackBottom - rackTop) / 2 - containerOffsetY.value;
 
           // Mark that animation started in worklet (JS side should skip animation)
           animationStartedInWorklet.value = true;
@@ -2631,13 +2652,17 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
           // Start animation immediately (no bridge delay!)
           positionX.value = withSpring(targetCenterX, SPRING_CONFIG_FAST);
-          positionY.value = withSpring(targetCenterY, SPRING_CONFIG_FAST, () => {
-            'worklet';
-            // Animation complete - hide floating tile
-            draggingRackIndexShared.value = -1;
-            animationStartedInWorklet.value = false;
-            runOnJS(onSettleComplete)();
-          });
+          positionY.value = withSpring(
+            targetCenterY,
+            SPRING_CONFIG_FAST,
+            () => {
+              'worklet';
+              // Animation complete - hide floating tile
+              draggingRackIndexShared.value = -1;
+              animationStartedInWorklet.value = false;
+              runOnJS(onSettleComplete)();
+            }
+          );
         }
       }
 

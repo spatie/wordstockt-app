@@ -13,7 +13,8 @@ interface UseRackActionsOptions {
  */
 export function useRackActions({ game, pendingTiles }: UseRackActionsOptions) {
   const recallAllTiles = useGameStore((s) => s.recallAllTiles);
-  const { startRecallAnimation, rackPermutationShared, setRackPermutation } = useDragDrop();
+  const { startRecallAnimation, rackPermutationShared, setRackPermutation } =
+    useDragDrop();
 
   // Recall all pending tiles back to rack with animation
   const handleRecall = useCallback(() => {
@@ -36,7 +37,12 @@ export function useRackActions({ game, pendingTiles }: UseRackActionsOptions) {
         }
       );
     }
-  }, [pendingTiles, rackPermutationShared, recallAllTiles, startRecallAnimation]);
+  }, [
+    pendingTiles,
+    rackPermutationShared,
+    recallAllTiles,
+    startRecallAnimation,
+  ]);
 
   // Shuffle available tiles in rack
   // Updates shared value for instant animation, syncs to Zustand for persistence
@@ -65,7 +71,9 @@ export function useRackActions({ game, pendingTiles }: UseRackActionsOptions) {
     }
 
     // Build new permutation: shuffled filled indices first, then empty positions
-    const emptyIndices = currentPerm.filter((idx) => !filledIndices.includes(idx));
+    const emptyIndices = currentPerm.filter(
+      (idx) => !filledIndices.includes(idx)
+    );
     const newPerm = [...shuffled, ...emptyIndices];
 
     // Update shared value for instant animation, sync to Zustand for persistence
