@@ -22,10 +22,10 @@ Read about [how this was built in ~10 days](https://freek.dev/2983-i-built-a-nat
 ## Screenshots
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/spatie/wordstockt.com/main/public/screenshots/ios-appstore/01-game-board.png" width="200" alt="Game Board">
-  <img src="https://raw.githubusercontent.com/spatie/wordstockt.com/main/public/screenshots/ios-appstore/02-games-list.png" width="200" alt="Games List">
-  <img src="https://raw.githubusercontent.com/spatie/wordstockt.com/main/public/screenshots/ios-appstore/04-leaderboard.png" width="200" alt="Leaderboard">
-  <img src="https://raw.githubusercontent.com/spatie/wordstockt.com/main/public/screenshots/ios-appstore/03-profile.png" width="200" alt="Profile">
+  <img src="docs/images/01-game-board.png" width="200" alt="Game Board">
+  <img src="docs/images/02-games-list.png" width="200" alt="Games List">
+  <img src="docs/images/04-leaderboard.png" width="200" alt="Leaderboard">
+  <img src="docs/images/03-profile.png" width="200" alt="Profile">
 </p>
 
 ## Tech Stack
