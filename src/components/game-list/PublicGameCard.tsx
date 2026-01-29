@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../ui/Card';
@@ -10,7 +10,7 @@ import type { PublicGame } from '../../types';
 
 interface PublicGameCardProps {
   game: PublicGame;
-  onPress: () => void;
+  onPress: (gameUlid: string) => void;
 }
 
 export function PublicGameCard({ game, onPress }: PublicGameCardProps) {
@@ -18,8 +18,12 @@ export function PublicGameCard({ game, onPress }: PublicGameCardProps) {
     row.some((cell) => cell !== null)
   );
 
+  const handlePress = useCallback(() => {
+    onPress(game.ulid);
+  }, [onPress, game.ulid]);
+
   return (
-    <Card onPress={onPress}>
+    <Card onPress={handlePress}>
       <View style={styles.cardTop}>
         <View style={styles.iconContainer}>
           <Ionicons name="globe-outline" size={18} color={colors.primary} />
@@ -42,7 +46,7 @@ export function PublicGameCard({ game, onPress }: PublicGameCardProps) {
         </View>
         <Button
           label="View"
-          onPress={onPress}
+          onPress={handlePress}
           size="sm"
           rounded
           style={styles.viewButton}

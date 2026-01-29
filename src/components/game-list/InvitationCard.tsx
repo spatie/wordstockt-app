@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Card } from '../ui/Card';
 import { SmartAvatar } from '../ui/SmartAvatar';
@@ -10,8 +10,8 @@ import type { GameInvitation } from '../../types/invitation';
 
 interface InvitationCardProps {
   invitation: GameInvitation;
-  onPress: () => void;
-  onDecline: () => void;
+  onPress: (gameUlid: string, invitationUlid: string) => void;
+  onDecline: (invitationUlid: string) => void;
   isDeclining?: boolean;
 }
 
@@ -23,8 +23,16 @@ export function InvitationCard({
 }: InvitationCardProps) {
   const { inviter, game, createdAt } = invitation;
 
+  const handlePress = useCallback(() => {
+    onPress(game.ulid, invitation.ulid);
+  }, [onPress, game.ulid, invitation.ulid]);
+
+  const handleDecline = useCallback(() => {
+    onDecline(invitation.ulid);
+  }, [onDecline, invitation.ulid]);
+
   return (
-    <Card accentColor={colors.secondary} showAccent onPress={onPress}>
+    <Card accentColor={colors.secondary} showAccent onPress={handlePress}>
       <View style={styles.cardTop}>
         <SmartAvatar
           userUlid={inviter.ulid}
@@ -52,14 +60,14 @@ export function InvitationCard({
         <View style={styles.buttonContainer}>
           <Button
             label="Decline"
-            onPress={onDecline}
+            onPress={handleDecline}
             variant="outline"
             size="sm"
             rounded
             disabled={isDeclining}
             loading={isDeclining}
           />
-          <Button label="View" onPress={onPress} size="sm" rounded />
+          <Button label="View" onPress={handlePress} size="sm" rounded />
         </View>
       </View>
     </Card>

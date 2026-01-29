@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, FlatList, StyleSheet, RefreshControl, Text } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
 import { useRouter } from 'expo-router';
@@ -10,7 +10,7 @@ import { ROUTES } from '../../src/config/routes';
 import type { Friend } from '../../src/types';
 
 export default function FriendsScreen() {
-  const router = useRouter();
+  const { push } = useRouter();
   const { data: friends, isLoading, error, refetch } = useFriends();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -27,12 +27,18 @@ export default function FriendsScreen() {
     setRefreshing(false);
   };
 
-  const handleFriendPress = (friend: Friend) => {
-    router.push(ROUTES.USER_PROFILE(friend.friendUlid));
-  };
+  const handleFriendPress = useCallback(
+    (friendUlid: string) => {
+      push(ROUTES.USER_PROFILE(friendUlid));
+    },
+    [push]
+  );
 
-  const renderFriend = ({ item }: { item: Friend }) => (
-    <FriendCard friend={item} onPress={() => handleFriendPress(item)} />
+  const renderFriend = useCallback(
+    ({ item }: { item: Friend }) => (
+      <FriendCard friend={item} onPress={handleFriendPress} />
+    ),
+    [handleFriendPress]
   );
 
   if (isLoading) {
