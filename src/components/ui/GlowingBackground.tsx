@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo } from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
+import { shuffle as shuffleArray } from 'lodash-es';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
   withTiming,
-  withDelay,
   Easing,
   interpolate,
 } from 'react-native-reanimated';
@@ -83,32 +83,38 @@ function GlowOrb({
 
   useEffect(() => {
     const startAnimation = () => {
-      moveProgress.set(withRepeat(
-        withTiming(1, {
-          duration: moveDuration,
-          easing: Easing.inOut(Easing.ease),
-        }),
-        -1,
-        true
-      ));
+      moveProgress.set(
+        withRepeat(
+          withTiming(1, {
+            duration: moveDuration,
+            easing: Easing.inOut(Easing.ease),
+          }),
+          -1,
+          true
+        )
+      );
 
-      scaleProgress.set(withRepeat(
-        withTiming(1, {
-          duration: scaleDuration,
-          easing: Easing.inOut(Easing.ease),
-        }),
-        -1,
-        true
-      ));
+      scaleProgress.set(
+        withRepeat(
+          withTiming(1, {
+            duration: scaleDuration,
+            easing: Easing.inOut(Easing.ease),
+          }),
+          -1,
+          true
+        )
+      );
 
-      colorProgress.set(withRepeat(
-        withTiming(1, {
-          duration: colorDuration,
-          easing: Easing.inOut(Easing.ease),
-        }),
-        -1,
-        true
-      ));
+      colorProgress.set(
+        withRepeat(
+          withTiming(1, {
+            duration: colorDuration,
+            easing: Easing.inOut(Easing.ease),
+          }),
+          -1,
+          true
+        )
+      );
     };
 
     if (initialDelay > 0) {
@@ -188,14 +194,14 @@ function GlowOrb({
     >
       <StaticOrb
         size={size}
-        color={colors[0]}
+        color={colors[0]!}
         opacity={opacity}
         gradientId={`${gradientIdPrefix}-1`}
       />
       <Animated.View style={[StyleSheet.absoluteFill, secondColorStyle]}>
         <StaticOrb
           size={size}
-          color={colors[1]}
+          color={colors[1]!}
           opacity={opacity}
           gradientId={`${gradientIdPrefix}-2`}
         />
@@ -213,16 +219,6 @@ const COLOR_PAIRS = [
   ['#F97316', '#FBBF24'], // Orange/Yellow
   ['#8B5CF6', '#EC4899'], // Purple/Pink
 ];
-
-// Shuffle array helper
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
 
 export function GlowingBackground() {
   // Randomize on mount - useMemo ensures values persist during component lifetime
@@ -255,12 +251,12 @@ export function GlowingBackground() {
       {/* Orb 1 - top right area */}
       <GlowOrb
         size={orbSize1}
-        colors={randomValues.colors[0]}
+        colors={randomValues.colors[0]!}
         opacity={0.4}
         initialX={
-          SCREEN_WIDTH - orbSize1 * 0.3 + randomValues.positionOffsets[0].x
+          SCREEN_WIDTH - orbSize1 * 0.3 + randomValues.positionOffsets[0]!.x
         }
-        initialY={-orbSize1 * 0.4 + randomValues.positionOffsets[0].y}
+        initialY={-orbSize1 * 0.4 + randomValues.positionOffsets[0]!.y}
         moveRangeX={-80}
         moveRangeY={100}
         moveDuration={32000}
@@ -275,10 +271,10 @@ export function GlowingBackground() {
       {/* Orb 2 - left side */}
       <GlowOrb
         size={orbSize2}
-        colors={randomValues.colors[1]}
+        colors={randomValues.colors[1]!}
         opacity={0.35}
-        initialX={-orbSize2 * 0.35 + randomValues.positionOffsets[1].x}
-        initialY={SCREEN_HEIGHT * 0.18 + randomValues.positionOffsets[1].y}
+        initialX={-orbSize2 * 0.35 + randomValues.positionOffsets[1]!.x}
+        initialY={SCREEN_HEIGHT * 0.18 + randomValues.positionOffsets[1]!.y}
         moveRangeX={90}
         moveRangeY={-60}
         moveDuration={38000}
@@ -293,11 +289,11 @@ export function GlowingBackground() {
       {/* Orb 3 - bottom area */}
       <GlowOrb
         size={orbSize3}
-        colors={randomValues.colors[2]}
+        colors={randomValues.colors[2]!}
         opacity={0.3}
-        initialX={SCREEN_WIDTH * 0.2 + randomValues.positionOffsets[2].x}
+        initialX={SCREEN_WIDTH * 0.2 + randomValues.positionOffsets[2]!.x}
         initialY={
-          SCREEN_HEIGHT - orbSize3 * 0.15 + randomValues.positionOffsets[2].y
+          SCREEN_HEIGHT - orbSize3 * 0.15 + randomValues.positionOffsets[2]!.y
         }
         moveRangeX={70}
         moveRangeY={-90}
@@ -313,10 +309,10 @@ export function GlowingBackground() {
       {/* Orb 4 - center */}
       <GlowOrb
         size={orbSize4}
-        colors={randomValues.colors[3]}
+        colors={randomValues.colors[3]!}
         opacity={0.25}
-        initialX={SCREEN_WIDTH * 0.4 + randomValues.positionOffsets[3].x}
-        initialY={SCREEN_HEIGHT * 0.4 + randomValues.positionOffsets[3].y}
+        initialX={SCREEN_WIDTH * 0.4 + randomValues.positionOffsets[3]!.x}
+        initialY={SCREEN_HEIGHT * 0.4 + randomValues.positionOffsets[3]!.y}
         moveRangeX={-60}
         moveRangeY={80}
         moveDuration={42000}
