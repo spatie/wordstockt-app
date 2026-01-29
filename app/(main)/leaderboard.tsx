@@ -178,10 +178,7 @@ export default function LeaderboardScreen() {
     [isTimeBased]
   );
 
-  const keyExtractor = useCallback(
-    (item: LeaderboardEntry) => item.ulid,
-    []
-  );
+  const keyExtractor = useCallback((item: LeaderboardEntry) => item.ulid, []);
 
   const renderCurrentUserFooter = () => {
     const currentUser = data?.meta?.currentUser;
