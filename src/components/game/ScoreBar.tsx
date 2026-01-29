@@ -77,17 +77,21 @@ function TilesBadge({ count }: { count: number }) {
 
   const handlePress = useCallback(() => {
     // Wobble animation: rotate back and forth while bouncing
-    rotation.value = withSequence(
-      withTiming(-12, { duration: 50 }),
-      withTiming(10, { duration: 60 }),
-      withTiming(-8, { duration: 60 }),
-      withTiming(6, { duration: 60 }),
-      withTiming(-3, { duration: 50 }),
-      withTiming(0, { duration: 50 })
+    rotation.set(
+      withSequence(
+        withTiming(-12, { duration: 50 }),
+        withTiming(10, { duration: 60 }),
+        withTiming(-8, { duration: 60 }),
+        withTiming(6, { duration: 60 }),
+        withTiming(-3, { duration: 50 }),
+        withTiming(0, { duration: 50 })
+      )
     );
-    scale.value = withSequence(
-      withSpring(1.15, { damping: 8, stiffness: 400 }),
-      withSpring(1, { damping: 10, stiffness: 300 })
+    scale.set(
+      withSequence(
+        withSpring(1.15, { damping: 8, stiffness: 400 }),
+        withSpring(1, { damping: 10, stiffness: 300 })
+      )
     );
   }, [rotation, scale]);
 
@@ -147,22 +151,24 @@ function PlayerAvatar({
 
   useEffect(() => {
     if (isActive) {
-      visible.value = withTiming(1, { duration: 300 });
-      pulse.value = 1;
-      pulse.value = withRepeat(
-        withSequence(
-          withTiming(0.3, {
-            duration: 1200,
-            easing: Easing.inOut(Easing.quad),
-          }),
-          withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.quad) })
-        ),
-        -1,
-        false
+      visible.set(withTiming(1, { duration: 300 }));
+      pulse.set(1);
+      pulse.set(
+        withRepeat(
+          withSequence(
+            withTiming(0.3, {
+              duration: 1200,
+              easing: Easing.inOut(Easing.quad),
+            }),
+            withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.quad) })
+          ),
+          -1,
+          false
+        )
       );
     } else {
-      visible.value = withTiming(0, { duration: 300 });
-      pulse.value = 1;
+      visible.set(withTiming(0, { duration: 300 }));
+      pulse.set(1);
     }
   }, [isActive, visible, pulse]);
 
@@ -248,9 +254,11 @@ export function ScoreBar({
   const bonusOpacity = useSharedValue(0);
 
   useEffect(() => {
-    bonusOpacity.value = withTiming(showBonus ? 1 : 0, {
-      duration: ANIMATION_DURATION,
-    });
+    bonusOpacity.set(
+      withTiming(showBonus ? 1 : 0, {
+        duration: ANIMATION_DURATION,
+      })
+    );
   }, [showBonus, bonusOpacity]);
 
   const bonusAnimatedStyle = useAnimatedStyle(() => ({

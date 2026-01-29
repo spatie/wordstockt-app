@@ -40,7 +40,7 @@ const AnimatedDigit = memo(function AnimatedDigit({
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
-      translateY.value = -currentDigitValue * DIGIT_HEIGHT;
+      translateY.set(-currentDigitValue * DIGIT_HEIGHT);
       return;
     }
 
@@ -49,12 +49,14 @@ const AnimatedDigit = memo(function AnimatedDigit({
       const staggerIndex = totalDigits - 1 - digitIndex;
       const delay = ANIMATION_START_DELAY + staggerIndex * STAGGER_DELAY;
 
-      translateY.value = withDelay(
-        delay,
-        withTiming(-currentDigitValue * DIGIT_HEIGHT, {
-          duration: ANIMATION_DURATION,
-          easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-        })
+      translateY.set(
+        withDelay(
+          delay,
+          withTiming(-currentDigitValue * DIGIT_HEIGHT, {
+            duration: ANIMATION_DURATION,
+            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+          })
+        )
       );
 
       prevDigit.current = digit;
@@ -106,19 +108,21 @@ export function AnimatedTilesCount({ count }: AnimatedTilesCountProps) {
       changeCounter.current += 1;
 
       // Scale pop animation with delay - snappy spring
-      scale.value = withDelay(
-        ANIMATION_START_DELAY,
-        withSequence(
-          withSpring(1.12, {
-            damping: 6,
-            stiffness: 500,
-            mass: 0.5,
-          }),
-          withSpring(1, {
-            damping: 8,
-            stiffness: 300,
-            mass: 0.5,
-          })
+      scale.set(
+        withDelay(
+          ANIMATION_START_DELAY,
+          withSequence(
+            withSpring(1.12, {
+              damping: 6,
+              stiffness: 500,
+              mass: 0.5,
+            }),
+            withSpring(1, {
+              damping: 8,
+              stiffness: 300,
+              mass: 0.5,
+            })
+          )
         )
       );
     }

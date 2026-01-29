@@ -31,10 +31,10 @@ export function AppHeader({
 
   const handleLogoPress = useCallback(() => {
     // Toggle the trigger to restart animation
-    logoAnimationTrigger.value = logoAnimationTrigger.value === 0 ? 1 : 0;
+    logoAnimationTrigger.set(logoAnimationTrigger.get() === 0 ? 1 : 0);
     // Reset after animation completes
     setTimeout(() => {
-      logoAnimationTrigger.value = 0;
+      logoAnimationTrigger.set(0);
     }, 600);
   }, [logoAnimationTrigger]);
 

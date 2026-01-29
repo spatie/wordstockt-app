@@ -415,9 +415,11 @@ function AnimatedWordHighlight({ highlight }: AnimatedWordHighlightProps) {
       prevHighlight.current = highlight;
       const timer = setTimeout(() => {
         setShouldRender(true);
-        opacity.value = withTiming(1, {
-          duration: HIGHLIGHT_ANIMATION_DURATION,
-        });
+        opacity.set(
+          withTiming(1, {
+            duration: HIGHLIGHT_ANIMATION_DURATION,
+          })
+        );
       }, HIGHLIGHT_ANIMATION_DELAY);
       return () => clearTimeout(timer);
     }
@@ -426,13 +428,13 @@ function AnimatedWordHighlight({ highlight }: AnimatedWordHighlightProps) {
       // Changing between valid/invalid - keep visible, just update color
       prevHighlight.current = highlight;
       setShouldRender(true);
-      opacity.value = 1;
+      opacity.set(1);
     }
 
     if (!isNowVisible && wasVisible) {
       // Disappearing - fade out, then stop rendering
       prevHighlight.current = highlight;
-      opacity.value = withTiming(0, { duration: HIGHLIGHT_ANIMATION_DURATION });
+      opacity.set(withTiming(0, { duration: HIGHLIGHT_ANIMATION_DURATION }));
       const timer = setTimeout(() => {
         setShouldRender(false);
       }, HIGHLIGHT_ANIMATION_DURATION);

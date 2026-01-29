@@ -5,7 +5,7 @@
  * - Uses Gesture.Pan() from react-native-gesture-handler v2+
  * - Uses react-native-reanimated for UI thread animations
  * - Gesture callbacks run on UI thread via worklets
- * - Only calls JS thread via runOnJS when needed (state updates)
+ * - Only calls JS thread via scheduleOnRN when needed (state updates)
  *
  * DRAG FLOW:
  * 1. User touches a draggable item
@@ -43,11 +43,11 @@ import Animated, {
   useAnimatedReaction,
   withTiming,
   withSpring,
-  runOnJS,
   Easing,
   SharedValue,
   interpolateColor,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import {
   TILE_SIZE,
   GAP,
@@ -293,9 +293,9 @@ function RackFloatingTile({
     () => draggingRackIndex.value === rackIndex,
     (isThisDragging, wasThisDragging) => {
       if (isThisDragging && !wasThisDragging) {
-        runOnJS(setIsDraggingThis)(true);
+        scheduleOnRN(setIsDraggingThis, true);
       } else if (!isThisDragging && wasThisDragging) {
-        runOnJS(setIsDraggingThis)(false);
+        scheduleOnRN(setIsDraggingThis, false);
       }
     },
     [rackIndex]
@@ -380,7 +380,7 @@ function BoardFloatingTile({
         if (tileData) {
           // Set opacity to 1 here on UI thread - fires in same frame as drag start
           opacity.value = 1;
-          runOnJS(setImmediateTile)({
+          scheduleOnRN(setImmediateTile, {
             letter: tileData[0],
             points: tileData[1],
             isBlank: tileData[2],
@@ -388,7 +388,7 @@ function BoardFloatingTile({
         }
       } else if (!pos && prevPos) {
         // Clear when dragging ends
-        runOnJS(setImmediateTile)(null);
+        scheduleOnRN(setImmediateTile, null);
       }
     },
     []
@@ -816,7 +816,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const containerRef = useRef<View>(null);
   const containerOffsetRef = useRef({ x: 0, y: 0 });
 
-  // Handler refs for worklet callbacks (needed because runOnJS requires stable refs)
+  // Handler refs for worklet callbacks (needed because scheduleOnRN requires stable refs)
   const handleGestureStartRef = useRef<(x: number, y: number) => void>(
     () => {}
   );
@@ -1521,7 +1521,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
                 () => {
                   'worklet';
                   // Animation complete - hide floating tile
-                  runOnJS(onSettleComplete)();
+                  scheduleOnRN(onSettleComplete);
                 }
               );
             }
@@ -1567,7 +1567,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
                   // For board-to-rack: DON'T hide floating tile here
                   // The rack tile is still "used" until React updates
                   // Let onSettleComplete handle hiding after state updates
-                  runOnJS(onSettleComplete)();
+                  scheduleOnRN(onSettleComplete);
                 }
               );
               finishDrag(target, true);
@@ -1626,7 +1626,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
                 // For returning to rack: DON'T hide floating tile here
                 // If source was board, rack tile is "used" until React updates
                 // Let onSettleComplete handle hiding after state updates
-                runOnJS(onSettleComplete)();
+                scheduleOnRN(onSettleComplete);
               }
             );
             finishDrag(null, true);
@@ -1702,7 +1702,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         { duration: SETTLE_DURATION, easing: SETTLE_EASING },
         () => {
           'worklet';
-          runOnJS(onComplete)();
+          scheduleOnRN(onComplete);
         }
       );
     },
@@ -1841,7 +1841,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     completeSettleRef.current();
   }, []);
 
-  // Sync permutation to Zustand for persistence (called from worklet via runOnJS)
+  // Sync permutation to Zustand for persistence (called from worklet via scheduleOnRN)
   const syncPermutationToZustand = useCallback((perm: number[]) => {
     useGameStore.getState().setRackPermutation(perm);
   }, []);
@@ -1863,7 +1863,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       rackPermutationShared.value = perm;
 
       // Sync to Zustand for persistence (deferred to JS thread)
-      runOnJS(syncPermutationToZustand)(perm);
+      scheduleOnRN(syncPermutationToZustand, perm);
     },
     [rackPermutationShared, syncPermutationToZustand]
   );
@@ -1882,7 +1882,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     rackPermutationShared.value = perm;
 
     // Sync to Zustand for persistence (deferred to JS thread)
-    runOnJS(syncPermutationToZustand)(perm);
+    scheduleOnRN(syncPermutationToZustand, perm);
   }, [rackPermutationShared, syncPermutationToZustand]);
 
   // JS-callable function to update permutation (for shuffle with filledIndices)
@@ -2055,7 +2055,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           easing: Easing.out(Easing.cubic),
         },
         () => {
-          runOnJS(onRecallComplete)();
+          scheduleOnRN(onRecallComplete);
         }
       );
 
@@ -2177,7 +2177,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     updatePositionRefFn.current = updatePositionRefCallback;
   }, [updatePositionRefCallback]);
 
-  // Stable wrapper functions for runOnJS (refs don't work directly)
+  // Stable wrapper functions for scheduleOnRN (refs don't work directly)
   const onGestureStart = useCallback((x: number, y: number) => {
     handleGestureStartRef.current(x, y);
   }, []);
@@ -2448,7 +2448,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         draggingRackIndexShared.value = rackHit.rackIndex;
 
         // Update JS state asynchronously (non-blocking)
-        runOnJS(onWorkletDragStart)(
+        scheduleOnRN(
+          onWorkletDragStart,
           { type: 'rack', rackIndex: rackHit.rackIndex },
           rackHit.tile
         );
@@ -2509,7 +2510,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         draggingRackIndexShared.value = boardHit.tile.rackIndex;
 
         // Update JS state asynchronously (non-blocking)
-        runOnJS(onWorkletDragStart)(
+        scheduleOnRN(
+          onWorkletDragStart,
           { type: 'board', x: boardHit.x, y: boardHit.y },
           { ...boardHit.tile, x: boardHit.x, y: boardHit.y }
         );
@@ -2517,7 +2519,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Fallback to JS hit testing if worklets don't find anything
-      runOnJS(onGestureStart)(screenX, screenY);
+      scheduleOnRN(onGestureStart, screenX, screenY);
     })
     .onUpdate((event) => {
       'worklet';
@@ -2603,7 +2605,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
               settlingTargetShared.value = null;
               draggingRackIndexShared.value = -1;
               boardFloatingOpacity.value = 0;
-              runOnJS(onSettleComplete)();
+              scheduleOnRN(onSettleComplete);
             }
           );
         }
@@ -2660,14 +2662,14 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
               // Animation complete - hide floating tile
               draggingRackIndexShared.value = -1;
               animationStartedInWorklet.value = false;
-              runOnJS(onSettleComplete)();
+              scheduleOnRN(onSettleComplete);
             }
           );
         }
       }
 
       // Let JS handle state updates and callbacks
-      runOnJS(onGestureEndWithPosition)(screenX, screenY);
+      scheduleOnRN(onGestureEndWithPosition, screenX, screenY);
     })
     .onFinalize((event) => {
       'worklet';
@@ -2683,7 +2685,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         // Use absoluteX/absoluteY for reliable screen coordinates on real devices
         const screenX = event.absoluteX;
         const screenY = event.absoluteY;
-        runOnJS(onGestureEndWithPosition)(screenX, screenY);
+        scheduleOnRN(onGestureEndWithPosition, screenX, screenY);
       }
     });
 

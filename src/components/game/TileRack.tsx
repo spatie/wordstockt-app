@@ -188,7 +188,7 @@ function AnimatedTileSlot({
   );
 
   const handleDragEnd = useCallback(
-    (rackIdx: number, target: DropTarget): boolean => {
+    (_rackIdx: number, target: DropTarget): boolean => {
       // Read visual slot at call time (not during render)
       const visualSlot = rackPermutationShared.value.indexOf(actualRackIndex);
       return onDragEnd(visualSlot, actualRackIndex, target);

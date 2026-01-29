@@ -5,9 +5,9 @@ import Animated, {
   useAnimatedStyle,
   withRepeat,
   withTiming,
-  runOnJS,
   Easing,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { colors } from '../../config/theme';
 
 const SPINNER_SIZE = 40;
@@ -30,10 +30,12 @@ export function AnimatedSplash({
   }, [onAnimationComplete]);
 
   useEffect(() => {
-    rotation.value = withRepeat(
-      withTiming(360, { duration: 800, easing: Easing.linear }),
-      -1,
-      false
+    rotation.set(
+      withRepeat(
+        withTiming(360, { duration: 800, easing: Easing.linear }),
+        -1,
+        false
+      )
     );
   }, [rotation]);
 
@@ -42,11 +44,13 @@ export function AnimatedSplash({
       return;
     }
 
-    containerOpacity.value = withTiming(0, { duration: 200 }, (finished) => {
-      if (finished) {
-        runOnJS(finishAnimation)();
-      }
-    });
+    containerOpacity.set(
+      withTiming(0, { duration: 200 }, (finished) => {
+        if (finished) {
+          scheduleOnRN(finishAnimation);
+        }
+      })
+    );
   }, [isReady, containerOpacity, finishAnimation]);
 
   const spinnerStyle = useAnimatedStyle(() => ({

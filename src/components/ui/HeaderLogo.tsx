@@ -9,9 +9,9 @@ export function HeaderLogo() {
   const logoAnimationTrigger = useSharedValue(0);
 
   const handleLogoPress = useCallback(() => {
-    logoAnimationTrigger.value = logoAnimationTrigger.value === 0 ? 1 : 0;
+    logoAnimationTrigger.set(logoAnimationTrigger.get() === 0 ? 1 : 0);
     setTimeout(() => {
-      logoAnimationTrigger.value = 0;
+      logoAnimationTrigger.set(0);
     }, 600);
   }, [logoAnimationTrigger]);
 

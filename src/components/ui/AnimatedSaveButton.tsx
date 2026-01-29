@@ -7,8 +7,8 @@ import Animated, {
   withSpring,
   withSequence,
   interpolateColor,
-  runOnJS,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { colors } from '../../config/theme';
 
 import type { TouchableOpacityProps } from 'react-native';
@@ -75,12 +75,14 @@ export function AnimatedSaveButton({
       setShowSuccess(true);
 
       // Animate to success state
-      colorProgress.value = withTiming(1, { duration: 300 });
-      labelOpacity.value = withTiming(0, { duration: 200 });
-      successOpacity.value = withTiming(1, { duration: 200 });
-      scale.value = withSequence(
-        withSpring(1.02, { damping: 15, stiffness: 300 }),
-        withSpring(1, { damping: 15, stiffness: 300 })
+      colorProgress.set(withTiming(1, { duration: 300 }));
+      labelOpacity.set(withTiming(0, { duration: 200 }));
+      successOpacity.set(withTiming(1, { duration: 200 }));
+      scale.set(
+        withSequence(
+          withSpring(1.02, { damping: 15, stiffness: 300 }),
+          withSpring(1, { damping: 15, stiffness: 300 })
+        )
       );
 
       // Call onSuccess callback after a short delay (if provided)
@@ -92,11 +94,13 @@ export function AnimatedSaveButton({
 
       // Revert after duration
       setTimeout(() => {
-        colorProgress.value = withTiming(0, { duration: 300 });
-        labelOpacity.value = withTiming(1, { duration: 200 });
-        successOpacity.value = withTiming(0, { duration: 200 }, () => {
-          runOnJS(resetToIdle)();
-        });
+        colorProgress.set(withTiming(0, { duration: 300 }));
+        labelOpacity.set(withTiming(1, { duration: 200 }));
+        successOpacity.set(
+          withTiming(0, { duration: 200 }, () => {
+            scheduleOnRN(resetToIdle);
+          })
+        );
       }, successDuration);
     } catch {
       if (spinnerTimeoutRef.current) {

@@ -83,32 +83,32 @@ function GlowOrb({
 
   useEffect(() => {
     const startAnimation = () => {
-      moveProgress.value = withRepeat(
+      moveProgress.set(withRepeat(
         withTiming(1, {
           duration: moveDuration,
           easing: Easing.inOut(Easing.ease),
         }),
         -1,
         true
-      );
+      ));
 
-      scaleProgress.value = withRepeat(
+      scaleProgress.set(withRepeat(
         withTiming(1, {
           duration: scaleDuration,
           easing: Easing.inOut(Easing.ease),
         }),
         -1,
         true
-      );
+      ));
 
-      colorProgress.value = withRepeat(
+      colorProgress.set(withRepeat(
         withTiming(1, {
           duration: colorDuration,
           easing: Easing.inOut(Easing.ease),
         }),
         -1,
         true
-      );
+      ));
     };
 
     if (initialDelay > 0) {

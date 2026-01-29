@@ -79,16 +79,20 @@ export function Tile({
 
       if (wasNeutral && targetValue !== 0) {
         const timer = setTimeout(() => {
-          colorProgress.value = withTiming(targetValue, {
-            duration: COLOR_ANIMATION_DURATION,
-          });
+          colorProgress.set(
+            withTiming(targetValue, {
+              duration: COLOR_ANIMATION_DURATION,
+            })
+          );
         }, COLOR_ANIMATION_DELAY);
         return () => clearTimeout(timer);
       }
 
-      colorProgress.value = withTiming(targetValue, {
-        duration: COLOR_ANIMATION_DURATION,
-      });
+      colorProgress.set(
+        withTiming(targetValue, {
+          duration: COLOR_ANIMATION_DURATION,
+        })
+      );
     }
   }, [validationState, colorProgress]);
 
@@ -101,22 +105,18 @@ export function Tile({
 
       if (isFirstValidation) {
         const timer = setTimeout(() => {
-          pulseProgress.value = withRepeat(
-            withTiming(1, { duration: 1000 }),
-            -1,
-            true
+          pulseProgress.set(
+            withRepeat(withTiming(1, { duration: 1000 }), -1, true)
           );
         }, COLOR_ANIMATION_DELAY);
         return () => clearTimeout(timer);
       }
 
-      pulseProgress.value = withRepeat(
-        withTiming(1, { duration: 1000 }),
-        -1,
-        true
+      pulseProgress.set(
+        withRepeat(withTiming(1, { duration: 1000 }), -1, true)
       );
     } else {
-      pulseProgress.value = 0;
+      pulseProgress.set(0);
     }
   }, [isPending, validationState, pulseProgress]);
 

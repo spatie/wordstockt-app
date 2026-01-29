@@ -90,9 +90,11 @@ function PeriodToggle({
   }));
 
   const handlePress = (newValue: PeriodType) => {
-    translateX.value = withTiming(newValue === 'monthly' ? 0 : PILL_WIDTH, {
-      duration: 200,
-    });
+    translateX.set(
+      withTiming(newValue === 'monthly' ? 0 : PILL_WIDTH, {
+        duration: 200,
+      })
+    );
     onChange(newValue);
   };
 
@@ -147,10 +149,10 @@ export default function LeaderboardScreen() {
   }));
 
   const animateTabChange = useCallback(() => {
-    tabOpacity.value = 0;
-    tabTranslateY.value = 10;
-    tabOpacity.value = withTiming(1, { duration: 200 });
-    tabTranslateY.value = withTiming(0, { duration: 200 });
+    tabOpacity.set(0);
+    tabTranslateY.set(10);
+    tabOpacity.set(withTiming(1, { duration: 200 }));
+    tabTranslateY.set(withTiming(0, { duration: 200 }));
   }, [tabOpacity, tabTranslateY]);
 
   const handleMainTypeChange = useCallback(

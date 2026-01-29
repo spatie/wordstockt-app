@@ -72,10 +72,12 @@ function PulsingDot() {
   const pulse = useSharedValue(1);
 
   useEffect(() => {
-    pulse.value = withRepeat(
-      withTiming(0.4, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
+    pulse.set(
+      withRepeat(
+        withTiming(0.4, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        true
+      )
     );
   }, [pulse]);
 
@@ -176,11 +178,11 @@ export default function HomeScreen() {
   const handleTabChange = useCallback(
     (newTab: TabValue) => {
       if (newTab === activeTab) return;
-      tabOpacity.value = 0;
-      tabTranslateY.value = 10;
+      tabOpacity.set(0);
+      tabTranslateY.set(10);
       setActiveTab(newTab);
-      tabOpacity.value = withTiming(1, { duration: 200 });
-      tabTranslateY.value = withTiming(0, { duration: 200 });
+      tabOpacity.set(withTiming(1, { duration: 200 }));
+      tabTranslateY.set(withTiming(0, { duration: 200 }));
     },
     [activeTab, tabOpacity, tabTranslateY]
   );

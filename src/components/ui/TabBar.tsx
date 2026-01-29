@@ -49,14 +49,14 @@ export function TabBar<T extends string>({
   useEffect(() => {
     const layout = tabLayouts[value];
     if (layout) {
-      indicatorX.value = withTiming(layout.x, {
+      indicatorX.set(withTiming(layout.x, {
         duration: 200,
         easing: Easing.out(Easing.cubic),
-      });
-      indicatorWidth.value = withTiming(layout.width, {
+      }));
+      indicatorWidth.set(withTiming(layout.width, {
         duration: 200,
         easing: Easing.out(Easing.cubic),
-      });
+      }));
     }
   }, [value, tabLayouts, indicatorX, indicatorWidth]);
 

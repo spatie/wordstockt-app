@@ -61,15 +61,15 @@ function FloatingTile({
   const fade = useSharedValue(0);
 
   useEffect(() => {
-    progress.value = withDelay(
+    progress.set(withDelay(
       delay,
       withRepeat(
         withTiming(1, { duration, easing: Easing.inOut(Easing.ease) }),
         -1,
         true
       )
-    );
-    rotation.value = withDelay(
+    ));
+    rotation.set(withDelay(
       delay,
       withRepeat(
         withTiming(1, {
@@ -79,8 +79,8 @@ function FloatingTile({
         -1,
         true
       )
-    );
-    scale.value = withDelay(
+    ));
+    scale.set(withDelay(
       delay,
       withRepeat(
         withTiming(1, {
@@ -90,8 +90,8 @@ function FloatingTile({
         -1,
         true
       )
-    );
-    fade.value = withDelay(
+    ));
+    fade.set(withDelay(
       delay,
       withRepeat(
         withTiming(1, {
@@ -101,7 +101,7 @@ function FloatingTile({
         -1,
         true
       )
-    );
+    ));
   }, []);
 
   const animatedStyle = useAnimatedStyle(() => ({
