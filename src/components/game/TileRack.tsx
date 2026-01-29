@@ -29,9 +29,6 @@ import {
   useIsSwappedTile,
   useGameStore,
 } from '../../stores/gameStore';
-
-// Track current game to detect game switches
-const useCurrentGameUlid = () => useGameStore((state) => state.currentGameUlid);
 import { useDragDrop } from '../../context/DragDropContext';
 import {
   TILE_SIZE,
@@ -43,6 +40,9 @@ import {
 import { colors } from '../../config/theme';
 import type { Tile as TileType } from '../../types';
 import type { DropTarget, RackLayout } from '../../context/DragDropContext';
+
+// Track current game to detect game switches
+const useCurrentGameUlid = () => useGameStore((state) => state.currentGameUlid);
 
 const SLOT_WIDTH = TILE_SIZE;
 const TOTAL_SLOTS_WIDTH = SLOT_COUNT * SLOT_WIDTH + (SLOT_COUNT - 1) * GAP;

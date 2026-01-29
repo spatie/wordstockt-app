@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  Dimensions,
-} from 'react-native';
+import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 import { colors } from '../../config/theme';
 import type { EloHistoryEntry } from '../../types';

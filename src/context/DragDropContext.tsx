@@ -118,8 +118,8 @@ interface DragDropContextType {
   settlingTarget: DropTarget;
   recallingRackIndices: number[];
   recallingRackIndicesShared: SharedValue<number[]>;
-  recallingBoardPositions: Array<{ x: number; y: number }>;
-  recallingBoardPositionsShared: SharedValue<Array<{ x: number; y: number }>>;
+  recallingBoardPositions: { x: number; y: number }[];
+  recallingBoardPositionsShared: SharedValue<{ x: number; y: number }[]>;
   boardLayout: BoardLayout | null;
 
   // Rack drop tracking (for spring animation)
@@ -131,7 +131,7 @@ interface DragDropContextType {
   setRackLayout: (layout: RackLayout) => void;
 
   // Tile data sync (for external components to update shared values)
-  updateRackTiles: (tiles: Array<TileType | null>) => void;
+  updateRackTiles: (tiles: (TileType | null)[]) => void;
 
   // Draggable registration (for hit testing)
   registerDraggable: (
@@ -162,9 +162,12 @@ interface DragDropContextType {
 
   // Recall animation
   startRecallAnimation: (
-    tiles: Array<
-      TileType & { x: number; y: number; rackIndex: number; visualSlot: number }
-    >,
+    tiles: (TileType & {
+      x: number;
+      y: number;
+      rackIndex: number;
+      visualSlot: number;
+    })[],
     onStart: () => void,
     onComplete: () => void
   ) => void;
@@ -558,11 +561,11 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     []
   );
   const [recallingBoardPositions, setRecallingBoardPositions] = useState<
-    Array<{ x: number; y: number }>
+    { x: number; y: number }[]
   >([]);
 
   // Track rack tiles for per-tile floating tiles (no sync issues!)
-  const [rackTiles, setRackTiles] = useState<Array<TileType | null>>(
+  const [rackTiles, setRackTiles] = useState<(TileType | null)[]>(
     new Array(7).fill(null)
   );
 
@@ -616,7 +619,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const recallingRackIndicesShared = useSharedValue<number[]>([]);
   // Board positions being recalled - updates immediately on UI thread (no React state delay)
   const recallingBoardPositionsShared = useSharedValue<
-    Array<{ x: number; y: number }>
+    { x: number; y: number }[]
   >([]);
 
   // Flag to indicate animation was started in worklet (skip JS-side animation)
@@ -639,9 +642,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
   // Shared values for storing tile data (accessed in worklet for drag operations)
   // Format: [letter, points, isBlank] for each rack index
-  const rackTilesShared = useSharedValue<
-    Array<[string, number, boolean] | null>
-  >(new Array(7).fill(null));
+  const rackTilesShared = useSharedValue<([string, number, boolean] | null)[]>(
+    new Array(7).fill(null)
+  );
 
   // Shared values for board tiles (pending tiles only)
   // Format: Map-like structure using string keys "x,y" -> [letter, points, isBlank, rackIndex]
@@ -909,11 +912,12 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
   // Update rack tiles in shared values AND React state (called by external components)
   const updateRackTiles = useCallback(
-    (tiles: Array<TileType | null>) => {
+    (tiles: (TileType | null)[]) => {
       // Update shared values for worklet hit testing
-      const newRackTilesShared = new Array(7).fill(null) as Array<
-        [string, number, boolean] | null
-      >;
+      const newRackTilesShared = new Array(7).fill(null) as (
+        | [string, number, boolean]
+        | null
+      )[];
       tiles.forEach((tile, index) => {
         if (tile) {
           newRackTilesShared[index] = [tile.letter, tile.points, tile.isBlank];
@@ -1974,14 +1978,12 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
   const startRecallAnimation = useCallback(
     (
-      tiles: Array<
-        TileType & {
-          x: number;
-          y: number;
-          rackIndex: number;
-          visualSlot: number;
-        }
-      >,
+      tiles: (TileType & {
+        x: number;
+        y: number;
+        rackIndex: number;
+        visualSlot: number;
+      })[],
       onStart: () => void,
       onComplete: () => void
     ) => {

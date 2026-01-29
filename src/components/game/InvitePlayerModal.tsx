@@ -212,8 +212,7 @@ export function InvitePlayerModal({
             styles.searchButton,
             (!searchQuery.trim() || isSearching) && styles.searchButtonDisabled,
             {
-              opacity:
-                pressed && searchQuery.trim() && !isSearching ? 0.7 : 1,
+              opacity: pressed && searchQuery.trim() && !isSearching ? 0.7 : 1,
             },
           ]}
           onPress={handleSearch}

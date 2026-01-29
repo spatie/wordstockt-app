@@ -1,10 +1,5 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  Pressable,
-  Platform,
-} from 'react-native';
+import { View, StyleSheet, Pressable, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import ReAnimated, {
   useSharedValue,

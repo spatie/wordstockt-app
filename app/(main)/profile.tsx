@@ -7,10 +7,10 @@ import {
   ActivityIndicator,
   ScrollView,
   Pressable,
+  Alert,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Alert } from 'react-native';
 import { useAuthStore } from '../../src/stores/authStore';
 import { ROUTES } from '../../src/config/routes';
 import {

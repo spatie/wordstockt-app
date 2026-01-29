@@ -49,14 +49,18 @@ export function TabBar<T extends string>({
   useEffect(() => {
     const layout = tabLayouts[value];
     if (layout) {
-      indicatorX.set(withTiming(layout.x, {
-        duration: 200,
-        easing: Easing.out(Easing.cubic),
-      }));
-      indicatorWidth.set(withTiming(layout.width, {
-        duration: 200,
-        easing: Easing.out(Easing.cubic),
-      }));
+      indicatorX.set(
+        withTiming(layout.x, {
+          duration: 200,
+          easing: Easing.out(Easing.cubic),
+        })
+      );
+      indicatorWidth.set(
+        withTiming(layout.width, {
+          duration: 200,
+          easing: Easing.out(Easing.cubic),
+        })
+      );
     }
   }, [value, tabLayouts, indicatorX, indicatorWidth]);
 
@@ -71,7 +75,10 @@ export function TabBar<T extends string>({
         {tabs.map((tab) => (
           <Pressable
             key={tab.value}
-            style={({ pressed }) => [styles.tab, { opacity: pressed ? 0.7 : 1 }]}
+            style={({ pressed }) => [
+              styles.tab,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
             onPress={() => onChange(tab.value)}
             onLayout={(e) => handleTabLayout(tab.value, e)}
           >

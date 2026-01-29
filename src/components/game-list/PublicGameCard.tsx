@@ -13,7 +13,10 @@ interface PublicGameCardProps {
   onPress: (gameUlid: string) => void;
 }
 
-export const PublicGameCard = memo(function PublicGameCard({ game, onPress }: PublicGameCardProps) {
+export const PublicGameCard = memo(function PublicGameCard({
+  game,
+  onPress,
+}: PublicGameCardProps) {
   const hasCustomBoard = game.boardTemplate.some((row) =>
     row.some((cell) => cell !== null)
   );

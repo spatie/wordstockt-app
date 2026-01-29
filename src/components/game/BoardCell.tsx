@@ -1,11 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  Pressable,
-  View,
-  Text,
-  StyleSheet,
-  Platform,
-} from 'react-native';
+import { Pressable, View, Text, StyleSheet, Platform } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,

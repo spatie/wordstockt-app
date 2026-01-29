@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import { apiClient } from '../client';
 import {
   UserStatsResponseSchema,
@@ -10,7 +10,12 @@ import { safeParse } from '../../schemas/safeParse';
 import type { UserStats, EloHistoryEntry, HeadToHeadRecord } from '../../types';
 import { userKeys } from './queryKeys';
 
-export function useUserStats(userUlid: string) {
+type UserStatsOptions = Pick<UseQueryOptions, 'enabled'>;
+
+export function useUserStats(
+  userUlid: string,
+  options: UserStatsOptions = { enabled: true }
+) {
   return useQuery({
     queryKey: userKeys.stats(userUlid),
     queryFn: async (): Promise<UserStats> => {
@@ -23,7 +28,7 @@ export function useUserStats(userUlid: string) {
       return validated.data;
     },
     staleTime: 5 * 60 * 1000,
-    enabled: userUlid.length > 0,
+    enabled: options.enabled && userUlid.length > 0,
   });
 }
 

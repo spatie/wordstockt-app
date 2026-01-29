@@ -50,7 +50,12 @@ function formatLastMove(
   return description;
 }
 
-export const GameCard = memo(function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
+export const GameCard = memo(function GameCard({
+  game,
+  userUlid,
+  onPress,
+  onDelete,
+}: GameCardProps) {
   const isCompleted = game.status === 'finished';
   const isWinner = game.winnerUlid === userUlid;
   const isAwaitingOpponent = game.status === 'pending' && !game.opponent;

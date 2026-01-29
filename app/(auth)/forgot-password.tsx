@@ -68,7 +68,10 @@ export default function ForgotPasswordScreen() {
           </Text>
 
           <Pressable
-            style={({ pressed }) => [styles.button, { opacity: pressed ? 0.7 : 1 }]}
+            style={({ pressed }) => [
+              styles.button,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
             onPress={() => router.back()}
           >
             <Text style={styles.buttonText}>Back to Login</Text>

@@ -10,20 +10,20 @@ interface WordInfoParams {
 }
 
 interface WordInfoApiResponse {
-  data: Array<{
+  data: {
     word: string;
     times_played: number;
     last_played_at: string | null;
     definition?: {
-      senses: Array<{
+      senses: {
         definition: string;
         pos?: string;
         examples?: string[];
-      }>;
+      }[];
       etymology?: string;
       proverbs?: string[];
     };
-  }>;
+  }[];
 }
 
 export function useWordInfo(

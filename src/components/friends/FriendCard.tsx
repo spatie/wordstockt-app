@@ -11,7 +11,10 @@ interface FriendCardProps {
   onPress: (friendUlid: string) => void;
 }
 
-export const FriendCard = memo(function FriendCard({ friend, onPress }: FriendCardProps) {
+export const FriendCard = memo(function FriendCard({
+  friend,
+  onPress,
+}: FriendCardProps) {
   const handlePress = useCallback(() => {
     onPress(friend.friendUlid);
   }, [onPress, friend.friendUlid]);

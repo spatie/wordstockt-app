@@ -17,7 +17,10 @@ export function HeaderLogo() {
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.container, { opacity: pressed ? 0.8 : 1 }]}
+      style={({ pressed }) => [
+        styles.container,
+        { opacity: pressed ? 0.8 : 1 },
+      ]}
       onPress={handleLogoPress}
     >
       <AnimatedLogoTile
