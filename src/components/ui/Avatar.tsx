@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { colors } from '../../config/theme';
 
 interface AvatarProps {
@@ -64,6 +65,9 @@ export function Avatar({
               borderRadius: size / 2,
             },
           ]}
+          contentFit="cover"
+          transition={200}
+          cachePolicy="memory-disk"
         />
       ) : (
         <View
@@ -103,9 +107,7 @@ const styles = StyleSheet.create({
   container: {
     position: 'relative',
   },
-  image: {
-    resizeMode: 'cover',
-  },
+  image: {},
   initialsContainer: {
     justifyContent: 'center',
     alignItems: 'center',
