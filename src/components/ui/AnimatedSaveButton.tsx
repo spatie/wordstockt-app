@@ -11,13 +11,11 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import { colors } from '../../config/theme';
 
-import type { TouchableOpacityProps } from 'react-native';
+import type { PressableProps } from 'react-native';
 
 const AnimatedPressable = Animated.createAnimatedComponent(
-  require('react-native').TouchableOpacity
-) as React.ComponentType<
-  TouchableOpacityProps & { children?: React.ReactNode }
->;
+  require('react-native').Pressable
+) as React.ComponentType<PressableProps & { children?: React.ReactNode }>;
 
 const SPINNER_DELAY = 200;
 
@@ -47,6 +45,7 @@ export function AnimatedSaveButton({
   const labelOpacity = useSharedValue(1);
   const successOpacity = useSharedValue(0);
   const scale = useSharedValue(1);
+  const pressedOpacity = useSharedValue(1);
 
   const resetToIdle = useCallback(() => {
     setShowSuccess(false);
@@ -124,6 +123,14 @@ export function AnimatedSaveButton({
     resetToIdle,
   ]);
 
+  const handlePressIn = useCallback(() => {
+    pressedOpacity.set(withTiming(0.7, { duration: 100 }));
+  }, [pressedOpacity]);
+
+  const handlePressOut = useCallback(() => {
+    pressedOpacity.set(withTiming(1, { duration: 100 }));
+  }, [pressedOpacity]);
+
   const buttonAnimatedStyle = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(
       colorProgress.value,
@@ -131,6 +138,7 @@ export function AnimatedSaveButton({
       [colors.primary, colors.gameWon]
     ),
     transform: [{ scale: scale.value }],
+    opacity: pressedOpacity.value,
   }));
 
   const labelAnimatedStyle = useAnimatedStyle(() => ({
@@ -151,8 +159,9 @@ export function AnimatedSaveButton({
         isDisabled && !showSuccess && styles.buttonDisabled,
       ]}
       onPress={handlePress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       disabled={isDisabled}
-      activeOpacity={0.7}
     >
       {showSpinner ? (
         <ActivityIndicator color="#FFF" size="small" />

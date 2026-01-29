@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  TouchableOpacity,
+  Pressable,
   Text,
   StyleSheet,
   type StyleProp,
@@ -30,16 +30,15 @@ export function IconButton({
   testID,
 }: IconButtonProps) {
   return (
-    <TouchableOpacity
-      style={[
+    <Pressable
+      style={({ pressed }) => [
         styles.base,
         layout === 'horizontal' && styles.horizontal,
-        disabled && styles.disabled,
+        { opacity: pressed && !disabled ? 0.7 : disabled ? 0.5 : 1 },
         style,
       ]}
       onPress={onPress}
       disabled={disabled}
-      activeOpacity={0.7}
       testID={testID}
     >
       <Text style={[styles.icon, disabled && styles.textDisabled]}>{icon}</Text>
@@ -48,7 +47,7 @@ export function IconButton({
           {label}
         </Text>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -61,9 +60,6 @@ const styles = StyleSheet.create({
   horizontal: {
     flexDirection: 'row',
     gap: 6,
-  },
-  disabled: {
-    opacity: 0.5,
   },
   icon: {
     fontSize: 18,

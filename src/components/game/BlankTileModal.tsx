@@ -3,7 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   Platform,
 } from 'react-native';
 import { BaseModal } from '../ui/BaseModal';
@@ -44,14 +44,16 @@ export function BlankTileModal({
         {rows.map((row, rowIndex) => (
           <View key={rowIndex} style={styles.row}>
             {row.map((letter) => (
-              <TouchableOpacity
+              <Pressable
                 key={letter}
-                style={styles.letterButton}
+                style={({ pressed }) => [
+                  styles.letterButton,
+                  { opacity: pressed ? 0.7 : 1 },
+                ]}
                 onPress={() => onSelectLetter(letter)}
-                activeOpacity={0.7}
               >
                 <Text style={styles.letterText}>{letter}</Text>
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </View>
         ))}

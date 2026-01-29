@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, StyleSheet, Pressable, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -263,14 +263,16 @@ export function Tile({
 
   if (onPress) {
     return (
-      <TouchableOpacity
+      <Pressable
         onPress={onPress}
         disabled={disabled}
-        activeOpacity={0.7}
-        style={styles.container}
+        style={({ pressed }) => [
+          styles.container,
+          { opacity: pressed && !disabled ? 0.7 : 1 },
+        ]}
       >
         <Animated.View style={getAnimatedStyles()}>{content}</Animated.View>
-      </TouchableOpacity>
+      </Pressable>
     );
   }
 

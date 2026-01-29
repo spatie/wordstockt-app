@@ -5,7 +5,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Text,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   ScrollView,
   Linking,
@@ -136,10 +136,11 @@ export default function RegisterScreen() {
             </Text>
 
             {/* Register Button */}
-            <TouchableOpacity
-              style={[
+            <Pressable
+              style={({ pressed }) => [
                 styles.registerButton,
                 !canSubmit && styles.registerButtonDisabled,
+                { opacity: pressed && canSubmit ? 0.7 : 1 },
               ]}
               onPress={handleRegister}
               disabled={!canSubmit}
@@ -152,15 +153,17 @@ export default function RegisterScreen() {
                   <Text style={styles.registerButtonIcon}>→</Text>
                 </>
               )}
-            </TouchableOpacity>
+            </Pressable>
 
             {/* Sign In Link */}
             <View style={styles.signInContainer}>
               <Text style={styles.signInText}>Already have an account? </Text>
               <Link href={ROUTES.LOGIN} asChild>
-                <TouchableOpacity>
+                <Pressable
+                  style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+                >
                   <Text style={styles.signInLink}>Sign In</Text>
-                </TouchableOpacity>
+                </Pressable>
               </Link>
             </View>
           </View>

@@ -6,7 +6,6 @@ import {
   TextInput,
   ActivityIndicator,
   ScrollView,
-  TouchableOpacity,
   Pressable,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -245,17 +244,20 @@ export default function ProfileScreen() {
               Please verify your email within 7 days of creating your account.
               After that, you won't be able to log in until verified.
             </Text>
-            <TouchableOpacity
+            <Pressable
               onPress={handleResendVerification}
               disabled={resendVerification.isPending}
-              style={styles.resendButton}
+              style={({ pressed }) => [
+                styles.resendButton,
+                { opacity: pressed && !resendVerification.isPending ? 0.7 : 1 },
+              ]}
             >
               <Text style={styles.resendButtonText}>
                 {resendVerification.isPending
                   ? 'Sending...'
                   : 'Resend verification email'}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         )}
 
@@ -424,12 +426,15 @@ export default function ProfileScreen() {
 
         {/* Delete Account Link */}
         <View style={styles.dangerZone}>
-          <TouchableOpacity
+          <Pressable
             onPress={() => router.push(ROUTES.DELETE_ACCOUNT)}
-            style={styles.deleteLink}
+            style={({ pressed }) => [
+              styles.deleteLink,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
           >
             <Text style={styles.deleteLinkText}>Delete account</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </ScrollView>
     </View>

@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import { AnimatedLogoTile } from './AnimatedLogoTile';
 import { colors } from '../../config/theme';
@@ -16,10 +16,9 @@ export function HeaderLogo() {
   }, [logoAnimationTrigger]);
 
   return (
-    <TouchableOpacity
-      style={styles.container}
+    <Pressable
+      style={({ pressed }) => [styles.container, { opacity: pressed ? 0.8 : 1 }]}
       onPress={handleLogoPress}
-      activeOpacity={0.8}
     >
       <AnimatedLogoTile
         letter="W"
@@ -34,7 +33,7 @@ export function HeaderLogo() {
         delay={50}
       />
       <Text style={styles.title}>WordStockt</Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 

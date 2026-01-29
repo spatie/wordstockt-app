@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  TouchableOpacity,
+  Pressable,
   Text,
   StyleSheet,
   ActivityIndicator,
@@ -107,8 +107,8 @@ export function Button({
   );
 
   return (
-    <TouchableOpacity
-      style={[
+    <Pressable
+      style={({ pressed }) => [
         styles.base,
         {
           height: sizeStyle.height,
@@ -116,7 +116,7 @@ export function Button({
           backgroundColor: getBackgroundColor(),
           borderColor: getBorderColor(),
           borderRadius,
-          opacity: isDisabled ? 0.6 : 1,
+          opacity: pressed && !isDisabled ? 0.7 : isDisabled ? 0.6 : 1,
         },
         variant === 'outline' && styles.outline,
         fullWidth && styles.fullWidth,
@@ -125,7 +125,6 @@ export function Button({
       ]}
       onPress={onPress}
       disabled={isDisabled}
-      activeOpacity={0.7}
       testID={testID}
     >
       {isPrimary && (
@@ -137,7 +136,7 @@ export function Button({
         />
       )}
       {buttonContent}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 

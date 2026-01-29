@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  TouchableOpacity,
+  Pressable,
   View,
   Text,
   StyleSheet,
@@ -324,7 +324,7 @@ export function BoardCell({
     );
   }
 
-  // Default: TouchableOpacity for empty cells and placed tiles
+  // Default: Pressable for empty cells and placed tiles
   const handleCellPress = () => {
     if (placedTile && onPlacedTileTap) {
       onPlacedTileTap(x, y);
@@ -335,11 +335,14 @@ export function BoardCell({
 
   return (
     <View style={styles.cellWrapper}>
-      <TouchableOpacity
-        style={[styles.cell, { backgroundColor }]}
+      <Pressable
+        style={({ pressed }) => [
+          styles.cell,
+          { backgroundColor },
+          { opacity: pressed && placedTile ? 0.7 : 1 },
+        ]}
         onPress={handleCellPress}
         disabled={disabled && !placedTile}
-        activeOpacity={placedTile ? 0.7 : 1}
       >
         <CellContent
           x={x}
@@ -352,7 +355,7 @@ export function BoardCell({
           isLastMove={isLastMove}
           cellSize={cellSize}
         />
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 }

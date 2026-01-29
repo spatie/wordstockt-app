@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   ScrollView,
   Share,
@@ -157,10 +157,14 @@ export function InvitePlayerModal({
           disabled
         />
         <Text style={styles.userName}>{user.username}</Text>
-        <TouchableOpacity
-          style={[
+        <Pressable
+          style={({ pressed }) => [
             styles.inviteButton,
             isInviting && styles.inviteButtonLoading,
+            {
+              opacity:
+                pressed && !isInviting && invitingUserUlid === null ? 0.7 : 1,
+            },
           ]}
           onPress={() => handleInviteUser(userUlid)}
           disabled={isInviting || invitingUserUlid !== null}
@@ -170,7 +174,7 @@ export function InvitePlayerModal({
           ) : (
             <Text style={styles.inviteButtonText}>Invite</Text>
           )}
-        </TouchableOpacity>
+        </Pressable>
       </View>
     );
   };
@@ -203,10 +207,14 @@ export function InvitePlayerModal({
             returnKeyType="search"
           />
         </View>
-        <TouchableOpacity
-          style={[
+        <Pressable
+          style={({ pressed }) => [
             styles.searchButton,
             (!searchQuery.trim() || isSearching) && styles.searchButtonDisabled,
+            {
+              opacity:
+                pressed && searchQuery.trim() && !isSearching ? 0.7 : 1,
+            },
           ]}
           onPress={handleSearch}
           disabled={!searchQuery.trim() || isSearching}
@@ -216,7 +224,7 @@ export function InvitePlayerModal({
           ) : (
             <Text style={styles.searchButtonText}>Search</Text>
           )}
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {searchError && <Text style={styles.searchErrorText}>{searchError}</Text>}
@@ -310,9 +318,15 @@ export function InvitePlayerModal({
     >
       <View style={styles.header}>
         <Text style={styles.title}>Invite Player</Text>
-        <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+        <Pressable
+          onPress={handleClose}
+          style={({ pressed }) => [
+            styles.closeButton,
+            { opacity: pressed ? 0.7 : 1 },
+          ]}
+        >
           <Text style={styles.closeButtonText}>×</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       <View style={styles.tabContainer}>

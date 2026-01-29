@@ -3,7 +3,7 @@ import {
   View,
   StyleSheet,
   Text,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
@@ -131,10 +131,11 @@ export default function UserProfileScreen() {
         {/* Friend Button - only show for other users */}
         {currentUserUlid && userUlid !== currentUserUlid && (
           <View style={styles.actionSection}>
-            <TouchableOpacity
-              style={[
+            <Pressable
+              style={({ pressed }) => [
                 styles.friendButton,
                 isFriend ? styles.removeFriendButton : styles.addFriendButton,
+                { opacity: pressed && !isButtonLoading ? 0.7 : 1 },
               ]}
               onPress={isFriend ? handleRemoveFriend : handleAddFriend}
               disabled={isButtonLoading}
@@ -155,7 +156,7 @@ export default function UserProfileScreen() {
                   </Text>
                 )}
               </View>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         )}
 

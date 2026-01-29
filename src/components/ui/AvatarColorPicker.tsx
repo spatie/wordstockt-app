@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import { View, Pressable, StyleSheet, Text } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../../config/theme';
 import { SPACING, RADIUS } from '../../config/constants';
@@ -30,20 +30,20 @@ export function AvatarColorPicker({
         {AVATAR_COLORS.map((color) => {
           const isSelected = selectedColor === color;
           return (
-            <TouchableOpacity
+            <Pressable
               key={color}
-              style={[
+              style={({ pressed }) => [
                 styles.colorSwatch,
                 { backgroundColor: color },
                 isSelected && styles.colorSwatchSelected,
+                { opacity: pressed ? 0.7 : 1 },
               ]}
               onPress={() => onSelectColor(color)}
-              activeOpacity={0.7}
             >
               {isSelected && (
                 <MaterialCommunityIcons name="check" size={20} color="#FFF" />
               )}
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
       </View>

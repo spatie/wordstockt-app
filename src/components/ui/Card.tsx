@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import {
   View,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   type StyleProp,
   type ViewStyle,
@@ -121,10 +121,13 @@ export function Card({
 
   if (onPress) {
     return (
-      <TouchableOpacity
-        style={[baseWrapperStyle, wrapperStyles]}
+      <Pressable
+        style={({ pressed }) => [
+          baseWrapperStyle,
+          wrapperStyles,
+          { opacity: pressed ? 0.7 : 1 },
+        ]}
         onPress={onPress}
-        activeOpacity={0.7}
         testID={testID}
       >
         <BlurView intensity={40} tint="dark" style={blurContentStyle}>
@@ -133,7 +136,7 @@ export function Card({
         {showAccent && (
           <AccentBar color={accentColor} borderRadius={radiusValue} />
         )}
-      </TouchableOpacity>
+      </Pressable>
     );
   }
 

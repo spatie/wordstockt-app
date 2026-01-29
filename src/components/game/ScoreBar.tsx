@@ -4,7 +4,6 @@ import {
   StyleSheet,
   Pressable,
   Platform,
-  TouchableOpacity,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import ReAnimated, {
@@ -100,12 +99,12 @@ function TilesBadge({ count }: { count: number }) {
   }));
 
   return (
-    <TouchableOpacity onPress={handlePress} activeOpacity={1}>
+    <Pressable onPress={handlePress}>
       <ReAnimated.View style={[styles.tilesBadge, animatedStyle]}>
         <AnimatedTilesCount count={count} />
         <Text style={styles.tilesLabel}>{count === 1 ? 'tile' : 'tiles'}</Text>
       </ReAnimated.View>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -124,15 +123,17 @@ function StatusDots({
   if (!showBlankPending && !showFreeSwap) return null;
 
   return (
-    <TouchableOpacity
-      style={styles.statusDots}
+    <Pressable
+      style={({ pressed }) => [
+        styles.statusDots,
+        { opacity: pressed ? 0.7 : 1 },
+      ]}
       onPress={onPress}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      activeOpacity={0.7}
     >
       {showBlankPending && <View style={[styles.dot, styles.blankDot]} />}
       {showFreeSwap && <View style={[styles.dot, styles.swapDot]} />}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -190,11 +191,13 @@ function PlayerAvatar({
   }, [player?.ulid, currentUserUlid, router]);
 
   return (
-    <TouchableOpacity
-      style={styles.avatarWrapper}
+    <Pressable
+      style={({ pressed }) => [
+        styles.avatarWrapper,
+        { opacity: pressed && player?.ulid ? 0.7 : 1 },
+      ]}
       onPress={handlePress}
       disabled={!player?.ulid}
-      activeOpacity={0.7}
     >
       <ReAnimated.View
         style={[styles.activeIndicator, animatedIndicatorStyle]}
@@ -206,7 +209,7 @@ function PlayerAvatar({
         size={AVATAR_SIZE}
         backgroundColor={player?.avatarColor ?? undefined}
       />
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 

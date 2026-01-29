@@ -3,7 +3,7 @@ import {
   View,
   StyleSheet,
   Text,
-  TouchableOpacity,
+  Pressable,
   Animated,
   Platform,
 } from 'react-native';
@@ -444,12 +444,15 @@ function GameScreenContent() {
       <View style={styles.container}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Failed to load game</Text>
-          <TouchableOpacity
+          <Pressable
             onPress={() => refetch()}
-            style={styles.retryButton}
+            style={({ pressed }) => [
+              styles.retryButton,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
           >
             <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     );

@@ -5,7 +5,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Text,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -67,9 +67,12 @@ export default function ForgotPasswordScreen() {
             password reset link.
           </Text>
 
-          <TouchableOpacity style={styles.button} onPress={() => router.back()}>
+          <Pressable
+            style={({ pressed }) => [styles.button, { opacity: pressed ? 0.7 : 1 }]}
+            onPress={() => router.back()}
+          >
             <Text style={styles.buttonText}>Back to Login</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     );
@@ -116,8 +119,12 @@ export default function ForgotPasswordScreen() {
             </View>
           )}
 
-          <TouchableOpacity
-            style={[styles.button, !canSubmit && styles.buttonDisabled]}
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              !canSubmit && styles.buttonDisabled,
+              { opacity: pressed && canSubmit ? 0.7 : 1 },
+            ]}
             onPress={handleSubmit}
             disabled={!canSubmit}
           >
@@ -126,7 +133,7 @@ export default function ForgotPasswordScreen() {
             ) : (
               <Text style={styles.buttonText}>Send Reset Link</Text>
             )}
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </KeyboardAvoidingView>
     </View>

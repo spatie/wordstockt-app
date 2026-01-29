@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSharedValue } from 'react-native-reanimated';
 import { useLogout } from '../../api/queries/useAuth';
@@ -80,10 +80,12 @@ export function AppHeader({
       </View>
 
       {/* Center: WordStockt logo (tappable for fun animation) */}
-      <TouchableOpacity
-        style={styles.headerCenter}
+      <Pressable
+        style={({ pressed }) => [
+          styles.headerCenter,
+          { opacity: pressed ? 0.8 : 1 },
+        ]}
         onPress={handleLogoPress}
-        activeOpacity={0.8}
       >
         <AnimatedLogoTile
           letter="W"
@@ -98,17 +100,20 @@ export function AppHeader({
           delay={50}
         />
         <Text style={styles.headerTitle}>WordStockt</Text>
-      </TouchableOpacity>
+      </Pressable>
 
       {/* Right: Hamburger menu (only shown when showMenu is true) */}
       <View style={styles.headerSide}>
         {showMenu && (
-          <TouchableOpacity
+          <Pressable
             onPress={() => setMenuVisible(true)}
-            style={styles.iconButton}
+            style={({ pressed }) => [
+              styles.iconButton,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
           >
             <Text style={styles.iconText}>☰</Text>
-          </TouchableOpacity>
+          </Pressable>
         )}
       </View>
 

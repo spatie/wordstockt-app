@@ -31,7 +31,7 @@ import {
   LayoutChangeEvent,
   Text,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   Clipboard,
   StatusBar,
 } from 'react-native';
@@ -2779,18 +2779,24 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       <View style={styles.debugHeader}>
         <Text style={styles.debugTitle}>Drop Debug ({debugInfo.length})</Text>
         <View style={styles.debugButtons}>
-          <TouchableOpacity
+          <Pressable
             onPress={handleCopyDebug}
-            style={styles.debugButton}
+            style={({ pressed }) => [
+              styles.debugButton,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
           >
             <Text style={styles.debugButtonText}>Copy</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             onPress={handleClearDebug}
-            style={styles.debugButton}
+            style={({ pressed }) => [
+              styles.debugButton,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
           >
             <Text style={styles.debugButtonText}>Clear</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
       <ScrollView style={styles.debugScroll}>
