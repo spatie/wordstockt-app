@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { memo, useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Card } from '../ui/Card';
 import { SmartAvatar } from '../ui/SmartAvatar';
@@ -15,7 +15,7 @@ interface InvitationCardProps {
   isDeclining?: boolean;
 }
 
-export function InvitationCard({
+export const InvitationCard = memo(function InvitationCard({
   invitation,
   onPress,
   onDecline,
@@ -72,7 +72,7 @@ export function InvitationCard({
       </View>
     </Card>
   );
-}
+});
 
 const styles = StyleSheet.create({
   cardTop: {

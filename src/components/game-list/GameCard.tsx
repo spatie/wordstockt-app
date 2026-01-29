@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { memo, useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../ui/Card';
@@ -50,7 +50,7 @@ function formatLastMove(
   return description;
 }
 
-export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
+export const GameCard = memo(function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
   const isCompleted = game.status === 'finished';
   const isWinner = game.winnerUlid === userUlid;
   const isAwaitingOpponent = game.status === 'pending' && !game.opponent;
@@ -220,7 +220,7 @@ export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
       </View>
     </Card>
   );
-}
+});
 
 const styles = StyleSheet.create({
   cardTop: {

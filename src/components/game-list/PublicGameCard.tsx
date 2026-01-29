@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { memo, useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../ui/Card';
@@ -13,7 +13,7 @@ interface PublicGameCardProps {
   onPress: (gameUlid: string) => void;
 }
 
-export function PublicGameCard({ game, onPress }: PublicGameCardProps) {
+export const PublicGameCard = memo(function PublicGameCard({ game, onPress }: PublicGameCardProps) {
   const hasCustomBoard = game.boardTemplate.some((row) =>
     row.some((cell) => cell !== null)
   );
@@ -54,7 +54,7 @@ export function PublicGameCard({ game, onPress }: PublicGameCardProps) {
       </View>
     </Card>
   );
-}
+});
 
 const styles = StyleSheet.create({
   cardTop: {
