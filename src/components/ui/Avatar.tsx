@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { colors } from '../../config/theme';
@@ -48,56 +48,54 @@ export function Avatar({
 }: AvatarProps) {
   const initials = getInitials(name);
   const bgColor = backgroundColor || getColorFromName(name);
-  const fontSize = size * 0.4;
-  const indicatorSize = size * 0.25;
-  const indicatorOffset = size * 0.02;
+
+  // Memoize all size-dependent styles to prevent re-renders in lists
+  const sizeStyles = useMemo(
+    () => ({
+      container: { width: size, height: size },
+      image: { width: size, height: size, borderRadius: size / 2 },
+      initialsContainer: {
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: bgColor,
+      },
+      initialsText: { fontSize: size * 0.4 },
+      indicator: {
+        width: size * 0.25,
+        height: size * 0.25,
+        borderRadius: (size * 0.25) / 2,
+        bottom: size * 0.02,
+        right: size * 0.02,
+        borderWidth: size * 0.25 * 0.2,
+      },
+    }),
+    [size, bgColor]
+  );
+
+  // Memoize image source separately (depends only on uri)
+  // Convert null to undefined since ImageSource expects string | undefined
+  const imageSource = useMemo(() => ({ uri: uri ?? undefined }), [uri]);
 
   return (
-    <View style={[styles.container, { width: size, height: size }]}>
+    <View style={[styles.container, sizeStyles.container]}>
       {uri ? (
         <Image
-          source={{ uri }}
-          style={[
-            styles.image,
-            {
-              width: size,
-              height: size,
-              borderRadius: size / 2,
-            },
-          ]}
+          source={imageSource}
+          style={[styles.image, sizeStyles.image]}
           contentFit="cover"
           transition={200}
           cachePolicy="memory-disk"
         />
       ) : (
-        <View
-          style={[
-            styles.initialsContainer,
-            {
-              width: size,
-              height: size,
-              borderRadius: size / 2,
-              backgroundColor: bgColor,
-            },
-          ]}
-        >
-          <Text style={[styles.initials, { fontSize }]}>{initials}</Text>
+        <View style={[styles.initialsContainer, sizeStyles.initialsContainer]}>
+          <Text style={[styles.initials, sizeStyles.initialsText]}>
+            {initials}
+          </Text>
         </View>
       )}
       {showOnlineIndicator && (
-        <View
-          style={[
-            styles.onlineIndicator,
-            {
-              width: indicatorSize,
-              height: indicatorSize,
-              borderRadius: indicatorSize / 2,
-              bottom: indicatorOffset,
-              right: indicatorOffset,
-              borderWidth: indicatorSize * 0.2,
-            },
-          ]}
-        />
+        <View style={[styles.onlineIndicator, sizeStyles.indicator]} />
       )}
     </View>
   );

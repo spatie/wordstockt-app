@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -7,14 +7,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withSequence,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
+
 import { colors, shadows } from '../../config/theme';
 import { RADIUS, SPACING } from '../../config/constants';
 
@@ -79,20 +72,22 @@ function AccentBar({
   color: string;
   borderRadius: number;
 }) {
-  return (
-    <View
-      style={{
-        position: 'absolute',
-        left: 0,
-        top: 0,
-        bottom: 0,
-        width: 4,
-        backgroundColor: color,
-        borderTopLeftRadius: borderRadius,
-        borderBottomLeftRadius: borderRadius,
-      }}
-    />
+  // Memoize style to prevent re-renders in list items
+  const accentStyle = useMemo(
+    () => ({
+      position: 'absolute' as const,
+      left: 0,
+      top: 0,
+      bottom: 0,
+      width: 4,
+      backgroundColor: color,
+      borderTopLeftRadius: borderRadius,
+      borderBottomLeftRadius: borderRadius,
+    }),
+    [color, borderRadius]
   );
+
+  return <View style={accentStyle} />;
 }
 
 export function Card({
