@@ -49,7 +49,9 @@ describe('RegisterScreen', () => {
     const usernameInput = screen.getByPlaceholderText('Username');
     fireEvent.changeText(usernameInput, 'ab');
 
-    expect(screen.getByText('3-20 characters required')).toBeTruthy();
+    expect(
+      screen.getByText('3-20 characters, letters, numbers, underscore only')
+    ).toBeTruthy();
   });
 
   it('shows validation error for invalid email', () => {
@@ -84,7 +86,9 @@ describe('RegisterScreen', () => {
     );
 
     // No validation errors should be shown
-    expect(screen.queryByText('3-20 characters required')).toBeNull();
+    expect(
+      screen.queryByText('3-20 characters, letters, numbers, underscore only')
+    ).toBeNull();
     expect(screen.queryByText('Enter a valid email')).toBeNull();
     expect(screen.queryByText('At least 8 characters')).toBeNull();
   });
