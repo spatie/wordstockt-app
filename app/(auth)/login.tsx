@@ -18,7 +18,7 @@ import { FormInput } from '../../src/components/form/FormInput';
 import { PasswordInput } from '../../src/components/form/PasswordInput';
 import { MainLogo } from '../../src/components/ui/MainLogo';
 import { FloatingTiles } from '../../src/components/ui/FloatingTiles';
-import { colors, shadows } from '../../src/config/theme';
+import { colors } from '../../src/config/theme';
 import { SPACING, RADIUS, DIMENSIONS } from '../../src/config/constants';
 import { ROUTES } from '../../src/config/routes';
 
@@ -147,7 +147,9 @@ export default function LoginScreen() {
               </Pressable>
 
               <View style={styles.signUpContainer}>
-                <Text style={styles.signUpText}>Don't have an account? </Text>
+                <Text style={styles.signUpText}>
+                  Don&apos;t have an account?{' '}
+                </Text>
                 <Link href={ROUTES.REGISTER} asChild>
                   <Pressable
                     style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}

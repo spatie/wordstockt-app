@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { Link } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { useRegister } from '../../src/api/queries/useAuth';
 import { getApiError } from '../../src/api/client';
 import { FormInput } from '../../src/components/form/FormInput';

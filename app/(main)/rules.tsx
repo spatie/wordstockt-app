@@ -127,8 +127,8 @@ export default function RulesScreen() {
           <Text style={styles.ruleText}>
             Use all 7 tiles from your rack in a single turn to earn a{' '}
             <Text style={styles.highlight}>+50 point bonus</Text>! This is
-            called a "Bingo". Combined with the tiles played bonus (+100 for 7
-            tiles), you&apos;ll get a massive{' '}
+            called a &quot;Bingo&quot;. Combined with the tiles played bonus
+            (+100 for 7 tiles), you&apos;ll get a massive{' '}
             <Text style={styles.highlight}>+150 total bonus</Text>!
           </Text>
         </RuleCard>

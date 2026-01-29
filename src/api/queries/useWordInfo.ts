@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../client';
 import { wordInfoKeys } from './queryKeys';
-import type { WordInfo, WordSense } from '../../types';
+import type { WordInfo } from '../../types';
 
 interface WordInfoParams {
   gameUlid: string;

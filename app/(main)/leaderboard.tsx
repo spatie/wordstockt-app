@@ -9,7 +9,6 @@ import {
 import { FlashList } from '@shopify/flash-list';
 import { ActivityIndicator } from 'react-native-paper';
 import Animated, {
-  FadeIn,
   FadeInDown,
   useSharedValue,
   useAnimatedStyle,

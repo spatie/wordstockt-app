@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Text, Pressable, StyleSheet } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import { AnimatedLogoTile } from './AnimatedLogoTile';
 import { colors } from '../../config/theme';

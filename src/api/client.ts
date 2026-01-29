@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios';
+import axios, { isAxiosError, AxiosError } from 'axios';
 import { ZodError } from 'zod';
 import { API_BASE_URL } from '../config/api';
 import { useAuthStore } from '../stores/authStore';
@@ -36,11 +36,11 @@ export interface ApiError {
 }
 
 export function isTimeoutError(error: unknown): boolean {
-  return axios.isAxiosError(error) && error.code === 'ECONNABORTED';
+  return isAxiosError(error) && error.code === 'ECONNABORTED';
 }
 
 export function getApiError(error: unknown): ApiError {
-  if (axios.isAxiosError(error)) {
+  if (isAxiosError(error)) {
     const data = error.response?.data;
     let message = data?.message ?? 'Network error';
 

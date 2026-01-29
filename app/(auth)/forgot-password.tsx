@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
 import { useForgotPassword } from '../../src/api/queries/useAuth';
 import { getApiError } from '../../src/api/client';
@@ -63,7 +62,7 @@ export default function ForgotPasswordScreen() {
 
           <Text style={styles.title}>Check Your Email</Text>
           <Text style={styles.subtitle}>
-            If we have an account with that email or username, we've sent a
+            If we have an account with that email or username, we&apos;ve sent a
             password reset link.
           </Text>
 
@@ -102,8 +101,8 @@ export default function ForgotPasswordScreen() {
 
           <Text style={styles.title}>Forgot Password?</Text>
           <Text style={styles.subtitle}>
-            Enter your email or username and we'll send you a link to reset your
-            password.
+            Enter your email or username and we&apos;ll send you a link to reset
+            your password.
           </Text>
 
           <FormInput

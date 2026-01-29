@@ -168,9 +168,7 @@ function GameScreenContent() {
     isGameActive,
     errorMessage,
     isSubmitting,
-    isPassing,
     isSwapping,
-    isResigning,
     isSwapMode,
     selectedSwapIndices,
     swapCompleted,
@@ -483,8 +481,9 @@ function GameScreenContent() {
   const showGameEndModal = gameJustEnded && !gameEndModalDismissed;
 
   // Calculate final scores for game end modal
-  const myScore = currentPlayer?.score ?? 0;
-  const opponentScore = opponent?.score ?? 0;
+  // Unused?
+  // const myScore = currentPlayer?.score ?? 0;
+  // const opponentScore = opponent?.score ?? 0;
 
   // Show rematch modal after game end modal and achievements are dismissed
   const showRematchModal =

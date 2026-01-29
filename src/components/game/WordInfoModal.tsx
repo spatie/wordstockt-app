@@ -98,7 +98,7 @@ function Section({
 function ProverbItem({ text }: { text: string }) {
   return (
     <View style={styles.exampleItem}>
-      <Text style={styles.exampleQuote}>"</Text>
+      <Text style={styles.exampleQuote}>&quot;</Text>
       <Text style={styles.exampleText}>{text}</Text>
     </View>
   );
@@ -124,7 +124,7 @@ function SenseItem({
         <View style={styles.senseExamples}>
           {sense.examples.map((example, i) => (
             <Text key={i} style={styles.senseExampleText}>
-              "{example}"
+              &quot;{example}&quot;
             </Text>
           ))}
         </View>

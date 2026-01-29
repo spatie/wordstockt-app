@@ -32,9 +32,9 @@ import {
   Text,
   ScrollView,
   Pressable,
-  Clipboard,
   StatusBar,
 } from 'react-native';
+import Clipboard from '@react-native-clipboard/clipboard';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -52,8 +52,6 @@ import {
   TILE_SIZE,
   GAP,
   SLOT_COUNT,
-  ANIMATION_DURATION,
-  SPRING_CONFIG,
   SPRING_CONFIG_FAST,
 } from '../config/constants';
 import { Tile } from '../components/game/Tile';
@@ -1406,15 +1404,14 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         captureDebugInfo(cell);
         if (cell) {
           const target: DropTarget = { type: 'board', ...cell };
-          const cellSize = boardLayoutRef.current.cellSize;
 
           // Target = CENTER of the cell (simple!)
-          const cellCenter = getBoardCellCenter(
-            cell.x,
-            cell.y,
-            boardLayoutRef.current
-          );
-          const targetPos = toRelative(cellCenter);
+          // const cellCenter = getBoardCellCenter(
+          //   cell.x,
+          //   cell.y,
+          //   boardLayoutRef.current
+          // );
+          // const targetPos = toRelative(cellCenter);
 
           // FIX (Jan 2026): Call placement logic SYNCHRONOUSLY to ensure it happens before animation completes.
           //
@@ -1643,6 +1640,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       finishDrag(null, false);
       return null;
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       positionX,
       positionY,
@@ -1710,6 +1708,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         }
       );
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [positionX, positionY, scale, draggingRackIndexShared]
   );
 
@@ -1822,6 +1821,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
     // Placement succeeded - reset state
     resetState();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     boardFloatingOpacity,
     scale,
@@ -1962,6 +1962,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       recallingRackIndicesShared.value = [];
       recallingBoardPositionsShared.value = [];
     }, 50);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recallingRackIndicesShared, recallingBoardPositionsShared]);
 
   // Ref to hold finishRecallFromRef for stable worklet access
@@ -2184,9 +2185,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     handleGestureStartRef.current(x, y);
   }, []);
 
-  const onGestureEnd = useCallback(() => {
-    handleGestureEndRef.current();
-  }, []);
+  // const onGestureEnd = useCallback(() => {
+  //   handleGestureEndRef.current();
+  // }, []);
 
   const onGestureEndWithPosition = useCallback((x: number, y: number) => {
     // Update position ref for drop target calculation
@@ -2195,9 +2196,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     handleGestureEndRef.current();
   }, []);
 
-  const onPositionUpdate = useCallback((x: number, y: number) => {
-    updatePositionRefFn.current(x, y);
-  }, []);
+  // const onPositionUpdate = useCallback((x: number, y: number) => {
+  //   updatePositionRefFn.current(x, y);
+  // }, []);
 
   // -------------------------------------------------------------------------
   // Native Gesture Handler (Gesture API)
@@ -2737,6 +2738,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       dragSource,
       dragTile,
       settlingTarget,
+      recallingBoardPositions,
+      recallingRackIndices,
       recallingRackIndicesShared,
       recallingBoardPositionsShared,
       getLastRackDrop,

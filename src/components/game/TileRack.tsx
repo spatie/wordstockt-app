@@ -111,7 +111,6 @@ function AnimatedTileSlot({
   const exitLiftY = useSharedValue(0); // For animating tiles down when exiting swap mode
   const prevIsSwapMode = useRef(isSwapMode);
   const prevWasLifted = useRef(false);
-  const prevGameUlid = useRef(currentGameUlid); // Track game changes to skip animation
 
   // Derive visualSlot from shared permutation (UI-thread source of truth)
   const visualSlotDerived = useDerivedValue(() => {

@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { StyleSheet, ActivityIndicator } from 'react-native';
+import { StyleSheet, ActivityIndicator, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -14,7 +14,7 @@ import { colors } from '../../config/theme';
 import type { PressableProps } from 'react-native';
 
 const AnimatedPressable = Animated.createAnimatedComponent(
-  require('react-native').Pressable
+  Pressable
 ) as React.ComponentType<PressableProps & { children?: React.ReactNode }>;
 
 const SPINNER_DELAY = 200;

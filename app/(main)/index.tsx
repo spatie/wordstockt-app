@@ -21,9 +21,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withDelay,
   withRepeat,
-  withSequence,
   Easing,
 } from 'react-native-reanimated';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -290,7 +288,7 @@ export default function HomeScreen() {
       if (!params.is_public) {
         push(ROUTES.GAME(result.ulid));
       }
-    } catch (e) {
+    } catch {
       // Error handled by mutation
     }
   };

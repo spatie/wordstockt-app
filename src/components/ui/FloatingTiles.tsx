@@ -62,7 +62,7 @@ function FloatingTile({
         )
       )
     );
-  }, []);
+  }, [delay, duration, moveProgress, styleProgress]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [

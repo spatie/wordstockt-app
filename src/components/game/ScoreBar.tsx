@@ -24,7 +24,7 @@ import { AnimatedScore } from './AnimatedScore';
 import { AnimatedTilesCount } from './AnimatedTilesCount';
 import { StatusInfoModal } from './StatusInfoModal';
 import { calculateTilesPlayedBonus } from '../../utils/scoring';
-import type { Game, Move, Player, PendingInvitation } from '../../types';
+import type { Game, Move, Player } from '../../types';
 
 const AVATAR_SIZE = DIMENSIONS.avatarScoreBar;
 const AVATAR_CONTAINER_SIZE = DIMENSIONS.avatarScoreBarContainer;

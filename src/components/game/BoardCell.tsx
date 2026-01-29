@@ -3,9 +3,7 @@ import { Pressable, View, Text, StyleSheet, Platform } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  useDerivedValue,
   withTiming,
-  withDelay,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { ScaledTile } from './Tile';

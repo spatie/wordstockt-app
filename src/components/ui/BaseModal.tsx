@@ -103,14 +103,6 @@ export function BaseModal({
     return overlayOpacity; // Android: no blur support, use full opacity
   };
 
-  const overlayStyle = [
-    styles.overlay,
-    {
-      backgroundColor: `rgba(0, 0, 0, ${getBackgroundOpacity()})`,
-      justifyContent: centered ? 'center' : 'flex-start',
-    },
-  ];
-
   const animatedContentStyle = {
     transform: [{ scale: scaleAnim }],
     opacity: opacityAnim,

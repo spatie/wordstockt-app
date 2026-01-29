@@ -242,7 +242,7 @@ export default function ProfileScreen() {
             </View>
             <Text style={styles.verificationText}>
               Please verify your email within 7 days of creating your account.
-              After that, you won't be able to log in until verified.
+              After that, you won&apos;t be able to log in until verified.
             </Text>
             <Pressable
               onPress={handleResendVerification}
