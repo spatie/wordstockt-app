@@ -1,12 +1,12 @@
 import React, { memo, useState, useCallback } from 'react';
 import {
   View,
-  FlatList,
   StyleSheet,
   RefreshControl,
   Text,
   Pressable,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { ActivityIndicator } from 'react-native-paper';
 import Animated, {
   FadeIn,
@@ -59,9 +59,7 @@ const LeaderboardEntryCard = memo(function LeaderboardEntryCard({
           <Text style={styles.valueText}>
             {isTimeBased ? entry.winsInPeriod : entry.eloRating}
           </Text>
-          <Text style={styles.metricLabel}>
-            {isTimeBased ? 'wins' : 'ELO'}
-          </Text>
+          <Text style={styles.metricLabel}>{isTimeBased ? 'wins' : 'ELO'}</Text>
         </View>
       </View>
     </Card>
@@ -274,7 +272,7 @@ export default function LeaderboardScreen() {
           )}
         </View>
 
-        <FlatList
+        <FlashList
           data={data?.data}
           renderItem={renderEntry}
           keyExtractor={keyExtractor}

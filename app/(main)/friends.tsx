@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, FlatList, StyleSheet, RefreshControl, Text } from 'react-native';
+import { View, StyleSheet, RefreshControl, Text } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { ActivityIndicator } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useFriends } from '../../src/api/queries/useFriends';
@@ -67,7 +68,7 @@ export default function FriendsScreen() {
           {friends?.length ?? 0} {friends?.length === 1 ? 'friend' : 'friends'}
         </Text>
       </View>
-      <FlatList
+      <FlashList
         data={sortedFriends}
         renderItem={renderFriend}
         keyExtractor={(item) => item.ulid}
