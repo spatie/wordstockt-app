@@ -9,27 +9,7 @@ import Animated, {
   Easing,
   interpolate,
 } from 'react-native-reanimated';
-import { colors } from '@/config/theme';
-import { tiles } from '@/config/tileConfig';
-
-const TILE_LETTERS = [
-  'W',
-  'O',
-  'R',
-  'D',
-  'S',
-  'T',
-  'C',
-  'K',
-  'A',
-  'E',
-  'I',
-  'N',
-  'L',
-  'P',
-  'M',
-];
-const TILE_COLORS = [colors.primary, '#E85D4C', '#F5A623']; // blue, red, orange like the logo
+import { TILE_COLORS, TILE_LETTERS, tiles } from '@/config/tileConfig';
 
 function FloatingTile({
   delay,
@@ -41,7 +21,6 @@ function FloatingTile({
   color,
   rotationRange,
   scaleRange,
-  fadeDuration,
 }: {
   delay: number;
   startX: number;
@@ -52,15 +31,14 @@ function FloatingTile({
   color: string;
   rotationRange: number;
   scaleRange: [number, number];
-  fadeDuration: number;
 }) {
-  const progress = useSharedValue(0);
-  const rotation = useSharedValue(0);
-  const scale = useSharedValue(0);
-  const fade = useSharedValue(0);
+  // Consolidated: 2 shared values instead of 4
+  const moveProgress = useSharedValue(0); // for translateX, translateY
+  const styleProgress = useSharedValue(0); // for rotation, scale, opacity
 
   useEffect(() => {
-    progress.set(
+    // Movement animation using base duration
+    moveProgress.set(
       withDelay(
         delay,
         withRepeat(
@@ -70,38 +48,13 @@ function FloatingTile({
         )
       )
     );
-    rotation.set(
+    // Style animation using duration * 1.1 as middle ground between 0.8 and 1.5
+    styleProgress.set(
       withDelay(
         delay,
         withRepeat(
           withTiming(1, {
-            duration: duration * 1.5,
-            easing: Easing.inOut(Easing.ease),
-          }),
-          -1,
-          true
-        )
-      )
-    );
-    scale.set(
-      withDelay(
-        delay,
-        withRepeat(
-          withTiming(1, {
-            duration: duration * 0.8,
-            easing: Easing.inOut(Easing.ease),
-          }),
-          -1,
-          true
-        )
-      )
-    );
-    fade.set(
-      withDelay(
-        delay,
-        withRepeat(
-          withTiming(1, {
-            duration: fadeDuration,
+            duration: duration * 1.1,
             easing: Easing.inOut(Easing.ease),
           }),
           -1,
@@ -113,20 +66,24 @@ function FloatingTile({
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
-      { translateY: interpolate(progress.value, [0, 1], [0, -100]) },
-      { translateX: interpolate(progress.value, [0, 0.5, 1], [0, 20, 0]) },
+      { translateY: interpolate(moveProgress.get(), [0, 1], [0, -100]) },
+      { translateX: interpolate(moveProgress.get(), [0, 0.5, 1], [0, 20, 0]) },
       {
-        rotate: `${interpolate(rotation.value, [0, 0.5, 1], [-rotationRange, rotationRange, -rotationRange])}deg`,
+        rotate: `${interpolate(styleProgress.get(), [0, 0.5, 1], [-rotationRange, rotationRange, -rotationRange])}deg`,
       },
       {
         scale: interpolate(
-          scale.value,
+          styleProgress.get(),
           [0, 0.5, 1],
           [scaleRange[0], scaleRange[1], scaleRange[0]]
         ),
       },
     ],
-    opacity: interpolate(fade.value, [0, 0.3, 0.7, 1], [0.1, 0.3, 0.3, 0.1]),
+    opacity: interpolate(
+      styleProgress.get(),
+      [0, 0.3, 0.7, 1],
+      [0.1, 0.3, 0.3, 0.1]
+    ),
   }));
 
   return (

@@ -1,6 +1,27 @@
 import { Dimensions } from 'react-native';
 
+import { colors } from '@/config/theme';
+
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+export const TILE_LETTERS = [
+  'W',
+  'O',
+  'R',
+  'D',
+  'S',
+  'T',
+  'C',
+  'K',
+  'A',
+  'E',
+  'I',
+  'N',
+  'L',
+  'P',
+  'M',
+];
+export const TILE_COLORS = [colors.primary, '#E85D4C', '#F5A623']; // blue, red, orange like the logo
 
 export const tiles = [
   {
