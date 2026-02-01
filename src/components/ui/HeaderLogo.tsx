@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Text, Pressable, StyleSheet } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import { AnimatedLogoTile } from './AnimatedLogoTile';
 import { colors } from '../../config/theme';
@@ -9,17 +9,19 @@ export function HeaderLogo() {
   const logoAnimationTrigger = useSharedValue(0);
 
   const handleLogoPress = useCallback(() => {
-    logoAnimationTrigger.value = logoAnimationTrigger.value === 0 ? 1 : 0;
+    logoAnimationTrigger.set(logoAnimationTrigger.get() === 0 ? 1 : 0);
     setTimeout(() => {
-      logoAnimationTrigger.value = 0;
+      logoAnimationTrigger.set(0);
     }, 600);
   }, [logoAnimationTrigger]);
 
   return (
-    <TouchableOpacity
-      style={styles.container}
+    <Pressable
+      style={({ pressed }) => [
+        styles.container,
+        { opacity: pressed ? 0.8 : 1 },
+      ]}
       onPress={handleLogoPress}
-      activeOpacity={0.8}
     >
       <AnimatedLogoTile
         letter="W"
@@ -34,7 +36,7 @@ export function HeaderLogo() {
         delay={50}
       />
       <Text style={styles.title}>WordStockt</Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 

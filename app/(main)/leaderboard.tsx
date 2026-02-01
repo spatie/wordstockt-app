@@ -1,15 +1,14 @@
-import React, { useState, useCallback } from 'react';
+import React, { memo, useState, useCallback } from 'react';
 import {
   View,
-  FlatList,
   StyleSheet,
   RefreshControl,
   Text,
   Pressable,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { ActivityIndicator } from 'react-native-paper';
 import Animated, {
-  FadeIn,
   FadeInDown,
   useSharedValue,
   useAnimatedStyle,
@@ -23,6 +22,48 @@ import { SmartAvatar } from '../../src/components/ui/SmartAvatar';
 import { colors } from '../../src/config/theme';
 import { SPACING } from '../../src/config/constants';
 import type { LeaderboardEntry, LeaderboardType } from '../../src/types';
+
+interface LeaderboardEntryCardProps {
+  entry: LeaderboardEntry;
+  rank: number;
+  isTimeBased: boolean;
+}
+
+const LeaderboardEntryCard = memo(function LeaderboardEntryCard({
+  entry,
+  rank,
+  isTimeBased,
+}: LeaderboardEntryCardProps) {
+  return (
+    <Card padding="md" marginBottom="sm">
+      <View style={styles.cardContent}>
+        <Text style={styles.rank}>{rank}</Text>
+
+        <SmartAvatar
+          userUlid={entry.ulid}
+          uri={entry.avatar}
+          name={entry.username}
+          size={40}
+          backgroundColor={entry.avatarColor ?? undefined}
+        />
+
+        <View style={styles.info}>
+          <Text style={styles.username}>{entry.username}</Text>
+          <Text style={styles.stats}>
+            {entry.gamesWon}W / {entry.gamesPlayed}G
+          </Text>
+        </View>
+
+        <View style={styles.valueContainer}>
+          <Text style={styles.valueText}>
+            {isTimeBased ? entry.winsInPeriod : entry.eloRating}
+          </Text>
+          <Text style={styles.metricLabel}>{isTimeBased ? 'wins' : 'ELO'}</Text>
+        </View>
+      </View>
+    </Card>
+  );
+});
 
 type MainType = 'wins' | 'elo';
 type PeriodType = 'monthly' | 'yearly';
@@ -48,9 +89,11 @@ function PeriodToggle({
   }));
 
   const handlePress = (newValue: PeriodType) => {
-    translateX.value = withTiming(newValue === 'monthly' ? 0 : PILL_WIDTH, {
-      duration: 200,
-    });
+    translateX.set(
+      withTiming(newValue === 'monthly' ? 0 : PILL_WIDTH, {
+        duration: 200,
+      })
+    );
     onChange(newValue);
   };
 
@@ -105,10 +148,10 @@ export default function LeaderboardScreen() {
   }));
 
   const animateTabChange = useCallback(() => {
-    tabOpacity.value = 0;
-    tabTranslateY.value = 10;
-    tabOpacity.value = withTiming(1, { duration: 200 });
-    tabTranslateY.value = withTiming(0, { duration: 200 });
+    tabOpacity.set(0);
+    tabTranslateY.set(10);
+    tabOpacity.set(withTiming(1, { duration: 200 }));
+    tabTranslateY.set(withTiming(0, { duration: 200 }));
   }, [tabOpacity, tabTranslateY]);
 
   const handleMainTypeChange = useCallback(
@@ -129,57 +172,28 @@ export default function LeaderboardScreen() {
     [period, animateTabChange]
   );
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
-  };
+  }, [refetch]);
 
   const isTimeBased = mainType === 'wins';
 
-  const renderEntry = ({
-    item,
-    index,
-  }: {
-    item: LeaderboardEntry;
-    index: number;
-  }) => {
-    const rank = index + 1;
-
-    return (
+  const renderEntry = useCallback(
+    ({ item, index }: { item: LeaderboardEntry; index: number }) => (
       <Animated.View entering={FadeInDown.duration(300).delay(index * 50)}>
-        <Card padding="md" marginBottom="sm">
-          <View style={styles.cardContent}>
-            <Text style={styles.rank}>{rank}</Text>
-
-            <SmartAvatar
-              userUlid={item.ulid}
-              uri={item.avatar}
-              name={item.username}
-              size={40}
-              backgroundColor={item.avatarColor ?? undefined}
-            />
-
-            <View style={styles.info}>
-              <Text style={styles.username}>{item.username}</Text>
-              <Text style={styles.stats}>
-                {item.gamesWon}W / {item.gamesPlayed}G
-              </Text>
-            </View>
-
-            <View style={styles.valueContainer}>
-              <Text style={styles.valueText}>
-                {isTimeBased ? item.winsInPeriod : item.eloRating}
-              </Text>
-              <Text style={styles.metricLabel}>
-                {isTimeBased ? 'wins' : 'ELO'}
-              </Text>
-            </View>
-          </View>
-        </Card>
+        <LeaderboardEntryCard
+          entry={item}
+          rank={index + 1}
+          isTimeBased={isTimeBased}
+        />
       </Animated.View>
-    );
-  };
+    ),
+    [isTimeBased]
+  );
+
+  const keyExtractor = useCallback((item: LeaderboardEntry) => item.ulid, []);
 
   const renderCurrentUserFooter = () => {
     const currentUser = data?.meta?.currentUser;
@@ -259,10 +273,10 @@ export default function LeaderboardScreen() {
           )}
         </View>
 
-        <FlatList
+        <FlashList
           data={data?.data}
           renderItem={renderEntry}
-          keyExtractor={(item) => item.ulid}
+          keyExtractor={keyExtractor}
           contentContainerStyle={styles.list}
           refreshControl={
             <RefreshControl

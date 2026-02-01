@@ -21,9 +21,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withDelay,
   withRepeat,
-  withSequence,
   Easing,
 } from 'react-native-reanimated';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -72,10 +70,12 @@ function PulsingDot() {
   const pulse = useSharedValue(1);
 
   useEffect(() => {
-    pulse.value = withRepeat(
-      withTiming(0.4, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
+    pulse.set(
+      withRepeat(
+        withTiming(0.4, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        true
+      )
     );
   }, [pulse]);
 
@@ -112,7 +112,7 @@ function SectionHeader({
 }
 
 export default function HomeScreen() {
-  const router = useRouter();
+  const { push } = useRouter();
   const user = useAuthStore((s) => s.user);
   const { isGuest, showGameLimitPrompt } = useGuestRestriction();
   const { data: games, isLoading, error, refetch } = useGames();
@@ -156,10 +156,10 @@ export default function HomeScreen() {
       // Small delay to ensure index is in navigation stack before pushing
       // This ensures router.canGoBack() works correctly on game screen
       setTimeout(() => {
-        router.push(ROUTES.GAME(gameUlid));
+        push(ROUTES.GAME(gameUlid));
       }, 50);
     }
-  }, [clearLastGameUlid, router]);
+  }, [clearLastGameUlid, push]);
 
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<TabValue>('active');
@@ -176,11 +176,11 @@ export default function HomeScreen() {
   const handleTabChange = useCallback(
     (newTab: TabValue) => {
       if (newTab === activeTab) return;
-      tabOpacity.value = 0;
-      tabTranslateY.value = 10;
+      tabOpacity.set(0);
+      tabTranslateY.set(10);
       setActiveTab(newTab);
-      tabOpacity.value = withTiming(1, { duration: 200 });
-      tabTranslateY.value = withTiming(0, { duration: 200 });
+      tabOpacity.set(withTiming(1, { duration: 200 }));
+      tabTranslateY.set(withTiming(0, { duration: 200 }));
     },
     [activeTab, tabOpacity, tabTranslateY]
   );
@@ -221,57 +221,76 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
-  const navigateToInvitedGame = (gameUlid: string, invitationUlid: string) => {
-    router.push(`${ROUTES.GAME(gameUlid)}?invitation=${invitationUlid}`);
-  };
+  const handleGamePress = useCallback(
+    (gameUlid: string) => {
+      push(ROUTES.GAME(gameUlid));
+    },
+    [push]
+  );
 
-  const handleDeclineInvitation = async (invitationUlid: string) => {
-    setDecliningInvitation(invitationUlid);
-    try {
-      await declineInvitation.mutateAsync(invitationUlid);
-    } catch (e) {
-      const error = getApiError(e);
-      Alert.alert('Error', error.message);
-    } finally {
-      setDecliningInvitation(null);
-    }
-  };
+  const handleGameDelete = useCallback(
+    (gameUlid: string) => {
+      Alert.alert(
+        'Delete Game',
+        'Are you sure you want to delete this game? This action cannot be undone.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await deleteGame.mutateAsync(gameUlid);
+              } catch (e) {
+                Alert.alert('Error', getApiError(e).message);
+              }
+            },
+          },
+        ]
+      );
+    },
+    [deleteGame]
+  );
+
+  const handleInvitationPress = useCallback(
+    (gameUlid: string, invitationUlid: string) => {
+      push(`${ROUTES.GAME(gameUlid)}?invitation=${invitationUlid}`);
+    },
+    [push]
+  );
+
+  const handleInvitationDecline = useCallback(
+    async (invitationUlid: string) => {
+      setDecliningInvitation(invitationUlid);
+      try {
+        await declineInvitation.mutateAsync(invitationUlid);
+      } catch (e) {
+        const error = getApiError(e);
+        Alert.alert('Error', error.message);
+      } finally {
+        setDecliningInvitation(null);
+      }
+    },
+    [declineInvitation]
+  );
+
+  const handlePublicGamePress = useCallback(
+    (gameUlid: string) => {
+      push(ROUTES.GAME(gameUlid));
+    },
+    [push]
+  );
 
   const handleCreateGame = async (params: CreateGameParams) => {
     try {
       const result = await createGame.mutateAsync(params);
       setShowCreateModal(false);
       if (!params.is_public) {
-        router.push(ROUTES.GAME(result.ulid));
+        push(ROUTES.GAME(result.ulid));
       }
-    } catch (e) {
+    } catch {
       // Error handled by mutation
     }
-  };
-
-  const navigateToGame = (gameUlid: string) => {
-    router.push(ROUTES.GAME(gameUlid));
-  };
-
-  const handleDeleteGame = (gameUlid: string) => {
-    Alert.alert(
-      'Delete Game',
-      'Are you sure you want to delete this game? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteGame.mutateAsync(gameUlid);
-            } catch (e) {
-              Alert.alert('Error', getApiError(e).message);
-            }
-          },
-        },
-      ]
-    );
   };
 
   if (isLoading || invitationsLoading) {
@@ -318,8 +337,8 @@ export default function HomeScreen() {
                   <GameCard
                     game={game}
                     userUlid={user?.ulid}
-                    onPress={() => navigateToGame(game.ulid)}
-                    onDelete={() => handleDeleteGame(game.ulid)}
+                    onPress={handleGamePress}
+                    onDelete={handleGameDelete}
                   />
                 </Animated.View>
               );
@@ -344,13 +363,8 @@ export default function HomeScreen() {
                 >
                   <InvitationCard
                     invitation={invitation}
-                    onPress={() =>
-                      navigateToInvitedGame(
-                        invitation.game.ulid,
-                        invitation.ulid
-                      )
-                    }
-                    onDecline={() => handleDeclineInvitation(invitation.ulid)}
+                    onPress={handleInvitationPress}
+                    onDecline={handleInvitationDecline}
                     isDeclining={decliningInvitation === invitation.ulid}
                   />
                 </Animated.View>
@@ -377,7 +391,7 @@ export default function HomeScreen() {
                   <GameCard
                     game={game}
                     userUlid={user?.ulid}
-                    onPress={() => navigateToGame(game.ulid)}
+                    onPress={handleGamePress}
                   />
                 </Animated.View>
               );
@@ -402,7 +416,7 @@ export default function HomeScreen() {
                   <GameCard
                     game={game}
                     userUlid={user?.ulid}
-                    onPress={() => navigateToGame(game.ulid)}
+                    onPress={handleGamePress}
                   />
                 </Animated.View>
               );
@@ -432,10 +446,7 @@ export default function HomeScreen() {
             key={game.ulid}
             entering={FadeInDown.duration(300).delay(index * 50)}
           >
-            <PublicGameCard
-              game={game}
-              onPress={() => navigateToGame(game.ulid)}
-            />
+            <PublicGameCard game={game} onPress={handlePublicGamePress} />
           </Animated.View>
         ))
       ) : (
@@ -463,7 +474,7 @@ export default function HomeScreen() {
             <GameCard
               game={game}
               userUlid={user?.ulid}
-              onPress={() => navigateToGame(game.ulid)}
+              onPress={handleGamePress}
             />
           </Animated.View>
         ))

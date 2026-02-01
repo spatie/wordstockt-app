@@ -1,11 +1,5 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  Pressable,
-  Platform,
-  TouchableOpacity,
-} from 'react-native';
+import { View, StyleSheet, Pressable, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import ReAnimated, {
   useSharedValue,
@@ -30,7 +24,7 @@ import { AnimatedScore } from './AnimatedScore';
 import { AnimatedTilesCount } from './AnimatedTilesCount';
 import { StatusInfoModal } from './StatusInfoModal';
 import { calculateTilesPlayedBonus } from '../../utils/scoring';
-import type { Game, Move, Player, PendingInvitation } from '../../types';
+import type { Game, Move, Player } from '../../types';
 
 const AVATAR_SIZE = DIMENSIONS.avatarScoreBar;
 const AVATAR_CONTAINER_SIZE = DIMENSIONS.avatarScoreBarContainer;
@@ -77,17 +71,21 @@ function TilesBadge({ count }: { count: number }) {
 
   const handlePress = useCallback(() => {
     // Wobble animation: rotate back and forth while bouncing
-    rotation.value = withSequence(
-      withTiming(-12, { duration: 50 }),
-      withTiming(10, { duration: 60 }),
-      withTiming(-8, { duration: 60 }),
-      withTiming(6, { duration: 60 }),
-      withTiming(-3, { duration: 50 }),
-      withTiming(0, { duration: 50 })
+    rotation.set(
+      withSequence(
+        withTiming(-12, { duration: 50 }),
+        withTiming(10, { duration: 60 }),
+        withTiming(-8, { duration: 60 }),
+        withTiming(6, { duration: 60 }),
+        withTiming(-3, { duration: 50 }),
+        withTiming(0, { duration: 50 })
+      )
     );
-    scale.value = withSequence(
-      withSpring(1.15, { damping: 8, stiffness: 400 }),
-      withSpring(1, { damping: 10, stiffness: 300 })
+    scale.set(
+      withSequence(
+        withSpring(1.15, { damping: 8, stiffness: 400 }),
+        withSpring(1, { damping: 10, stiffness: 300 })
+      )
     );
   }, [rotation, scale]);
 
@@ -96,12 +94,12 @@ function TilesBadge({ count }: { count: number }) {
   }));
 
   return (
-    <TouchableOpacity onPress={handlePress} activeOpacity={1}>
+    <Pressable onPress={handlePress}>
       <ReAnimated.View style={[styles.tilesBadge, animatedStyle]}>
         <AnimatedTilesCount count={count} />
         <Text style={styles.tilesLabel}>{count === 1 ? 'tile' : 'tiles'}</Text>
       </ReAnimated.View>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -120,15 +118,17 @@ function StatusDots({
   if (!showBlankPending && !showFreeSwap) return null;
 
   return (
-    <TouchableOpacity
-      style={styles.statusDots}
+    <Pressable
+      style={({ pressed }) => [
+        styles.statusDots,
+        { opacity: pressed ? 0.7 : 1 },
+      ]}
       onPress={onPress}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      activeOpacity={0.7}
     >
       {showBlankPending && <View style={[styles.dot, styles.blankDot]} />}
       {showFreeSwap && <View style={[styles.dot, styles.swapDot]} />}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -147,22 +147,24 @@ function PlayerAvatar({
 
   useEffect(() => {
     if (isActive) {
-      visible.value = withTiming(1, { duration: 300 });
-      pulse.value = 1;
-      pulse.value = withRepeat(
-        withSequence(
-          withTiming(0.3, {
-            duration: 1200,
-            easing: Easing.inOut(Easing.quad),
-          }),
-          withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.quad) })
-        ),
-        -1,
-        false
+      visible.set(withTiming(1, { duration: 300 }));
+      pulse.set(1);
+      pulse.set(
+        withRepeat(
+          withSequence(
+            withTiming(0.3, {
+              duration: 1200,
+              easing: Easing.inOut(Easing.quad),
+            }),
+            withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.quad) })
+          ),
+          -1,
+          false
+        )
       );
     } else {
-      visible.value = withTiming(0, { duration: 300 });
-      pulse.value = 1;
+      visible.set(withTiming(0, { duration: 300 }));
+      pulse.set(1);
     }
   }, [isActive, visible, pulse]);
 
@@ -184,11 +186,13 @@ function PlayerAvatar({
   }, [player?.ulid, currentUserUlid, router]);
 
   return (
-    <TouchableOpacity
-      style={styles.avatarWrapper}
+    <Pressable
+      style={({ pressed }) => [
+        styles.avatarWrapper,
+        { opacity: pressed && player?.ulid ? 0.7 : 1 },
+      ]}
       onPress={handlePress}
       disabled={!player?.ulid}
-      activeOpacity={0.7}
     >
       <ReAnimated.View
         style={[styles.activeIndicator, animatedIndicatorStyle]}
@@ -200,7 +204,7 @@ function PlayerAvatar({
         size={AVATAR_SIZE}
         backgroundColor={player?.avatarColor ?? undefined}
       />
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -248,9 +252,11 @@ export function ScoreBar({
   const bonusOpacity = useSharedValue(0);
 
   useEffect(() => {
-    bonusOpacity.value = withTiming(showBonus ? 1 : 0, {
-      duration: ANIMATION_DURATION,
-    });
+    bonusOpacity.set(
+      withTiming(showBonus ? 1 : 0, {
+        duration: ANIMATION_DURATION,
+      })
+    );
   }, [showBonus, bonusOpacity]);
 
   const bonusAnimatedStyle = useAnimatedStyle(() => ({

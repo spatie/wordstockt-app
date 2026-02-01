@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../ui/Card';
@@ -13,8 +13,8 @@ import type { GameListItem } from '../../types';
 interface GameCardProps {
   game: GameListItem;
   userUlid: string | undefined;
-  onPress: () => void;
-  onDelete?: () => void;
+  onPress: (gameUlid: string) => void;
+  onDelete?: (gameUlid: string) => void;
 }
 
 function formatLastMove(
@@ -50,11 +50,24 @@ function formatLastMove(
   return description;
 }
 
-export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
+export const GameCard = memo(function GameCard({
+  game,
+  userUlid,
+  onPress,
+  onDelete,
+}: GameCardProps) {
   const isCompleted = game.status === 'finished';
   const isWinner = game.winnerUlid === userUlid;
   const isAwaitingOpponent = game.status === 'pending' && !game.opponent;
   const hasPendingInvitation = isAwaitingOpponent && game.pendingInvitation;
+
+  const handlePress = useCallback(() => {
+    onPress(game.ulid);
+  }, [onPress, game.ulid]);
+
+  const handleDelete = useCallback(() => {
+    onDelete?.(game.ulid);
+  }, [onDelete, game.ulid]);
 
   // Determine what to show in the avatar/name area
   const getDisplayInfo = () => {
@@ -96,7 +109,7 @@ export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
 
   return (
     <Card
-      onPress={onPress}
+      onPress={handlePress}
       showAccent={!isCompleted && game.isMyTurn}
       style={[!game.isMyTurn && styles.opponentTurnCard]}
     >
@@ -185,7 +198,7 @@ export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
             {onDelete && (
               <Button
                 label="Delete"
-                onPress={onDelete}
+                onPress={handleDelete}
                 variant="outline"
                 size="sm"
                 rounded
@@ -194,7 +207,7 @@ export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
             )}
             <Button
               label={hasPendingInvitation ? 'Open' : 'Invite'}
-              onPress={onPress}
+              onPress={handlePress}
               size="sm"
               rounded
               style={styles.playButton}
@@ -203,7 +216,7 @@ export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
         ) : (
           <Button
             label={game.isMyTurn ? 'Play' : 'View'}
-            onPress={onPress}
+            onPress={handlePress}
             size="sm"
             rounded
             style={[styles.playButton, !game.isMyTurn && styles.viewButton]}
@@ -212,7 +225,7 @@ export function GameCard({ game, userUlid, onPress, onDelete }: GameCardProps) {
       </View>
     </Card>
   );
-}
+});
 
 const styles = StyleSheet.create({
   cardTop: {

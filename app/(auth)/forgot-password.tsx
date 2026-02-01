@@ -5,11 +5,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Text,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
 import { useForgotPassword } from '../../src/api/queries/useAuth';
 import { getApiError } from '../../src/api/client';
@@ -63,13 +62,19 @@ export default function ForgotPasswordScreen() {
 
           <Text style={styles.title}>Check Your Email</Text>
           <Text style={styles.subtitle}>
-            If we have an account with that email or username, we've sent a
+            If we have an account with that email or username, we&apos;ve sent a
             password reset link.
           </Text>
 
-          <TouchableOpacity style={styles.button} onPress={() => router.back()}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
+            onPress={() => router.back()}
+          >
             <Text style={styles.buttonText}>Back to Login</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     );
@@ -96,8 +101,8 @@ export default function ForgotPasswordScreen() {
 
           <Text style={styles.title}>Forgot Password?</Text>
           <Text style={styles.subtitle}>
-            Enter your email or username and we'll send you a link to reset your
-            password.
+            Enter your email or username and we&apos;ll send you a link to reset
+            your password.
           </Text>
 
           <FormInput
@@ -116,8 +121,12 @@ export default function ForgotPasswordScreen() {
             </View>
           )}
 
-          <TouchableOpacity
-            style={[styles.button, !canSubmit && styles.buttonDisabled]}
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              !canSubmit && styles.buttonDisabled,
+              { opacity: pressed && canSubmit ? 0.7 : 1 },
+            ]}
             onPress={handleSubmit}
             disabled={!canSubmit}
           >
@@ -126,7 +135,7 @@ export default function ForgotPasswordScreen() {
             ) : (
               <Text style={styles.buttonText}>Send Reset Link</Text>
             )}
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </KeyboardAvoidingView>
     </View>

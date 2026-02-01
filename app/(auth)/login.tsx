@@ -3,7 +3,7 @@ import {
   View,
   StyleSheet,
   Text,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,7 +18,7 @@ import { FormInput } from '../../src/components/form/FormInput';
 import { PasswordInput } from '../../src/components/form/PasswordInput';
 import { MainLogo } from '../../src/components/ui/MainLogo';
 import { FloatingTiles } from '../../src/components/ui/FloatingTiles';
-import { colors, shadows } from '../../src/config/theme';
+import { colors } from '../../src/config/theme';
 import { SPACING, RADIUS, DIMENSIONS } from '../../src/config/constants';
 import { ROUTES } from '../../src/config/routes';
 
@@ -109,12 +109,15 @@ export default function LoginScreen() {
                 />
               </View>
 
-              <TouchableOpacity
-                style={styles.forgotPassword}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.forgotPassword,
+                  { opacity: pressed ? 0.7 : 1 },
+                ]}
                 onPress={() => router.push(ROUTES.FORGOT_PASSWORD)}
               >
                 <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-              </TouchableOpacity>
+              </Pressable>
 
               {errorMessage && (
                 <Animated.View
@@ -125,14 +128,14 @@ export default function LoginScreen() {
                 </Animated.View>
               )}
 
-              <TouchableOpacity
-                style={[
+              <Pressable
+                style={({ pressed }) => [
                   styles.loginButtonOuter,
                   (!canSubmit || isLoading) && styles.loginButtonDisabled,
+                  { opacity: pressed && canSubmit && !isLoading ? 0.8 : 1 },
                 ]}
                 onPress={handleLogin}
                 disabled={!canSubmit || isLoading}
-                activeOpacity={0.8}
               >
                 <BlurView intensity={30} tint="dark" style={styles.loginButton}>
                   {login.isPending ? (
@@ -141,14 +144,18 @@ export default function LoginScreen() {
                     <Text style={styles.loginButtonText}>Log In</Text>
                   )}
                 </BlurView>
-              </TouchableOpacity>
+              </Pressable>
 
               <View style={styles.signUpContainer}>
-                <Text style={styles.signUpText}>Don't have an account? </Text>
+                <Text style={styles.signUpText}>
+                  Don&apos;t have an account?{' '}
+                </Text>
                 <Link href={ROUTES.REGISTER} asChild>
-                  <TouchableOpacity>
+                  <Pressable
+                    style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+                  >
                     <Text style={styles.signUpLink}>Sign Up</Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 </Link>
               </View>
             </Animated.View>
@@ -173,14 +180,14 @@ export default function LoginScreen() {
                 />
               </View>
 
-              <TouchableOpacity
-                style={[
+              <Pressable
+                style={({ pressed }) => [
                   styles.guestButtonOuter,
                   isLoading && styles.guestButtonDisabled,
+                  { opacity: pressed && !isLoading ? 0.7 : 1 },
                 ]}
                 onPress={handleGuestLogin}
                 disabled={isLoading}
-                activeOpacity={0.7}
               >
                 <BlurView intensity={25} tint="dark" style={styles.guestButton}>
                   {guestLogin.isPending ? (
@@ -189,7 +196,7 @@ export default function LoginScreen() {
                     <Text style={styles.guestButtonText}>Play as Guest</Text>
                   )}
                 </BlurView>
-              </TouchableOpacity>
+              </Pressable>
 
               <Text style={styles.guestHelperText}>
                 Try the game first - no account needed

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { BaseModal } from './BaseModal';
 import { colors } from '../../config/theme';
 import { SPACING, RADIUS } from '../../config/constants';
@@ -33,8 +33,11 @@ export function MenuModal({ visible, onClose, items }: MenuModalProps) {
           {index > 0 && items[index - 1]?.destructive !== item.destructive && (
             <View style={styles.divider} />
           )}
-          <TouchableOpacity
-            style={styles.menuItem}
+          <Pressable
+            style={({ pressed }) => [
+              styles.menuItem,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
             onPress={() => {
               onClose();
               item.onPress();
@@ -48,7 +51,7 @@ export function MenuModal({ visible, onClose, items }: MenuModalProps) {
             >
               {item.label}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </React.Fragment>
       ))}
     </BaseModal>

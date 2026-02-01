@@ -4,12 +4,12 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
-  ScrollView,
   Share,
   Platform,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../config/theme';
 import { RADIUS, SPACING } from '../../config/constants';
@@ -157,10 +157,14 @@ export function InvitePlayerModal({
           disabled
         />
         <Text style={styles.userName}>{user.username}</Text>
-        <TouchableOpacity
-          style={[
+        <Pressable
+          style={({ pressed }) => [
             styles.inviteButton,
             isInviting && styles.inviteButtonLoading,
+            {
+              opacity:
+                pressed && !isInviting && invitingUserUlid === null ? 0.7 : 1,
+            },
           ]}
           onPress={() => handleInviteUser(userUlid)}
           disabled={isInviting || invitingUserUlid !== null}
@@ -170,7 +174,7 @@ export function InvitePlayerModal({
           ) : (
             <Text style={styles.inviteButtonText}>Invite</Text>
           )}
-        </TouchableOpacity>
+        </Pressable>
       </View>
     );
   };
@@ -203,10 +207,13 @@ export function InvitePlayerModal({
             returnKeyType="search"
           />
         </View>
-        <TouchableOpacity
-          style={[
+        <Pressable
+          style={({ pressed }) => [
             styles.searchButton,
             (!searchQuery.trim() || isSearching) && styles.searchButtonDisabled,
+            {
+              opacity: pressed && searchQuery.trim() && !isSearching ? 0.7 : 1,
+            },
           ]}
           onPress={handleSearch}
           disabled={!searchQuery.trim() || isSearching}
@@ -216,7 +223,7 @@ export function InvitePlayerModal({
           ) : (
             <Text style={styles.searchButtonText}>Search</Text>
           )}
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {searchError && <Text style={styles.searchErrorText}>{searchError}</Text>}
@@ -230,33 +237,37 @@ export function InvitePlayerModal({
       {searchResults.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Search Results</Text>
-          <ScrollView
-            style={styles.userList}
-            showsVerticalScrollIndicator={false}
-          >
-            {searchResults.map((user) => renderUserRow(user, user.ulid))}
-          </ScrollView>
+          <View style={styles.userListContainer}>
+            <FlashList
+              data={searchResults}
+              renderItem={({ item }) => renderUserRow(item, item.ulid)}
+              keyExtractor={(item) => item.ulid}
+              showsVerticalScrollIndicator={false}
+            />
+          </View>
         </View>
       )}
 
       {searchResults.length === 0 && friends && friends.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Friends</Text>
-          <ScrollView
-            style={styles.userList}
-            showsVerticalScrollIndicator={false}
-          >
-            {friends.map((friend) =>
-              renderUserRow(
-                {
-                  ulid: friend.ulid,
-                  username: friend.username,
-                  avatar: friend.avatar,
-                },
-                friend.friendUlid
-              )
-            )}
-          </ScrollView>
+          <View style={styles.userListContainer}>
+            <FlashList
+              data={friends}
+              renderItem={({ item }) =>
+                renderUserRow(
+                  {
+                    ulid: item.ulid,
+                    username: item.username,
+                    avatar: item.avatar,
+                  },
+                  item.friendUlid
+                )
+              }
+              keyExtractor={(item) => item.ulid}
+              showsVerticalScrollIndicator={false}
+            />
+          </View>
         </View>
       )}
 
@@ -310,9 +321,15 @@ export function InvitePlayerModal({
     >
       <View style={styles.header}>
         <Text style={styles.title}>Invite Player</Text>
-        <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+        <Pressable
+          onPress={handleClose}
+          style={({ pressed }) => [
+            styles.closeButton,
+            { opacity: pressed ? 0.7 : 1 },
+          ]}
+        >
           <Text style={styles.closeButtonText}>×</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       <View style={styles.tabContainer}>
@@ -420,8 +437,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: SPACING.sm,
   },
-  userList: {
-    maxHeight: 200,
+  userListContainer: {
+    height: 200,
   },
   userRow: {
     flexDirection: 'row',

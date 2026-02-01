@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   View,
-  TouchableOpacity,
+  Pressable,
   Text,
   StyleSheet,
   LayoutChangeEvent,
@@ -49,14 +49,18 @@ export function TabBar<T extends string>({
   useEffect(() => {
     const layout = tabLayouts[value];
     if (layout) {
-      indicatorX.value = withTiming(layout.x, {
-        duration: 200,
-        easing: Easing.out(Easing.cubic),
-      });
-      indicatorWidth.value = withTiming(layout.width, {
-        duration: 200,
-        easing: Easing.out(Easing.cubic),
-      });
+      indicatorX.set(
+        withTiming(layout.x, {
+          duration: 200,
+          easing: Easing.out(Easing.cubic),
+        })
+      );
+      indicatorWidth.set(
+        withTiming(layout.width, {
+          duration: 200,
+          easing: Easing.out(Easing.cubic),
+        })
+      );
     }
   }, [value, tabLayouts, indicatorX, indicatorWidth]);
 
@@ -69,9 +73,12 @@ export function TabBar<T extends string>({
     <BlurView intensity={40} tint="dark" style={styles.tabBarBlur}>
       <View style={styles.tabBar}>
         {tabs.map((tab) => (
-          <TouchableOpacity
+          <Pressable
             key={tab.value}
-            style={styles.tab}
+            style={({ pressed }) => [
+              styles.tab,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
             onPress={() => onChange(tab.value)}
             onLayout={(e) => handleTabLayout(tab.value, e)}
           >
@@ -83,7 +90,7 @@ export function TabBar<T extends string>({
             >
               {tab.label}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         ))}
         <Animated.View style={[styles.indicator, indicatorStyle]} />
       </View>

@@ -2,7 +2,7 @@ import React from 'react';
 import {
   View,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   Text,
   ActivityIndicator,
 } from 'react-native';
@@ -36,10 +36,10 @@ function SmallActionButton({
   disabled: boolean;
 }) {
   return (
-    <TouchableOpacity
-      style={[
+    <Pressable
+      style={({ pressed }) => [
         styles.smallActionButton,
-        disabled && styles.actionButtonDisabled,
+        { opacity: pressed && !disabled ? 0.7 : disabled ? 0.5 : 1 },
       ]}
       onPress={onPress}
       disabled={disabled}
@@ -54,7 +54,7 @@ function SmallActionButton({
       >
         {label}
       </Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -116,10 +116,18 @@ export function ActionButtons({
       </View>
 
       {/* Play button */}
-      <TouchableOpacity
-        style={[
+      <Pressable
+        style={({ pressed }) => [
           styles.playButton,
           (!canPlay || disabled) && styles.playButtonDisabled,
+          {
+            opacity:
+              pressed && canPlay && !disabled
+                ? 0.7
+                : !canPlay || disabled
+                  ? 0.6
+                  : 1,
+          },
         ]}
         onPress={onPlay}
         disabled={!canPlay || disabled}
@@ -143,7 +151,7 @@ export function ActionButtons({
             )}
           </>
         )}
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 }
@@ -172,9 +180,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     minWidth: 48,
   },
-  actionButtonDisabled: {
-    opacity: 0.5,
-  },
   smallActionLabel: {
     fontSize: 10,
     color: colors.textSecondary,
@@ -193,7 +198,6 @@ const styles = StyleSheet.create({
   },
   playButtonDisabled: {
     backgroundColor: colors.buttonSecondary,
-    opacity: 0.6,
   },
   playText: {
     color: colors.textPrimary,

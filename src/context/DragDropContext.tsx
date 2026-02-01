@@ -5,7 +5,7 @@
  * - Uses Gesture.Pan() from react-native-gesture-handler v2+
  * - Uses react-native-reanimated for UI thread animations
  * - Gesture callbacks run on UI thread via worklets
- * - Only calls JS thread via runOnJS when needed (state updates)
+ * - Only calls JS thread via scheduleOnRN when needed (state updates)
  *
  * DRAG FLOW:
  * 1. User touches a draggable item
@@ -31,10 +31,10 @@ import {
   LayoutChangeEvent,
   Text,
   ScrollView,
-  TouchableOpacity,
-  Clipboard,
+  Pressable,
   StatusBar,
 } from 'react-native';
+import Clipboard from '@react-native-clipboard/clipboard';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -43,17 +43,15 @@ import Animated, {
   useAnimatedReaction,
   withTiming,
   withSpring,
-  runOnJS,
   Easing,
   SharedValue,
   interpolateColor,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import {
   TILE_SIZE,
   GAP,
   SLOT_COUNT,
-  ANIMATION_DURATION,
-  SPRING_CONFIG,
   SPRING_CONFIG_FAST,
 } from '../config/constants';
 import { Tile } from '../components/game/Tile';
@@ -118,8 +116,8 @@ interface DragDropContextType {
   settlingTarget: DropTarget;
   recallingRackIndices: number[];
   recallingRackIndicesShared: SharedValue<number[]>;
-  recallingBoardPositions: Array<{ x: number; y: number }>;
-  recallingBoardPositionsShared: SharedValue<Array<{ x: number; y: number }>>;
+  recallingBoardPositions: { x: number; y: number }[];
+  recallingBoardPositionsShared: SharedValue<{ x: number; y: number }[]>;
   boardLayout: BoardLayout | null;
 
   // Rack drop tracking (for spring animation)
@@ -131,7 +129,7 @@ interface DragDropContextType {
   setRackLayout: (layout: RackLayout) => void;
 
   // Tile data sync (for external components to update shared values)
-  updateRackTiles: (tiles: Array<TileType | null>) => void;
+  updateRackTiles: (tiles: (TileType | null)[]) => void;
 
   // Draggable registration (for hit testing)
   registerDraggable: (
@@ -162,9 +160,12 @@ interface DragDropContextType {
 
   // Recall animation
   startRecallAnimation: (
-    tiles: Array<
-      TileType & { x: number; y: number; rackIndex: number; visualSlot: number }
-    >,
+    tiles: (TileType & {
+      x: number;
+      y: number;
+      rackIndex: number;
+      visualSlot: number;
+    })[],
     onStart: () => void,
     onComplete: () => void
   ) => void;
@@ -293,9 +294,9 @@ function RackFloatingTile({
     () => draggingRackIndex.value === rackIndex,
     (isThisDragging, wasThisDragging) => {
       if (isThisDragging && !wasThisDragging) {
-        runOnJS(setIsDraggingThis)(true);
+        scheduleOnRN(setIsDraggingThis, true);
       } else if (!isThisDragging && wasThisDragging) {
-        runOnJS(setIsDraggingThis)(false);
+        scheduleOnRN(setIsDraggingThis, false);
       }
     },
     [rackIndex]
@@ -380,7 +381,7 @@ function BoardFloatingTile({
         if (tileData) {
           // Set opacity to 1 here on UI thread - fires in same frame as drag start
           opacity.value = 1;
-          runOnJS(setImmediateTile)({
+          scheduleOnRN(setImmediateTile, {
             letter: tileData[0],
             points: tileData[1],
             isBlank: tileData[2],
@@ -388,7 +389,7 @@ function BoardFloatingTile({
         }
       } else if (!pos && prevPos) {
         // Clear when dragging ends
-        runOnJS(setImmediateTile)(null);
+        scheduleOnRN(setImmediateTile, null);
       }
     },
     []
@@ -558,11 +559,11 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     []
   );
   const [recallingBoardPositions, setRecallingBoardPositions] = useState<
-    Array<{ x: number; y: number }>
+    { x: number; y: number }[]
   >([]);
 
   // Track rack tiles for per-tile floating tiles (no sync issues!)
-  const [rackTiles, setRackTiles] = useState<Array<TileType | null>>(
+  const [rackTiles, setRackTiles] = useState<(TileType | null)[]>(
     new Array(7).fill(null)
   );
 
@@ -616,7 +617,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const recallingRackIndicesShared = useSharedValue<number[]>([]);
   // Board positions being recalled - updates immediately on UI thread (no React state delay)
   const recallingBoardPositionsShared = useSharedValue<
-    Array<{ x: number; y: number }>
+    { x: number; y: number }[]
   >([]);
 
   // Flag to indicate animation was started in worklet (skip JS-side animation)
@@ -639,9 +640,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
   // Shared values for storing tile data (accessed in worklet for drag operations)
   // Format: [letter, points, isBlank] for each rack index
-  const rackTilesShared = useSharedValue<
-    Array<[string, number, boolean] | null>
-  >(new Array(7).fill(null));
+  const rackTilesShared = useSharedValue<([string, number, boolean] | null)[]>(
+    new Array(7).fill(null)
+  );
 
   // Shared values for board tiles (pending tiles only)
   // Format: Map-like structure using string keys "x,y" -> [letter, points, isBlank, rackIndex]
@@ -816,7 +817,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const containerRef = useRef<View>(null);
   const containerOffsetRef = useRef({ x: 0, y: 0 });
 
-  // Handler refs for worklet callbacks (needed because runOnJS requires stable refs)
+  // Handler refs for worklet callbacks (needed because scheduleOnRN requires stable refs)
   const handleGestureStartRef = useRef<(x: number, y: number) => void>(
     () => {}
   );
@@ -909,11 +910,12 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
   // Update rack tiles in shared values AND React state (called by external components)
   const updateRackTiles = useCallback(
-    (tiles: Array<TileType | null>) => {
+    (tiles: (TileType | null)[]) => {
       // Update shared values for worklet hit testing
-      const newRackTilesShared = new Array(7).fill(null) as Array<
-        [string, number, boolean] | null
-      >;
+      const newRackTilesShared = new Array(7).fill(null) as (
+        | [string, number, boolean]
+        | null
+      )[];
       tiles.forEach((tile, index) => {
         if (tile) {
           newRackTilesShared[index] = [tile.letter, tile.points, tile.isBlank];
@@ -1402,15 +1404,14 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         captureDebugInfo(cell);
         if (cell) {
           const target: DropTarget = { type: 'board', ...cell };
-          const cellSize = boardLayoutRef.current.cellSize;
 
           // Target = CENTER of the cell (simple!)
-          const cellCenter = getBoardCellCenter(
-            cell.x,
-            cell.y,
-            boardLayoutRef.current
-          );
-          const targetPos = toRelative(cellCenter);
+          // const cellCenter = getBoardCellCenter(
+          //   cell.x,
+          //   cell.y,
+          //   boardLayoutRef.current
+          // );
+          // const targetPos = toRelative(cellCenter);
 
           // FIX (Jan 2026): Call placement logic SYNCHRONOUSLY to ensure it happens before animation completes.
           //
@@ -1521,7 +1522,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
                 () => {
                   'worklet';
                   // Animation complete - hide floating tile
-                  runOnJS(onSettleComplete)();
+                  scheduleOnRN(onSettleComplete);
                 }
               );
             }
@@ -1567,7 +1568,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
                   // For board-to-rack: DON'T hide floating tile here
                   // The rack tile is still "used" until React updates
                   // Let onSettleComplete handle hiding after state updates
-                  runOnJS(onSettleComplete)();
+                  scheduleOnRN(onSettleComplete);
                 }
               );
               finishDrag(target, true);
@@ -1626,7 +1627,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
                 // For returning to rack: DON'T hide floating tile here
                 // If source was board, rack tile is "used" until React updates
                 // Let onSettleComplete handle hiding after state updates
-                runOnJS(onSettleComplete)();
+                scheduleOnRN(onSettleComplete);
               }
             );
             finishDrag(null, true);
@@ -1639,6 +1640,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       finishDrag(null, false);
       return null;
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       positionX,
       positionY,
@@ -1702,10 +1704,11 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         { duration: SETTLE_DURATION, easing: SETTLE_EASING },
         () => {
           'worklet';
-          runOnJS(onComplete)();
+          scheduleOnRN(onComplete);
         }
       );
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [positionX, positionY, scale, draggingRackIndexShared]
   );
 
@@ -1818,6 +1821,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
     // Placement succeeded - reset state
     resetState();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     boardFloatingOpacity,
     scale,
@@ -1841,7 +1845,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     completeSettleRef.current();
   }, []);
 
-  // Sync permutation to Zustand for persistence (called from worklet via runOnJS)
+  // Sync permutation to Zustand for persistence (called from worklet via scheduleOnRN)
   const syncPermutationToZustand = useCallback((perm: number[]) => {
     useGameStore.getState().setRackPermutation(perm);
   }, []);
@@ -1863,7 +1867,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       rackPermutationShared.value = perm;
 
       // Sync to Zustand for persistence (deferred to JS thread)
-      runOnJS(syncPermutationToZustand)(perm);
+      scheduleOnRN(syncPermutationToZustand, perm);
     },
     [rackPermutationShared, syncPermutationToZustand]
   );
@@ -1882,7 +1886,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     rackPermutationShared.value = perm;
 
     // Sync to Zustand for persistence (deferred to JS thread)
-    runOnJS(syncPermutationToZustand)(perm);
+    scheduleOnRN(syncPermutationToZustand, perm);
   }, [rackPermutationShared, syncPermutationToZustand]);
 
   // JS-callable function to update permutation (for shuffle with filledIndices)
@@ -1958,6 +1962,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       recallingRackIndicesShared.value = [];
       recallingBoardPositionsShared.value = [];
     }, 50);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recallingRackIndicesShared, recallingBoardPositionsShared]);
 
   // Ref to hold finishRecallFromRef for stable worklet access
@@ -1974,14 +1979,12 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
   const startRecallAnimation = useCallback(
     (
-      tiles: Array<
-        TileType & {
-          x: number;
-          y: number;
-          rackIndex: number;
-          visualSlot: number;
-        }
-      >,
+      tiles: (TileType & {
+        x: number;
+        y: number;
+        rackIndex: number;
+        visualSlot: number;
+      })[],
       onStart: () => void,
       onComplete: () => void
     ) => {
@@ -2055,7 +2058,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           easing: Easing.out(Easing.cubic),
         },
         () => {
-          runOnJS(onRecallComplete)();
+          scheduleOnRN(onRecallComplete);
         }
       );
 
@@ -2177,14 +2180,14 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     updatePositionRefFn.current = updatePositionRefCallback;
   }, [updatePositionRefCallback]);
 
-  // Stable wrapper functions for runOnJS (refs don't work directly)
+  // Stable wrapper functions for scheduleOnRN (refs don't work directly)
   const onGestureStart = useCallback((x: number, y: number) => {
     handleGestureStartRef.current(x, y);
   }, []);
 
-  const onGestureEnd = useCallback(() => {
-    handleGestureEndRef.current();
-  }, []);
+  // const onGestureEnd = useCallback(() => {
+  //   handleGestureEndRef.current();
+  // }, []);
 
   const onGestureEndWithPosition = useCallback((x: number, y: number) => {
     // Update position ref for drop target calculation
@@ -2193,9 +2196,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     handleGestureEndRef.current();
   }, []);
 
-  const onPositionUpdate = useCallback((x: number, y: number) => {
-    updatePositionRefFn.current(x, y);
-  }, []);
+  // const onPositionUpdate = useCallback((x: number, y: number) => {
+  //   updatePositionRefFn.current(x, y);
+  // }, []);
 
   // -------------------------------------------------------------------------
   // Native Gesture Handler (Gesture API)
@@ -2448,7 +2451,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         draggingRackIndexShared.value = rackHit.rackIndex;
 
         // Update JS state asynchronously (non-blocking)
-        runOnJS(onWorkletDragStart)(
+        scheduleOnRN(
+          onWorkletDragStart,
           { type: 'rack', rackIndex: rackHit.rackIndex },
           rackHit.tile
         );
@@ -2509,7 +2513,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         draggingRackIndexShared.value = boardHit.tile.rackIndex;
 
         // Update JS state asynchronously (non-blocking)
-        runOnJS(onWorkletDragStart)(
+        scheduleOnRN(
+          onWorkletDragStart,
           { type: 'board', x: boardHit.x, y: boardHit.y },
           { ...boardHit.tile, x: boardHit.x, y: boardHit.y }
         );
@@ -2517,7 +2522,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Fallback to JS hit testing if worklets don't find anything
-      runOnJS(onGestureStart)(screenX, screenY);
+      scheduleOnRN(onGestureStart, screenX, screenY);
     })
     .onUpdate((event) => {
       'worklet';
@@ -2603,7 +2608,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
               settlingTargetShared.value = null;
               draggingRackIndexShared.value = -1;
               boardFloatingOpacity.value = 0;
-              runOnJS(onSettleComplete)();
+              scheduleOnRN(onSettleComplete);
             }
           );
         }
@@ -2660,14 +2665,14 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
               // Animation complete - hide floating tile
               draggingRackIndexShared.value = -1;
               animationStartedInWorklet.value = false;
-              runOnJS(onSettleComplete)();
+              scheduleOnRN(onSettleComplete);
             }
           );
         }
       }
 
       // Let JS handle state updates and callbacks
-      runOnJS(onGestureEndWithPosition)(screenX, screenY);
+      scheduleOnRN(onGestureEndWithPosition, screenX, screenY);
     })
     .onFinalize((event) => {
       'worklet';
@@ -2683,7 +2688,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         // Use absoluteX/absoluteY for reliable screen coordinates on real devices
         const screenX = event.absoluteX;
         const screenY = event.absoluteY;
-        runOnJS(onGestureEndWithPosition)(screenX, screenY);
+        scheduleOnRN(onGestureEndWithPosition, screenX, screenY);
       }
     });
 
@@ -2733,6 +2738,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       dragSource,
       dragTile,
       settlingTarget,
+      recallingBoardPositions,
+      recallingRackIndices,
       recallingRackIndicesShared,
       recallingBoardPositionsShared,
       getLastRackDrop,
@@ -2777,18 +2784,24 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       <View style={styles.debugHeader}>
         <Text style={styles.debugTitle}>Drop Debug ({debugInfo.length})</Text>
         <View style={styles.debugButtons}>
-          <TouchableOpacity
+          <Pressable
             onPress={handleCopyDebug}
-            style={styles.debugButton}
+            style={({ pressed }) => [
+              styles.debugButton,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
           >
             <Text style={styles.debugButtonText}>Copy</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             onPress={handleClearDebug}
-            style={styles.debugButton}
+            style={({ pressed }) => [
+              styles.debugButton,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
           >
             <Text style={styles.debugButtonText}>Clear</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
       <ScrollView style={styles.debugScroll}>

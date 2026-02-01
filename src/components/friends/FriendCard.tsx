@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Card } from '../ui/Card';
 import { SmartAvatar } from '../ui/SmartAvatar';
@@ -8,13 +8,20 @@ import type { Friend } from '../../types';
 
 interface FriendCardProps {
   friend: Friend;
-  onPress: () => void;
+  onPress: (friendUlid: string) => void;
 }
 
-export function FriendCard({ friend, onPress }: FriendCardProps) {
+export const FriendCard = memo(function FriendCard({
+  friend,
+  onPress,
+}: FriendCardProps) {
+  const handlePress = useCallback(() => {
+    onPress(friend.friendUlid);
+  }, [onPress, friend.friendUlid]);
+
   return (
     <Card
-      onPress={onPress}
+      onPress={handlePress}
       padding="md"
       borderRadius="lg"
       marginBottom="sm"
@@ -33,7 +40,7 @@ export function FriendCard({ friend, onPress }: FriendCardProps) {
       </View>
     </Card>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

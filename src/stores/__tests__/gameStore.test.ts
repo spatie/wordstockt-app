@@ -1,8 +1,4 @@
-import {
-  useGameStore,
-  usePendingTiles,
-  useRackPermutation,
-} from '../gameStore';
+import { useGameStore } from '../gameStore';
 import {
   mockTile,
   mockPendingTile,

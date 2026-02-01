@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Animated,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   Platform,
 } from 'react-native';
@@ -108,16 +108,23 @@ export function SwapModeOverlay({
 
       {/* Button area - replaces ActionButtons when in swap mode */}
       <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.cancelButton}
+        <Pressable
+          style={({ pressed }) => [
+            styles.cancelButton,
+            { opacity: pressed && !isLoading ? 0.7 : 1 },
+          ]}
           onPress={onCancel}
           disabled={isLoading}
         >
           <Text style={styles.cancelText}>Cancel</Text>
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity
-          style={[styles.swapButton, !canSwap && styles.swapButtonDisabled]}
+        <Pressable
+          style={({ pressed }) => [
+            styles.swapButton,
+            !canSwap && styles.swapButtonDisabled,
+            { opacity: pressed && canSwap && !isLoading ? 0.7 : 1 },
+          ]}
           onPress={onSwap}
           disabled={!canSwap || isLoading}
         >
@@ -130,7 +137,7 @@ export function SwapModeOverlay({
               Swap {selectedCount} {selectedCount === 1 ? 'tile' : 'tiles'}
             </Text>
           )}
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </>
   );
@@ -287,25 +294,38 @@ export function SwapModeButtons({
   if (swapCompleted) {
     return (
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.okButton} onPress={onDismiss}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.okButton,
+            { opacity: pressed ? 0.7 : 1 },
+          ]}
+          onPress={onDismiss}
+        >
           <Text style={styles.okText}>Ok</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     );
   }
 
   return (
     <View style={styles.buttonContainer}>
-      <TouchableOpacity
-        style={styles.cancelButton}
+      <Pressable
+        style={({ pressed }) => [
+          styles.cancelButton,
+          { opacity: pressed && !isLoading ? 0.7 : 1 },
+        ]}
         onPress={onCancel}
         disabled={isLoading}
       >
         <Text style={styles.cancelText}>Cancel</Text>
-      </TouchableOpacity>
+      </Pressable>
 
-      <TouchableOpacity
-        style={[styles.swapButton, !canSwap && styles.swapButtonDisabled]}
+      <Pressable
+        style={({ pressed }) => [
+          styles.swapButton,
+          !canSwap && styles.swapButtonDisabled,
+          { opacity: pressed && canSwap && !isLoading ? 0.7 : 1 },
+        ]}
         onPress={onSwap}
         disabled={!canSwap || isLoading}
       >
@@ -316,7 +336,7 @@ export function SwapModeButtons({
             Swap {selectedCount} {selectedCount === 1 ? 'tile' : 'tiles'}
           </Text>
         )}
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 }

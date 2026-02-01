@@ -36,7 +36,6 @@ export function usePointerDrag({
   // Web: pointer down handler
   // Uses flexible typing to handle both React Native and DOM pointer events
   const handlePointerDown = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (e: {
       nativeEvent?: { pageX: number; pageY: number };
       pageX?: number;

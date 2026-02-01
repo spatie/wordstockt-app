@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-} from '@testing-library/react-native';
+import { render, screen, fireEvent } from '@testing-library/react-native';
 import LoginScreen from '../(auth)/login';
 
 // Mock expo-router
@@ -18,11 +13,17 @@ jest.mock('expo-router', () => ({
     children,
 }));
 
-// Mock the useLogin hook
+// Mock the useLogin and useGuestLogin hooks
 const mockMutate = jest.fn();
+const mockGuestMutate = jest.fn();
 jest.mock('../../src/api/queries/useAuth', () => ({
   useLogin: () => ({
     mutate: mockMutate,
+    isPending: false,
+    error: null,
+  }),
+  useGuestLogin: () => ({
+    mutate: mockGuestMutate,
     isPending: false,
     error: null,
   }),
@@ -41,7 +42,7 @@ describe('LoginScreen', () => {
   it('renders the login form', () => {
     render(<LoginScreen />);
 
-    expect(screen.getByText('Welcome Back')).toBeTruthy();
+    expect(screen.getByText('WordStockt')).toBeTruthy();
     expect(screen.getByPlaceholderText('Email or Username')).toBeTruthy();
     expect(screen.getByPlaceholderText('Password')).toBeTruthy();
     expect(screen.getByText('Log In')).toBeTruthy();
@@ -50,8 +51,15 @@ describe('LoginScreen', () => {
   it('disables login button when fields are empty', () => {
     render(<LoginScreen />);
 
-    const loginButton = screen.getByText('Log In').parent?.parent;
-    expect(loginButton?.props.accessibilityState?.disabled).toBe(true);
+    // Find the button by accessibility role (Pressable renders as accessible button)
+    // The login button text's grandparent (Pressable) has the accessibilityState
+    const loginButtonText = screen.getByText('Log In');
+    // Traverse up to find the element with accessibilityState
+    let element = loginButtonText.parent;
+    while (element && !element.props.accessibilityState) {
+      element = element.parent;
+    }
+    expect(element?.props.accessibilityState?.disabled).toBe(true);
   });
 
   it('enables login button when fields are filled', () => {

@@ -1,12 +1,5 @@
 import { z } from 'zod';
-import type {
-  Game,
-  GameListItem,
-  Player,
-  Move,
-  Tile,
-  PlacedTile,
-} from '../types';
+import type { Game, GameListItem, Player, Move, Tile } from '../types';
 
 const TileSchema = z
   .object({
@@ -15,11 +8,6 @@ const TileSchema = z
     is_blank: z.boolean(),
   })
   .passthrough();
-
-const PlacedTileSchema = TileSchema.extend({
-  x: z.number(),
-  y: z.number(),
-}).passthrough();
 
 const PlayerSchema = z
   .object({
@@ -103,18 +91,6 @@ function transformTile(data: z.infer<typeof TileSchema>): Tile {
     letter: data.letter,
     points: data.points,
     isBlank: data.is_blank,
-  };
-}
-
-function transformPlacedTile(
-  data: z.infer<typeof PlacedTileSchema>
-): PlacedTile {
-  return {
-    letter: data.letter,
-    points: data.points,
-    isBlank: data.is_blank,
-    x: data.x,
-    y: data.y,
   };
 }
 

@@ -1,17 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  TouchableOpacity,
-  View,
-  Text,
-  StyleSheet,
-  Platform,
-} from 'react-native';
+import { Pressable, View, Text, StyleSheet, Platform } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  useDerivedValue,
   withTiming,
-  withDelay,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { ScaledTile } from './Tile';
@@ -324,7 +316,7 @@ export function BoardCell({
     );
   }
 
-  // Default: TouchableOpacity for empty cells and placed tiles
+  // Default: Pressable for empty cells and placed tiles
   const handleCellPress = () => {
     if (placedTile && onPlacedTileTap) {
       onPlacedTileTap(x, y);
@@ -335,11 +327,14 @@ export function BoardCell({
 
   return (
     <View style={styles.cellWrapper}>
-      <TouchableOpacity
-        style={[styles.cell, { backgroundColor }]}
+      <Pressable
+        style={({ pressed }) => [
+          styles.cell,
+          { backgroundColor },
+          { opacity: pressed && placedTile ? 0.7 : 1 },
+        ]}
         onPress={handleCellPress}
         disabled={disabled && !placedTile}
-        activeOpacity={placedTile ? 0.7 : 1}
       >
         <CellContent
           x={x}
@@ -352,7 +347,7 @@ export function BoardCell({
           isLastMove={isLastMove}
           cellSize={cellSize}
         />
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 }
@@ -415,9 +410,11 @@ function AnimatedWordHighlight({ highlight }: AnimatedWordHighlightProps) {
       prevHighlight.current = highlight;
       const timer = setTimeout(() => {
         setShouldRender(true);
-        opacity.value = withTiming(1, {
-          duration: HIGHLIGHT_ANIMATION_DURATION,
-        });
+        opacity.set(
+          withTiming(1, {
+            duration: HIGHLIGHT_ANIMATION_DURATION,
+          })
+        );
       }, HIGHLIGHT_ANIMATION_DELAY);
       return () => clearTimeout(timer);
     }
@@ -426,13 +423,13 @@ function AnimatedWordHighlight({ highlight }: AnimatedWordHighlightProps) {
       // Changing between valid/invalid - keep visible, just update color
       prevHighlight.current = highlight;
       setShouldRender(true);
-      opacity.value = 1;
+      opacity.set(1);
     }
 
     if (!isNowVisible && wasVisible) {
       // Disappearing - fade out, then stop rendering
       prevHighlight.current = highlight;
-      opacity.value = withTiming(0, { duration: HIGHLIGHT_ANIMATION_DURATION });
+      opacity.set(withTiming(0, { duration: HIGHLIGHT_ANIMATION_DURATION }));
       const timer = setTimeout(() => {
         setShouldRender(false);
       }, HIGHLIGHT_ANIMATION_DURATION);

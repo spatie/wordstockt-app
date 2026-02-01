@@ -36,15 +36,33 @@ jest.mock('../../../api/queries/useInvites', () => ({
   }),
 }));
 
-const mockSearchUsers = jest.fn();
-jest.mock('../../../api/queries/useUsers', () => ({
-  useSearchUsers: (query: string) => mockSearchUsers(query),
+// Mock apiClient for search functionality
+const mockApiClientGet = jest.fn();
+jest.mock('../../../api/client', () => ({
+  apiClient: {
+    get: (...args: unknown[]) => mockApiClientGet(...args),
+  },
+  getApiError: (err: unknown) => ({
+    message: (err as Error)?.message || 'Error',
+  }),
 }));
 
 jest.mock('../../../api/queries/useFriends', () => ({
   useFriends: () => ({
     data: [],
     isLoading: false,
+  }),
+}));
+
+// Mock useCreateInviteLink
+const mockCreateInviteLinkMutateAsync = jest.fn();
+const mockCreateInviteLinkReset = jest.fn();
+jest.mock('../../../api/queries/useInviteLink', () => ({
+  useCreateInviteLink: () => ({
+    mutateAsync: mockCreateInviteLinkMutateAsync,
+    isPending: false,
+    error: null,
+    reset: mockCreateInviteLinkReset,
   }),
 }));
 
@@ -58,10 +76,7 @@ describe('InvitePlayerModal', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockSearchUsers.mockReturnValue({
-      data: [],
-      isLoading: false,
-    });
+    mockApiClientGet.mockResolvedValue({ data: { data: [] } });
   });
 
   it('renders the modal when visible', () => {
@@ -86,32 +101,33 @@ describe('InvitePlayerModal', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('shows no match message when search has no exact match', () => {
-    mockSearchUsers.mockReturnValue({
-      data: [
-        {
-          ulid: '01hxyz0000000similar01',
-          username: 'similar_user',
-          avatar: null,
-        },
-      ],
-      isLoading: false,
-    });
+  it('shows no users found message when search returns empty', async () => {
+    mockApiClientGet.mockResolvedValue({ data: { data: [] } });
 
     render(<InvitePlayerModal {...defaultProps} />);
 
     const searchInput = screen.getByPlaceholderText('Search by username');
-    fireEvent.changeText(searchInput, 'test');
+    fireEvent.changeText(searchInput, 'testuser');
 
-    expect(screen.getByText('No user found with username "test"')).toBeTruthy();
+    // Press the Search button
+    fireEvent.press(screen.getByText('Search'));
+
+    await waitFor(() => {
+      expect(screen.getByText('No users found')).toBeTruthy();
+    });
   });
 
-  it('shows user card when exact username match is found', () => {
-    mockSearchUsers.mockReturnValue({
-      data: [
-        { ulid: '01hxyz000000000testuser', username: 'testuser', avatar: null },
-      ],
-      isLoading: false,
+  it('shows user card when search returns results', async () => {
+    mockApiClientGet.mockResolvedValue({
+      data: {
+        data: [
+          {
+            ulid: '01hxyz000000000testuser',
+            username: 'testuser',
+            avatar: null,
+          },
+        ],
+      },
     });
 
     render(<InvitePlayerModal {...defaultProps} />);
@@ -119,34 +135,25 @@ describe('InvitePlayerModal', () => {
     const searchInput = screen.getByPlaceholderText('Search by username');
     fireEvent.changeText(searchInput, 'testuser');
 
-    expect(screen.getByText('testuser')).toBeTruthy();
-    expect(
-      screen.queryByText('No user found with username "testuser"')
-    ).toBeNull();
-  });
+    // Press the Search button
+    fireEvent.press(screen.getByText('Search'));
 
-  it('matches username case-insensitively', () => {
-    mockSearchUsers.mockReturnValue({
-      data: [
-        { ulid: '01hxyz000000000testuser', username: 'TestUser', avatar: null },
-      ],
-      isLoading: false,
+    await waitFor(() => {
+      expect(screen.getByText('testuser')).toBeTruthy();
     });
-
-    render(<InvitePlayerModal {...defaultProps} />);
-
-    const searchInput = screen.getByPlaceholderText('Search by username');
-    fireEvent.changeText(searchInput, 'testuser');
-
-    expect(screen.getByText('TestUser')).toBeTruthy();
   });
 
-  it('calls invite mutation when Send Invitation is pressed', async () => {
-    mockSearchUsers.mockReturnValue({
-      data: [
-        { ulid: '01hxyz000000000testuser', username: 'testuser', avatar: null },
-      ],
-      isLoading: false,
+  it('calls invite mutation when Invite button is pressed', async () => {
+    mockApiClientGet.mockResolvedValue({
+      data: {
+        data: [
+          {
+            ulid: '01hxyz000000000testuser',
+            username: 'testuser',
+            avatar: null,
+          },
+        ],
+      },
     });
     mockMutateAsync.mockResolvedValue({});
 
@@ -155,7 +162,15 @@ describe('InvitePlayerModal', () => {
     const searchInput = screen.getByPlaceholderText('Search by username');
     fireEvent.changeText(searchInput, 'testuser');
 
-    fireEvent.press(screen.getByText('Send Invitation'));
+    // Press the Search button
+    fireEvent.press(screen.getByText('Search'));
+
+    await waitFor(() => {
+      expect(screen.getByText('testuser')).toBeTruthy();
+    });
+
+    // Press the Invite button for the user
+    fireEvent.press(screen.getByText('Invite'));
 
     await waitFor(() => {
       expect(mockMutateAsync).toHaveBeenCalledWith({
@@ -169,11 +184,16 @@ describe('InvitePlayerModal', () => {
     const onSuccess = jest.fn();
     const onClose = jest.fn();
 
-    mockSearchUsers.mockReturnValue({
-      data: [
-        { ulid: '01hxyz000000000testuser', username: 'testuser', avatar: null },
-      ],
-      isLoading: false,
+    mockApiClientGet.mockResolvedValue({
+      data: {
+        data: [
+          {
+            ulid: '01hxyz000000000testuser',
+            username: 'testuser',
+            avatar: null,
+          },
+        ],
+      },
     });
     mockMutateAsync.mockResolvedValue({});
 
@@ -188,7 +208,15 @@ describe('InvitePlayerModal', () => {
     const searchInput = screen.getByPlaceholderText('Search by username');
     fireEvent.changeText(searchInput, 'testuser');
 
-    fireEvent.press(screen.getByText('Send Invitation'));
+    // Press the Search button
+    fireEvent.press(screen.getByText('Search'));
+
+    await waitFor(() => {
+      expect(screen.getByText('testuser')).toBeTruthy();
+    });
+
+    // Press the Invite button
+    fireEvent.press(screen.getByText('Invite'));
 
     await waitFor(() => {
       expect(onSuccess).toHaveBeenCalled();
@@ -196,19 +224,17 @@ describe('InvitePlayerModal', () => {
     });
   });
 
-  it('disables Send Invitation button when no user is matched', () => {
-    mockSearchUsers.mockReturnValue({
-      data: [],
-      isLoading: false,
-    });
-
+  it('shows validation error when search query is too short', () => {
     render(<InvitePlayerModal {...defaultProps} />);
 
     const searchInput = screen.getByPlaceholderText('Search by username');
-    fireEvent.changeText(searchInput, 'nonexistent');
+    fireEvent.changeText(searchInput, 'a');
 
-    const button = screen.getByText('Send Invitation');
-    // Button should have disabled styles (opacity 0.5)
-    expect(button).toBeTruthy();
+    // Press the Search button
+    fireEvent.press(screen.getByText('Search'));
+
+    expect(
+      screen.getByText('Username must be at least 2 characters')
+    ).toBeTruthy();
   });
 });

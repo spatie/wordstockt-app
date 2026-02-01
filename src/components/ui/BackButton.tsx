@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -25,11 +25,14 @@ export function BackButton({ backTo, onBack }: BackButtonProps) {
   };
 
   return (
-    <TouchableOpacity onPress={handleBack} activeOpacity={0.7}>
+    <Pressable
+      onPress={handleBack}
+      style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+    >
       <View style={styles.button}>
         <Ionicons name="chevron-back" size={20} color="#FFF" />
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 

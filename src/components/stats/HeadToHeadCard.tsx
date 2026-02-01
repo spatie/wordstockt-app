@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { colors } from '../../config/theme';
 import { SmartAvatar } from '../ui/SmartAvatar';
 import type { HeadToHeadRecord } from '../../types';
@@ -15,11 +15,13 @@ export function HeadToHeadCard({ record, onPress }: HeadToHeadCardProps) {
   const isTied = record.wins === record.losses;
 
   return (
-    <TouchableOpacity
-      style={styles.container}
+    <Pressable
+      style={({ pressed }) => [
+        styles.container,
+        { opacity: pressed && onPress ? 0.7 : 1 },
+      ]}
       onPress={onPress}
       disabled={!onPress}
-      activeOpacity={onPress ? 0.7 : 1}
     >
       <View style={styles.header}>
         <View style={styles.opponentInfo}>
@@ -94,7 +96,7 @@ export function HeadToHeadCard({ record, onPress }: HeadToHeadCardProps) {
           <Text style={styles.bestWordScore}>{record.bestWord.score} pts</Text>
         </View>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 

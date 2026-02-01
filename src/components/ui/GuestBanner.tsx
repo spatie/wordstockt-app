@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { colors } from '../../config/theme';
@@ -21,19 +21,22 @@ export function GuestBanner() {
         <Ionicons name="person-outline" size={16} color={colors.primary} />
       </View>
       <Text style={styles.text}>Playing as guest</Text>
-      <TouchableOpacity
+      <Pressable
         onPress={() => router.push(ROUTES.CONVERT_ACCOUNT)}
-        style={styles.button}
+        style={({ pressed }) => [styles.button, { opacity: pressed ? 0.7 : 1 }]}
       >
         <Text style={styles.buttonText}>Create Account</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
+      </Pressable>
+      <Pressable
         onPress={() => setIsDismissed(true)}
-        style={styles.dismissButton}
+        style={({ pressed }) => [
+          styles.dismissButton,
+          { opacity: pressed ? 0.7 : 1 },
+        ]}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <Ionicons name="close" size={16} color={colors.textMuted} />
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 }

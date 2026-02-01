@@ -33,7 +33,7 @@ export default function DeleteAccountScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Delete Account</Text>
         <Text style={styles.subtitle}>
-          We're sorry to see you go. Please read the following information
+          We&apos;re sorry to see you go. Please read the following information
           before deleting your account.
         </Text>
 

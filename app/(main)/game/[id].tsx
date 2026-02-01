@@ -3,7 +3,7 @@ import {
   View,
   StyleSheet,
   Text,
-  TouchableOpacity,
+  Pressable,
   Animated,
   Platform,
 } from 'react-native';
@@ -168,9 +168,7 @@ function GameScreenContent() {
     isGameActive,
     errorMessage,
     isSubmitting,
-    isPassing,
     isSwapping,
-    isResigning,
     isSwapMode,
     selectedSwapIndices,
     swapCompleted,
@@ -444,12 +442,15 @@ function GameScreenContent() {
       <View style={styles.container}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Failed to load game</Text>
-          <TouchableOpacity
+          <Pressable
             onPress={() => refetch()}
-            style={styles.retryButton}
+            style={({ pressed }) => [
+              styles.retryButton,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
           >
             <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     );
@@ -480,8 +481,9 @@ function GameScreenContent() {
   const showGameEndModal = gameJustEnded && !gameEndModalDismissed;
 
   // Calculate final scores for game end modal
-  const myScore = currentPlayer?.score ?? 0;
-  const opponentScore = opponent?.score ?? 0;
+  // Unused?
+  // const myScore = currentPlayer?.score ?? 0;
+  // const opponentScore = opponent?.score ?? 0;
 
   // Show rematch modal after game end modal and achievements are dismissed
   const showRematchModal =

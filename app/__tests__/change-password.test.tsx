@@ -36,14 +36,6 @@ jest.mock('../../src/components/ui/AppHeader', () => ({
   AppHeader: () => null,
 }));
 
-// Mock SnackbarProvider
-const mockShowSnackbar = jest.fn();
-jest.mock('../../src/components/ui/SnackbarProvider', () => ({
-  useSnackbar: () => ({
-    showSnackbar: mockShowSnackbar,
-  }),
-}));
-
 describe('ChangePasswordScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -99,7 +91,7 @@ describe('ChangePasswordScreen', () => {
     ).toBeTruthy();
   });
 
-  it('submits form and shows success message', async () => {
+  it('submits form and navigates back on success', async () => {
     mockMutateAsync.mockResolvedValue({});
     render(<ChangePasswordScreen />);
 
@@ -125,12 +117,15 @@ describe('ChangePasswordScreen', () => {
         password: 'newpassword123',
         password_confirmation: 'newpassword123',
       });
-      expect(mockShowSnackbar).toHaveBeenCalledWith(
-        'Password changed successfully',
-        'success'
-      );
-      expect(mockBack).toHaveBeenCalled();
     });
+
+    // AnimatedSaveButton calls onSuccess after 800ms delay
+    await waitFor(
+      () => {
+        expect(mockBack).toHaveBeenCalled();
+      },
+      { timeout: 2000 }
+    );
   });
 
   it('shows API error when change password fails', async () => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, type StyleProp, type ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Avatar } from './Avatar';
 import { ROUTES } from '../../config/routes';
@@ -87,13 +87,12 @@ export function SmartAvatar({
   }
 
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={handlePress}
-      activeOpacity={0.7}
-      style={wrapperStyle}
+      style={({ pressed }) => [wrapperStyle, { opacity: pressed ? 0.7 : 1 }]}
       testID={testID}
     >
       {avatarElement}
-    </TouchableOpacity>
+    </Pressable>
   );
 }

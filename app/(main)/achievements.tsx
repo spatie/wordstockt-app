@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
   View,
-  FlatList,
   StyleSheet,
   RefreshControl,
   Text,
@@ -13,7 +12,7 @@ import { useAchievements } from '../../src/api/queries/useAchievements';
 import { ErrorView } from '../../src/components/ui/ErrorView';
 import { Card } from '../../src/components/ui/Card';
 import { colors } from '../../src/config/theme';
-import { SPACING, RADIUS } from '../../src/config/constants';
+import { SPACING } from '../../src/config/constants';
 import type { UserAchievement } from '../../src/types';
 
 const CATEGORY_LABELS: Record<string, string> = {

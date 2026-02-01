@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Dimensions,
-} from 'react-native';
+import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 import { colors } from '../../config/theme';
 import type { EloHistoryEntry } from '../../types';
@@ -54,26 +48,34 @@ export function EloHistoryCard({
       <View style={styles.header}>
         <Text style={styles.title}>ELO HISTORY</Text>
         <View style={styles.toggleContainer}>
-          <TouchableOpacity
+          <Pressable
             onPress={() => setShowAll(false)}
-            style={[styles.toggleButton, !showAll && styles.toggleButtonActive]}
+            style={({ pressed }) => [
+              styles.toggleButton,
+              !showAll && styles.toggleButtonActive,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
           >
             <Text
               style={[styles.toggleText, !showAll && styles.toggleTextActive]}
             >
               Recent
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             onPress={() => setShowAll(true)}
-            style={[styles.toggleButton, showAll && styles.toggleButtonActive]}
+            style={({ pressed }) => [
+              styles.toggleButton,
+              showAll && styles.toggleButtonActive,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
           >
             <Text
               style={[styles.toggleText, showAll && styles.toggleTextActive]}
             >
               All
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
 

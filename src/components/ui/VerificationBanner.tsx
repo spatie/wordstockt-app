@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../../config/theme';
@@ -29,17 +29,20 @@ export function VerificationBanner() {
           Please verify your email. {daysRemaining} day
           {daysRemaining !== 1 ? 's' : ''} remaining.
         </Text>
-        <TouchableOpacity
+        <Pressable
           onPress={() => resend()}
           disabled={isPending}
-          style={styles.button}
+          style={({ pressed }) => [
+            styles.button,
+            { opacity: pressed && !isPending ? 0.7 : 1 },
+          ]}
         >
           {isPending ? (
             <ActivityIndicator size="small" color="#000" />
           ) : (
             <Text style={styles.buttonText}>Resend</Text>
           )}
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </View>
   );

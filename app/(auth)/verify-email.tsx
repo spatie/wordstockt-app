@@ -3,11 +3,10 @@ import {
   View,
   StyleSheet,
   Text,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import {
   useResendVerification,
   useLogout,
@@ -62,8 +61,12 @@ export default function VerifyEmailScreen() {
           </View>
         )}
 
-        <TouchableOpacity
-          style={[styles.button, isResending && styles.buttonDisabled]}
+        <Pressable
+          style={({ pressed }) => [
+            styles.button,
+            isResending && styles.buttonDisabled,
+            { opacity: pressed && !isResending ? 0.7 : 1 },
+          ]}
           onPress={() => resend()}
           disabled={isResending}
         >
@@ -72,17 +75,20 @@ export default function VerifyEmailScreen() {
           ) : (
             <Text style={styles.buttonText}>Resend Verification Email</Text>
           )}
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity
-          style={styles.secondaryButton}
+        <Pressable
+          style={({ pressed }) => [
+            styles.secondaryButton,
+            { opacity: pressed && !isLoggingOut ? 0.7 : 1 },
+          ]}
           onPress={() => logout()}
           disabled={isLoggingOut}
         >
           <Text style={styles.secondaryButtonText}>
             {isLoggingOut ? 'Logging out...' : 'Log out'}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </View>
   );

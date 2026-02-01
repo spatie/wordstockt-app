@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Animated, TouchableOpacity, Platform } from 'react-native';
+import { StyleSheet, Animated, Pressable, Platform } from 'react-native';
 import { Tile } from './Tile';
 import {
   TILE_SIZE,
@@ -99,9 +99,11 @@ export function SelectableTile({
   const isInteractive = !swapCompleted;
 
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={isInteractive ? onToggle : undefined}
-      activeOpacity={isInteractive ? 0.8 : 1}
+      style={({ pressed }) => ({
+        opacity: pressed && isInteractive ? 0.8 : 1,
+      })}
       disabled={!isInteractive}
     >
       <Animated.View
@@ -119,7 +121,7 @@ export function SelectableTile({
           isSelected={isSelected || (isSwapped && swapCompleted)}
         />
       </Animated.View>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 

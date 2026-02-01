@@ -26,7 +26,7 @@ async function checkForUpdates() {
 
     await Updates.fetchUpdateAsync();
     await Updates.reloadAsync();
-  } catch (error) {
+  } catch {
     // expo-updates not available in dev client
   }
 }

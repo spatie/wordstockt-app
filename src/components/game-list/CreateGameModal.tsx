@@ -52,7 +52,7 @@ function BoardOption({
   const progress = useSharedValue(selected ? 1 : 0);
 
   useEffect(() => {
-    progress.value = withTiming(selected ? 1 : 0, { duration: 200 });
+    progress.set(withTiming(selected ? 1 : 0, { duration: 200 }));
   }, [selected, progress]);
 
   const selectedOverlayStyle = useAnimatedStyle(() => ({
