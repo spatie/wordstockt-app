@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,9 +6,12 @@ import {
   SectionList,
   ActivityIndicator,
   Animated,
+  Pressable,
+  Alert,
 } from 'react-native';
 import { BaseModal } from '../ui/BaseModal';
 import { Button } from '../ui/Button';
+import { useReportWord } from '../../api/queries/useDictionary';
 import { colors } from '../../config/theme';
 import { SPACING, RADIUS } from '../../config/constants';
 import type { WordInfo } from '../../types';
@@ -18,6 +21,7 @@ interface WordInfoModalProps {
   onClose: () => void;
   words: WordInfo[] | undefined;
   isLoading: boolean;
+  language: string;
 }
 
 function formatDate(dateString: string | null): string {
@@ -142,6 +146,60 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   );
 }
 
+function ReportButton({
+  word,
+  language,
+  onReport,
+  isReporting,
+  isReported,
+}: {
+  word: string;
+  language: string;
+  onReport: (word: string, language: string) => void;
+  isReporting: boolean;
+  isReported: boolean;
+}) {
+  const handlePress = () => {
+    Alert.alert(
+      'Report Word?',
+      `Are you sure you want to report "${word}" as an invalid word?\n\nOur team will review this report.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Report',
+          style: 'destructive',
+          onPress: () => onReport(word, language),
+        },
+      ]
+    );
+  };
+
+  if (isReported) {
+    return (
+      <View style={styles.reportButtonReported}>
+        <Text style={styles.reportButtonReportedIcon}>✓</Text>
+        <Text style={styles.reportButtonReportedText}>Reported</Text>
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.reportButton,
+        pressed && styles.reportButtonPressed,
+      ]}
+      onPress={handlePress}
+      disabled={isReporting}
+    >
+      <Text style={styles.reportButtonIcon}>⚑</Text>
+      <Text style={styles.reportButtonText}>
+        {isReporting ? 'Reporting...' : 'Report word'}
+      </Text>
+    </Pressable>
+  );
+}
+
 function WordHeader({ word }: { word: WordInfo }) {
   return (
     <View style={styles.wordHeader}>
@@ -156,7 +214,19 @@ function WordHeader({ word }: { word: WordInfo }) {
   );
 }
 
-function WordContent({ word }: { word: WordInfo }) {
+function WordContent({
+  word,
+  language,
+  onReport,
+  isReporting,
+  reportedWords,
+}: {
+  word: WordInfo;
+  language: string;
+  onReport: (word: string, language: string) => void;
+  isReporting: boolean;
+  reportedWords: Set<string>;
+}) {
   const { definition } = word;
   const senses = definition?.senses ?? [];
   const showNumbers = senses.length > 1;
@@ -166,6 +236,16 @@ function WordContent({ word }: { word: WordInfo }) {
 
   return (
     <View style={styles.wordContent}>
+      <FadeSlideIn delay={getDelay()}>
+        <ReportButton
+          word={word.word}
+          language={language}
+          onReport={onReport}
+          isReporting={isReporting}
+          isReported={reportedWords.has(word.word)}
+        />
+      </FadeSlideIn>
+
       {senses.length > 0 && (
         <View style={styles.definitionSection}>
           <FadeSlideIn delay={getDelay()}>
@@ -207,10 +287,27 @@ export function WordInfoModal({
   onClose,
   words,
   isLoading,
+  language,
 }: WordInfoModalProps) {
   // Cache content while modal is closing to prevent jarring disappearance
   const cachedWordsRef = useRef<WordInfo[] | undefined>(undefined);
   const cachedLoadingRef = useRef(false);
+
+  // Track words that have been reported in this session
+  const [reportedWords, setReportedWords] = useState<Set<string>>(new Set());
+
+  const reportWord = useReportWord();
+
+  const handleReport = (word: string, lang: string) => {
+    reportWord.mutate(
+      { word, language: lang },
+      {
+        onSuccess: () => {
+          setReportedWords((prev) => new Set(prev).add(word));
+        },
+      }
+    );
+  };
 
   useEffect(() => {
     if (visible) {
@@ -251,7 +348,15 @@ export function WordInfoModal({
         renderSectionHeader={({ section }) => (
           <WordHeader word={section.word} />
         )}
-        renderItem={({ item }) => <WordContent word={item} />}
+        renderItem={({ item }) => (
+          <WordContent
+            word={item}
+            language={language}
+            onReport={handleReport}
+            isReporting={reportWord.isPending}
+            reportedWords={reportedWords}
+          />
+        )}
         stickySectionHeadersEnabled
         showsVerticalScrollIndicator={false}
       />
@@ -433,5 +538,43 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     padding: SPACING.xl,
+  },
+  reportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: RADIUS.sm,
+    backgroundColor: 'rgba(139, 157, 195, 0.1)',
+    marginBottom: SPACING.sm,
+  },
+  reportButtonPressed: {
+    backgroundColor: 'rgba(231, 76, 60, 0.15)',
+  },
+  reportButtonIcon: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  reportButtonText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  reportButtonReported: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 4,
+    paddingVertical: 6,
+    marginBottom: SPACING.sm,
+  },
+  reportButtonReportedIcon: {
+    fontSize: 11,
+    color: colors.gameWon,
+  },
+  reportButtonReportedText: {
+    fontSize: 12,
+    color: colors.textMuted,
   },
 });

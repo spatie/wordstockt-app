@@ -9,49 +9,49 @@ import {
 } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useGame } from '../../../src/api/queries/useGame';
-import { useValidation } from '../../../src/api/queries/useValidation';
-import { useWordInfo } from '../../../src/api/queries/useWordInfo';
+import { useGame } from '../../../../src/api/queries/useGame';
+import { useValidation } from '../../../../src/api/queries/useValidation';
+import { useWordInfo } from '../../../../src/api/queries/useWordInfo';
 import {
   useRevokeInvitation,
   useAcceptInvitation,
   useDeclineInvitation,
-} from '../../../src/api/queries/useInvitations';
-import { useJoinGame } from '../../../src/api/queries/useGames';
-import { useAuthStore } from '../../../src/stores/authStore';
-import { useGameStore } from '../../../src/stores/gameStore';
-import { useNavigationStore } from '../../../src/stores/navigationStore';
-import { useNotificationStore } from '../../../src/stores/notificationStore';
+} from '../../../../src/api/queries/useInvitations';
+import { useJoinGame } from '../../../../src/api/queries/useGames';
+import { useAuthStore } from '../../../../src/stores/authStore';
+import { useGameStore } from '../../../../src/stores/gameStore';
+import { useNavigationStore } from '../../../../src/stores/navigationStore';
+import { useNotificationStore } from '../../../../src/stores/notificationStore';
 import {
   useAchievementStore,
   useCurrentAchievement,
-} from '../../../src/stores/achievementStore';
-import { useWebSocket } from '../../../src/hooks/useWebSocket';
-import { useGameInteractions } from '../../../src/hooks/useGameInteractions';
-import { useConflictingTilesRecall } from '../../../src/hooks/useConflictingTilesRecall';
-import { useRematch } from '../../../src/hooks/useRematch';
-import { DragDropProvider } from '../../../src/context/DragDropContext';
-import { GameBoard } from '../../../src/components/game/GameBoard';
-import { TileRack } from '../../../src/components/game/TileRack';
-import { ActionButtons } from '../../../src/components/game/ActionButtons';
-import { ScoreBar } from '../../../src/components/game/ScoreBar';
+} from '../../../../src/stores/achievementStore';
+import { useWebSocket } from '../../../../src/hooks/useWebSocket';
+import { useGameInteractions } from '../../../../src/hooks/useGameInteractions';
+import { useConflictingTilesRecall } from '../../../../src/hooks/useConflictingTilesRecall';
+import { useRematch } from '../../../../src/hooks/useRematch';
+import { DragDropProvider } from '../../../../src/context/DragDropContext';
+import { GameBoard } from '../../../../src/components/game/GameBoard';
+import { TileRack } from '../../../../src/components/game/TileRack';
+import { ActionButtons } from '../../../../src/components/game/ActionButtons';
+import { ScoreBar } from '../../../../src/components/game/ScoreBar';
 import {
   SwapModeDarkOverlay,
   SwapModeButtons,
-} from '../../../src/components/game/SwapModeOverlay';
-import { InvitePlayerModal } from '../../../src/components/game/InvitePlayerModal';
-import { BlankTileModal } from '../../../src/components/game/BlankTileModal';
-import { WordInfoModal } from '../../../src/components/game/WordInfoModal';
-import { LoadingView } from '../../../src/components/ui/LoadingView';
-import { FeedbackModal } from '../../../src/components/ui/FeedbackModal';
-import { AchievementModal } from '../../../src/components/ui/AchievementModal';
-import { RematchModal } from '../../../src/components/ui/RematchModal';
-import { Button } from '../../../src/components/ui/Button';
-import { showConfirm } from '../../../src/utils/alerts';
-import { colors } from '../../../src/config/theme';
-import { SPACING, RADIUS } from '../../../src/config/constants';
-import { ROUTES } from '../../../src/config/routes';
-import { mockGame } from '../../../src/config/mockData';
+} from '../../../../src/components/game/SwapModeOverlay';
+import { InvitePlayerModal } from '../../../../src/components/game/InvitePlayerModal';
+import { BlankTileModal } from '../../../../src/components/game/BlankTileModal';
+import { WordInfoModal } from '../../../../src/components/game/WordInfoModal';
+import { LoadingView } from '../../../../src/components/ui/LoadingView';
+import { FeedbackModal } from '../../../../src/components/ui/FeedbackModal';
+import { AchievementModal } from '../../../../src/components/ui/AchievementModal';
+import { RematchModal } from '../../../../src/components/ui/RematchModal';
+import { Button } from '../../../../src/components/ui/Button';
+import { showConfirm } from '../../../../src/utils/alerts';
+import { colors } from '../../../../src/config/theme';
+import { SPACING, RADIUS } from '../../../../src/config/constants';
+import { ROUTES } from '../../../../src/config/routes';
+import { mockGame } from '../../../../src/config/mockData';
 
 // Removed BACK_DESTINATION - let AppHeader use router.back() for correct animation
 
@@ -132,6 +132,11 @@ function GameScreenContent() {
   const actionButtonsOpacity = useRef(new Animated.Value(1)).current;
   const swapButtonsOpacity = useRef(new Animated.Value(0)).current;
 
+  // Animation values for UI entry
+  const uiEntryOpacity = useRef(new Animated.Value(0)).current;
+  const uiEntryTranslate = useRef(new Animated.Value(20)).current;
+  const hasAnimatedEntry = useRef(false);
+
   const { data: apiGame, isLoading, error, refetch } = useGame(gameUlid);
   const setValidationResult = useGameStore((s) => s.setValidationResult);
   const revokeInvitation = useRevokeInvitation();
@@ -159,6 +164,28 @@ function GameScreenContent() {
 
   // Detect and recall tiles that conflict with opponent's played tiles
   useConflictingTilesRecall(game);
+
+  // Trigger UI entry animation when game loads
+  useEffect(() => {
+    if (game && !hasAnimatedEntry.current) {
+      hasAnimatedEntry.current = true;
+      // Small delay to let board start its animation first
+      setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(uiEntryOpacity, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(uiEntryTranslate, {
+            toValue: 0,
+            duration: 250,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }, 100);
+    }
+  }, [game, uiEntryOpacity, uiEntryTranslate]);
 
   // Get all game interaction handlers from the hook
   const {
@@ -523,13 +550,20 @@ function GameScreenContent() {
     <View style={styles.container}>
       {/* Board area - wrapped so overlay can cover just this section */}
       <View style={styles.boardSection}>
-        <ScoreBar
-          game={gameData}
-          currentUserUlid={userUlid}
-          onInvite={() => setInviteModalVisible(true)}
-          onRevokeInvitation={handleRevokeInvitation}
-          tilesPlayed={pendingTiles.length}
-        />
+        <Animated.View
+          style={{
+            opacity: uiEntryOpacity,
+            transform: [{ translateY: uiEntryTranslate }],
+          }}
+        >
+          <ScoreBar
+            game={gameData}
+            currentUserUlid={userUlid}
+            onInvite={() => setInviteModalVisible(true)}
+            onRevokeInvitation={handleRevokeInvitation}
+            tilesPlayed={pendingTiles.length}
+          />
+        </Animated.View>
         <View style={styles.boardWrapper}>
           <GameBoard
             game={gameData}
@@ -581,13 +615,28 @@ function GameScreenContent() {
         </View>
       ) : (
         <>
-          <TileRack
-            tiles={gameData.myRack}
-            disabled={!isGameActive}
-            onTileDrop={handleRackTileDrop}
-          />
+          <Animated.View
+            style={{
+              opacity: uiEntryOpacity,
+              transform: [{ translateY: uiEntryTranslate }],
+            }}
+          >
+            <TileRack
+              tiles={gameData.myRack}
+              disabled={!isGameActive}
+              onTileDrop={handleRackTileDrop}
+            />
+          </Animated.View>
           {/* Button area with crossfade animation */}
-          <View style={styles.buttonArea}>
+          <Animated.View
+            style={[
+              styles.buttonArea,
+              {
+                opacity: uiEntryOpacity,
+                transform: [{ translateY: uiEntryTranslate }],
+              },
+            ]}
+          >
             {/* Action buttons - always rendered, animated opacity */}
             <Animated.View
               style={[
@@ -630,7 +679,7 @@ function GameScreenContent() {
                 />
               </Animated.View>
             )}
-          </View>
+          </Animated.View>
         </>
       )}
       <FeedbackModal
@@ -673,6 +722,7 @@ function GameScreenContent() {
         onClose={() => setWordInfoPosition(null)}
         words={wordInfo}
         isLoading={isWordInfoLoading}
+        language={gameData.language}
       />
       <AchievementModal
         visible={
