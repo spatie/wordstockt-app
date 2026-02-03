@@ -343,7 +343,9 @@ export function GlowingBackground() {
         size={orbSize6}
         colors={randomValues.colors[5]!}
         opacity={0.28}
-        initialX={SCREEN_WIDTH - orbSize6 * 0.25 + randomValues.positionOffsets[5]!.x}
+        initialX={
+          SCREEN_WIDTH - orbSize6 * 0.25 + randomValues.positionOffsets[5]!.x
+        }
         initialY={SCREEN_HEIGHT * 0.55 + randomValues.positionOffsets[5]!.y}
         moveRangeX={-90}
         moveRangeY={-80}
@@ -362,7 +364,9 @@ export function GlowingBackground() {
         colors={randomValues.colors[6]!}
         opacity={0.32}
         initialX={SCREEN_WIDTH * 0.5 + randomValues.positionOffsets[6]!.x}
-        initialY={SCREEN_HEIGHT - orbSize7 * 0.3 + randomValues.positionOffsets[6]!.y}
+        initialY={
+          SCREEN_HEIGHT - orbSize7 * 0.3 + randomValues.positionOffsets[6]!.y
+        }
         moveRangeX={-85}
         moveRangeY={-100}
         moveDuration={23000}

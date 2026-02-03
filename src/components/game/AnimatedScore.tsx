@@ -85,7 +85,14 @@ const AnimatedDigit = memo(function AnimatedDigit({
       <Animated.View style={[styles.digitStrip, animatedStyle]}>
         {['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-'].map((d) => (
           <View key={d} style={[styles.digitWrapper, { height: digitHeight }]}>
-            <Text style={[styles.digit, { fontSize, lineHeight: digitHeight, minWidth: fontSize * 0.7 }]}>{d}</Text>
+            <Text
+              style={[
+                styles.digit,
+                { fontSize, lineHeight: digitHeight, minWidth: fontSize * 0.7 },
+              ]}
+            >
+              {d}
+            </Text>
           </View>
         ))}
       </Animated.View>
@@ -93,7 +100,11 @@ const AnimatedDigit = memo(function AnimatedDigit({
   );
 });
 
-export function AnimatedScore({ score, fontSize = 16, style }: AnimatedScoreProps) {
+export function AnimatedScore({
+  score,
+  fontSize = 16,
+  style,
+}: AnimatedScoreProps) {
   const scale = useSharedValue(1);
   const prevScore = useRef(score);
   const isFirstRender = useRef(true);

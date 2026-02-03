@@ -134,7 +134,9 @@ function StatusDots({
 
 function ResultBadge({ won }: { won: boolean }) {
   return (
-    <View style={[styles.resultBadge, won ? styles.wonBadge : styles.lostBadge]}>
+    <View
+      style={[styles.resultBadge, won ? styles.wonBadge : styles.lostBadge]}
+    >
       <Text style={[styles.resultBadgeText, !won && styles.lostBadgeText]}>
         {won ? 'Won' : 'Lost'}
       </Text>
@@ -196,8 +198,10 @@ function AnimatedPlayerSection({
       };
     }
     // Active player gets colored box with pulse, inactive gets nothing
-    const bgAlpha = interpolate(pulse.value, [0.6, 1], [0.1, 0.2]) * boxOpacity.value;
-    const borderAlpha = interpolate(pulse.value, [0.6, 1], [0.3, 0.6]) * boxOpacity.value;
+    const bgAlpha =
+      interpolate(pulse.value, [0.6, 1], [0.1, 0.2]) * boxOpacity.value;
+    const borderAlpha =
+      interpolate(pulse.value, [0.6, 1], [0.3, 0.6]) * boxOpacity.value;
     return {
       backgroundColor: `rgba(${hexToRgb(color)}, ${bgAlpha})`,
       borderColor: `rgba(${hexToRgb(color)}, ${borderAlpha})`,
@@ -331,10 +335,7 @@ function FooterHistory({
 
   return (
     <Pressable
-      style={({ pressed }) => [
-        styles.footer,
-        pressed && styles.footerPressed,
-      ]}
+      style={({ pressed }) => [styles.footer, pressed && styles.footerPressed]}
       onPress={handlePress}
     >
       <ReAnimated.View style={[styles.footerContent, animatedStyle]}>
@@ -437,9 +438,7 @@ export function ScoreBar({
                   </Text>
                 )}
                 {myPlayerGotEmptyRackBonus && (
-                  <Text style={styles.finishBonus}>
-                    +25 finish
-                  </Text>
+                  <Text style={styles.finishBonus}>+25 finish</Text>
                 )}
                 {!myPlayerGotEmptyRackBonus && (
                   <StatusDots
@@ -527,9 +526,7 @@ export function ScoreBar({
                   <AnimatedScore score={opponent?.score ?? 0} />
                   <View style={[styles.metaRow, styles.metaRowRight]}>
                     {opponentGotEmptyRackBonus && (
-                      <Text style={styles.finishBonus}>
-                        +25 finish
-                      </Text>
+                      <Text style={styles.finishBonus}>+25 finish</Text>
                     )}
                     {!opponentGotEmptyRackBonus && (
                       <StatusDots

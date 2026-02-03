@@ -1,5 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, StyleSheet, RefreshControl, Text, Pressable } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  RefreshControl,
+  Text,
+  Pressable,
+} from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { ActivityIndicator } from 'react-native-paper';
 import { useRouter } from 'expo-router';
