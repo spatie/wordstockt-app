@@ -1,5 +1,13 @@
 import { z } from 'zod';
-import type { Game, GameListItem, Player, Move, Tile } from '../types';
+import type {
+  Game,
+  GameListItem,
+  Player,
+  Move,
+  Tile,
+  MoveHistoryItem,
+  ScoreBreakdown,
+} from '../types';
 
 const TileSchema = z
   .object({
@@ -298,6 +306,99 @@ export function transformPublicGame(
     language: data.language,
     boardTemplate: data.board_template,
     creator: data.creator,
+    createdAt: data.created_at,
+  };
+}
+
+// Move History schemas
+const WordScoreSchema = z
+  .object({
+    word: z.string(),
+    baseScore: z.number(),
+    multipliedScore: z.number(),
+    multipliers: z.array(
+      z.object({
+        type: z.enum(['letter', 'word']),
+        value: z.number(),
+        position: z.tuple([z.number(), z.number()]),
+      })
+    ),
+  })
+  .passthrough();
+
+const BonusSchema = z
+  .object({
+    rule: z.string(),
+    points: z.number(),
+    description: z.string(),
+  })
+  .passthrough();
+
+const ScoreBreakdownSchema = z
+  .object({
+    total: z.number(),
+    words_total: z.number(),
+    bonus_total: z.number(),
+    words: z.array(WordScoreSchema),
+    bonuses: z.array(BonusSchema),
+  })
+  .passthrough();
+
+export const MoveHistoryItemSchema = z
+  .object({
+    ulid: z.string(),
+    type: z.enum(['play', 'pass', 'swap', 'resign']),
+    user: z.object({
+      ulid: z.string(),
+      username: z.string(),
+      avatar: z.string().nullable(),
+      avatar_color: z.string().nullish(),
+    }),
+    words: z.array(z.string()).nullable(),
+    score: z.number(),
+    score_breakdown: ScoreBreakdownSchema.nullable(),
+    tiles_count: z.number(),
+    created_at: z.string(),
+  })
+  .passthrough();
+
+export type MoveHistoryItemResponse = z.infer<typeof MoveHistoryItemSchema>;
+
+function transformScoreBreakdown(
+  data: z.infer<typeof ScoreBreakdownSchema>
+): ScoreBreakdown {
+  return {
+    total: data.total,
+    wordsTotal: data.words_total,
+    bonusTotal: data.bonus_total,
+    words: data.words.map((w) => ({
+      word: w.word,
+      baseScore: w.baseScore,
+      multipliedScore: w.multipliedScore,
+      multipliers: w.multipliers,
+    })),
+    bonuses: data.bonuses,
+  };
+}
+
+export function transformMoveHistoryItem(
+  data: MoveHistoryItemResponse
+): MoveHistoryItem {
+  return {
+    ulid: data.ulid,
+    type: data.type,
+    user: {
+      ulid: data.user.ulid,
+      username: data.user.username,
+      avatar: data.user.avatar,
+      avatarColor: data.user.avatar_color ?? null,
+    },
+    words: data.words,
+    score: data.score,
+    scoreBreakdown: data.score_breakdown
+      ? transformScoreBreakdown(data.score_breakdown)
+      : null,
+    tilesCount: data.tiles_count,
     createdAt: data.created_at,
   };
 }

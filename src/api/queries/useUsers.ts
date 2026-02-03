@@ -45,32 +45,43 @@ const SearchUsersResponseSchema = z.object({
       ulid: z.string(),
       username: z.string(),
       avatar: z.string().nullable(),
+      avatar_color: z.string().nullish(),
+      eloRating: z.number(),
     })
   ),
 });
 
-interface SearchUser {
+export interface UserSearchResult {
   ulid: string;
   username: string;
   avatar: string | null;
+  avatarColor: string | null;
+  eloRating: number;
 }
 
-export function useSearchUsers(query: string) {
+export function useSearchUsers(query: string, exact: boolean = false) {
   return useQuery({
-    queryKey: userKeys.search(query),
-    queryFn: async (): Promise<SearchUser[]> => {
+    queryKey: userKeys.search(query, exact),
+    queryFn: async (): Promise<UserSearchResult[]> => {
       const { data } = await apiClient.get('/users/search', {
-        params: { query },
+        params: { query, ...(exact && { exact: true }) },
       });
       const validated = safeParse(
         SearchUsersResponseSchema,
         data,
         'useSearchUsers'
       );
-      return validated.data;
+      return validated.data.map((user) => ({
+        ulid: user.ulid,
+        username: user.username,
+        avatar: user.avatar,
+        avatarColor: user.avatar_color ?? null,
+        eloRating: user.eloRating,
+      }));
     },
     enabled: query.length >= 2,
     staleTime: 30_000,
+    retry: false,
   });
 }
 

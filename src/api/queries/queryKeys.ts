@@ -13,12 +13,14 @@ export const gameKeys = {
   public: () => [...gameKeys.all, 'public'] as const,
   details: () => [...gameKeys.all, 'detail'] as const,
   detail: (ulid: string) => [...gameKeys.details(), ulid] as const,
+  moveHistory: (ulid: string) => [...gameKeys.all, ulid, 'moves'] as const,
 };
 
 export const userKeys = {
   all: ['users'] as const,
   leaderboard: (type: string = 'elo') => ['leaderboard', type] as const,
-  search: (query: string) => [...userKeys.all, 'search', query] as const,
+  search: (query: string, exact?: boolean) =>
+    [...userKeys.all, 'search', query, exact ? 'exact' : 'prefix'] as const,
   profile: (ulid: string) => [...userKeys.all, ulid] as const,
   stats: (ulid: string) => [...userKeys.all, ulid, 'stats'] as const,
   eloHistory: (ulid: string) => [...userKeys.all, ulid, 'elo-history'] as const,

@@ -19,6 +19,8 @@ const STAGGER_DELAY = 50;
 
 interface AnimatedScoreProps {
   score: number;
+  fontSize?: number;
+  style?: object;
 }
 
 const AnimatedDigit = memo(function AnimatedDigit({
@@ -26,11 +28,15 @@ const AnimatedDigit = memo(function AnimatedDigit({
   digitIndex,
   totalDigits,
   scoreChanged,
+  digitHeight,
+  fontSize,
 }: {
   digit: string;
   digitIndex: number;
   totalDigits: number;
   scoreChanged: number;
+  digitHeight: number;
+  fontSize: number;
 }) {
   const translateY = useSharedValue(0);
   const prevDigit = useRef(digit);
@@ -40,19 +46,18 @@ const AnimatedDigit = memo(function AnimatedDigit({
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
-      translateY.set(-currentDigitValue * DIGIT_HEIGHT);
+      translateY.set(-currentDigitValue * digitHeight);
       return;
     }
 
     if (prevDigit.current !== digit) {
-      // Calculate the stagger delay - rightmost digits animate first (like a real counter)
       const staggerIndex = totalDigits - 1 - digitIndex;
       const delay = ANIMATION_START_DELAY + staggerIndex * STAGGER_DELAY;
 
       translateY.set(
         withDelay(
           delay,
-          withTiming(-currentDigitValue * DIGIT_HEIGHT, {
+          withTiming(-currentDigitValue * digitHeight, {
             duration: ANIMATION_DURATION,
             easing: Easing.bezier(0.25, 0.1, 0.25, 1),
           })
@@ -68,6 +73,7 @@ const AnimatedDigit = memo(function AnimatedDigit({
     totalDigits,
     translateY,
     scoreChanged,
+    digitHeight,
   ]);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -75,11 +81,11 @@ const AnimatedDigit = memo(function AnimatedDigit({
   }));
 
   return (
-    <View style={styles.digitContainer}>
+    <View style={[styles.digitContainer, { height: digitHeight }]}>
       <Animated.View style={[styles.digitStrip, animatedStyle]}>
         {['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-'].map((d) => (
-          <View key={d} style={styles.digitWrapper}>
-            <Text style={styles.digit}>{d}</Text>
+          <View key={d} style={[styles.digitWrapper, { height: digitHeight }]}>
+            <Text style={[styles.digit, { fontSize, lineHeight: digitHeight, minWidth: fontSize * 0.7 }]}>{d}</Text>
           </View>
         ))}
       </Animated.View>
@@ -87,7 +93,7 @@ const AnimatedDigit = memo(function AnimatedDigit({
   );
 });
 
-export function AnimatedScore({ score }: AnimatedScoreProps) {
+export function AnimatedScore({ score, fontSize = 16, style }: AnimatedScoreProps) {
   const scale = useSharedValue(1);
   const prevScore = useRef(score);
   const isFirstRender = useRef(true);
@@ -95,6 +101,7 @@ export function AnimatedScore({ score }: AnimatedScoreProps) {
 
   const scoreString = score.toString();
   const digits = scoreString.split('');
+  const digitHeight = fontSize * 1.4;
 
   useEffect(() => {
     if (isFirstRender.current) {
@@ -107,7 +114,6 @@ export function AnimatedScore({ score }: AnimatedScoreProps) {
       prevScore.current = score;
       changeCounter.current += 1;
 
-      // Scale pop animation with delay - snappy spring
       scale.set(
         withDelay(
           ANIMATION_START_DELAY,
@@ -133,7 +139,7 @@ export function AnimatedScore({ score }: AnimatedScoreProps) {
   }));
 
   return (
-    <Animated.View style={[styles.container, containerStyle]}>
+    <Animated.View style={[styles.container, style, containerStyle]}>
       {digits.map((digit, index) => (
         <AnimatedDigit
           key={`pos-${index}`}
@@ -141,6 +147,8 @@ export function AnimatedScore({ score }: AnimatedScoreProps) {
           digitIndex={index}
           totalDigits={digits.length}
           scoreChanged={changeCounter.current}
+          digitHeight={digitHeight}
+          fontSize={fontSize}
         />
       ))}
     </Animated.View>

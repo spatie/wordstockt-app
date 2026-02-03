@@ -32,6 +32,49 @@ export interface Move {
   createdAt: string;
 }
 
+export interface WordScore {
+  word: string;
+  baseScore: number;
+  multipliedScore: number;
+  multipliers: Array<{
+    type: 'letter' | 'word';
+    value: number;
+    position: [number, number];
+  }>;
+}
+
+export interface Bonus {
+  rule: string;
+  points: number;
+  description: string;
+}
+
+export interface ScoreBreakdown {
+  total: number;
+  wordsTotal: number;
+  bonusTotal: number;
+  words: WordScore[];
+  bonuses: Bonus[];
+}
+
+export interface MoveHistoryUser {
+  ulid: string;
+  username: string;
+  avatar: string | null;
+  avatarColor: string | null;
+}
+
+export interface MoveHistoryItem {
+  ulid: string;
+  type: MoveType;
+  user: MoveHistoryUser;
+  words: string[] | null;
+  score: number;
+  scoreBreakdown: ScoreBreakdown | null;
+  tilesCount: number;
+  createdAt: string;
+}
+
 export interface PendingInvitation {
   ulid: string;
   invitee: {

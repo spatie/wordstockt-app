@@ -1,19 +1,26 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, StyleSheet, RefreshControl, Text } from 'react-native';
+import { View, StyleSheet, RefreshControl, Text, Pressable } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { ActivityIndicator } from 'react-native-paper';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import Animated from 'react-native-reanimated';
 import { useFriends } from '../../src/api/queries/useFriends';
 import { ErrorView } from '../../src/components/ui/ErrorView';
 import { FriendCard } from '../../src/components/friends/FriendCard';
+import { AddFriendModal } from '../../src/components/friends/AddFriendModal';
+import { useSnackbar } from '../../src/components/ui/SnackbarProvider';
 import { colors } from '../../src/config/theme';
+import { SPACING, RADIUS } from '../../src/config/constants';
 import { ROUTES } from '../../src/config/routes';
 import type { Friend } from '../../src/types';
 
 export default function FriendsScreen() {
   const { push } = useRouter();
   const { data: friends, isLoading, error, refetch } = useFriends();
+  const { showSnackbar } = useSnackbar();
   const [refreshing, setRefreshing] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const sortedFriends = useMemo(() => {
     if (!friends) return [];
@@ -34,6 +41,10 @@ export default function FriendsScreen() {
     },
     [push]
   );
+
+  const handleAddFriendSuccess = useCallback(() => {
+    showSnackbar('Friend added!', 'success');
+  }, [showSnackbar]);
 
   const renderFriend = useCallback(
     ({ item }: { item: Friend }) => (
@@ -84,11 +95,28 @@ export default function FriendsScreen() {
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyTitle}>No friends yet</Text>
             <Text style={styles.emptyText}>
-              Add friends by viewing their profile from the game list or
-              leaderboard.
+              Tap the + button to add a friend by username, or view their
+              profile from the game list or leaderboard.
             </Text>
           </View>
         }
+      />
+
+      <Animated.View style={styles.fabContainer}>
+        <Pressable
+          onPress={() => setShowAddModal(true)}
+          style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+        >
+          <View style={styles.fabInner}>
+            <Ionicons name="person-add" size={26} color="#FFF" />
+          </View>
+        </Pressable>
+      </Animated.View>
+
+      <AddFriendModal
+        visible={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSuccess={handleAddFriendSuccess}
       />
     </View>
   );
@@ -137,5 +165,33 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  fabContainer: {
+    position: 'absolute',
+    right: SPACING.xl,
+    bottom: SPACING.xl,
+  },
+  fab: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  fabPressed: {
+    transform: [{ scale: 0.92 }],
+    shadowOpacity: 0.2,
+  },
+  fabInner: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
 });

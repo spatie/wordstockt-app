@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -55,6 +55,12 @@ export function InvitePlayerModal({
   const [searchError, setSearchError] = useState<string | null>(null);
   const [invitingUserUlid, setInvitingUserUlid] = useState<string | null>(null);
   const { data: friends, isLoading: isLoadingFriends } = useFriends();
+  const sortedFriends = useMemo(() => {
+    if (!friends) return [];
+    return [...friends].sort((a, b) =>
+      a.username.toLowerCase().localeCompare(b.username.toLowerCase())
+    );
+  }, [friends]);
   const invitePlayer = useInvitePlayer();
   const createInviteLink = useCreateInviteLink();
 
@@ -248,12 +254,12 @@ export function InvitePlayerModal({
         </View>
       )}
 
-      {searchResults.length === 0 && friends && friends.length > 0 && (
+      {searchResults.length === 0 && sortedFriends.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Friends</Text>
           <View style={styles.userListContainer}>
             <FlashList
-              data={friends}
+              data={sortedFriends}
               renderItem={({ item }) =>
                 renderUserRow(
                   {
@@ -279,7 +285,7 @@ export function InvitePlayerModal({
 
       {searchResults.length === 0 &&
         !isLoadingFriends &&
-        (!friends || friends.length === 0) && (
+        sortedFriends.length === 0 && (
           <Text style={styles.hintText}>
             Search for a username above to invite them.
           </Text>

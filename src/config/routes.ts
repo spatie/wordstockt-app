@@ -18,6 +18,7 @@ export const ROUTES = {
 
   // Game routes
   GAME: (ulid: string) => `/(main)/game/${ulid}` as const,
+  GAME_HISTORY: (ulid: string) => `/(main)/game/${ulid}/history` as const,
 
   // User routes
   USER_PROFILE: (ulid: string) => `/(main)/user/${ulid}` as const,

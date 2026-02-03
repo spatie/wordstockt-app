@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { View, StyleSheet, Pressable, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import ReAnimated, {
@@ -158,10 +158,12 @@ function AnimatedPlayerSection({
   children: React.ReactNode;
 }) {
   const pulse = useSharedValue(1);
+  const boxOpacity = useSharedValue(isActive ? 1 : 0);
   const color = avatarColor || '#4A90D9';
 
   useEffect(() => {
     if (isActive && !isGameFinished) {
+      boxOpacity.set(withTiming(1, { duration: 300 }));
       pulse.set(
         withRepeat(
           withTiming(0.6, {
@@ -173,9 +175,10 @@ function AnimatedPlayerSection({
         )
       );
     } else {
+      boxOpacity.set(withTiming(0, { duration: 300 }));
       pulse.set(withTiming(1, { duration: 300 }));
     }
-  }, [isActive, isGameFinished, pulse]);
+  }, [isActive, isGameFinished, pulse, boxOpacity]);
 
   const animatedStyle = useAnimatedStyle(() => {
     if (isGameFinished && isWinner) {
@@ -185,17 +188,20 @@ function AnimatedPlayerSection({
         opacity: 1,
       };
     }
-    if (isActive && !isGameFinished) {
+    if (isGameFinished) {
       return {
-        backgroundColor: `rgba(${hexToRgb(color)}, ${interpolate(pulse.value, [0.6, 1], [0.1, 0.2])})`,
-        borderColor: `rgba(${hexToRgb(color)}, ${interpolate(pulse.value, [0.6, 1], [0.3, 0.6])})`,
+        backgroundColor: 'transparent',
+        borderColor: 'transparent',
         opacity: 1,
       };
     }
+    // Active player gets colored box with pulse, inactive gets nothing
+    const bgAlpha = interpolate(pulse.value, [0.6, 1], [0.1, 0.2]) * boxOpacity.value;
+    const borderAlpha = interpolate(pulse.value, [0.6, 1], [0.3, 0.6]) * boxOpacity.value;
     return {
-      backgroundColor: 'transparent',
-      borderColor: 'transparent',
-      opacity: isGameFinished ? 1 : 0.55,
+      backgroundColor: `rgba(${hexToRgb(color)}, ${bgAlpha})`,
+      borderColor: `rgba(${hexToRgb(color)}, ${borderAlpha})`,
+      opacity: 1,
     };
   });
 
@@ -270,15 +276,46 @@ function FooterHistory({
   bonus,
 }: FooterHistoryProps) {
   const router = useRouter();
-  const bonusOpacity = useSharedValue(0);
+  const isFirstRender = useRef(true);
+  const opacity = useSharedValue(1);
+  const bonusOpacity = useSharedValue(showBonus ? 1 : 0);
+  const [displayedText, setDisplayedText] = useState(lastMoveText);
+  const [displayedBonus, setDisplayedBonus] = useState({ showBonus, bonus });
 
   useEffect(() => {
+    // Skip animation on first render - show immediately
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      setDisplayedText(lastMoveText);
+      setDisplayedBonus({ showBonus, bonus });
+      return;
+    }
+
+    if (lastMoveText) {
+      // Fade out, update text, fade in
+      opacity.set(withTiming(0, { duration: ANIMATION_DURATION }));
+      const timeout = setTimeout(() => {
+        setDisplayedText(lastMoveText);
+        setDisplayedBonus({ showBonus, bonus });
+        opacity.set(withTiming(1, { duration: ANIMATION_DURATION }));
+      }, ANIMATION_DURATION);
+      return () => clearTimeout(timeout);
+    }
+    opacity.set(withTiming(0, { duration: ANIMATION_DURATION }));
+  }, [lastMoveText, showBonus, bonus, opacity]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  useEffect(() => {
+    if (isFirstRender.current) return;
     bonusOpacity.set(
-      withTiming(showBonus ? 1 : 0, {
+      withTiming(displayedBonus.showBonus ? 1 : 0, {
         duration: ANIMATION_DURATION,
       })
     );
-  }, [showBonus, bonusOpacity]);
+  }, [displayedBonus.showBonus, bonusOpacity]);
 
   const bonusAnimatedStyle = useAnimatedStyle(() => ({
     opacity: bonusOpacity.value,
@@ -288,6 +325,10 @@ function FooterHistory({
     router.push(ROUTES.GAME_HISTORY(gameUlid));
   }, [router, gameUlid]);
 
+  if (!lastMoveText) {
+    return null;
+  }
+
   return (
     <Pressable
       style={({ pressed }) => [
@@ -296,21 +337,15 @@ function FooterHistory({
       ]}
       onPress={handlePress}
     >
-      <View style={styles.footerContent}>
-        <MaterialCommunityIcons
-          name="history"
-          size={12}
-          color="rgba(255, 255, 255, 0.4)"
-          style={styles.historyIcon}
-        />
+      <ReAnimated.View style={[styles.footerContent, animatedStyle]}>
         <Text style={styles.lastMoveText} numberOfLines={1}>
-          {lastMoveText}
+          {displayedText}
         </Text>
-      </View>
+      </ReAnimated.View>
       <View style={styles.footerRight}>
-        {showBonus && (
+        {displayedBonus.showBonus && (
           <ReAnimated.Text style={[styles.bonusText, bonusAnimatedStyle]}>
-            {`inc. +${bonus} word length bonus`}
+            {`inc. +${displayedBonus.bonus} length bonus`}
           </ReAnimated.Text>
         )}
         <MaterialCommunityIcons
@@ -403,7 +438,7 @@ export function ScoreBar({
                 )}
                 {myPlayerGotEmptyRackBonus && (
                   <Text style={styles.finishBonus}>
-                    +25 for finishing first
+                    +25 finish
                   </Text>
                 )}
                 {!myPlayerGotEmptyRackBonus && (
@@ -493,7 +528,7 @@ export function ScoreBar({
                   <View style={[styles.metaRow, styles.metaRowRight]}>
                     {opponentGotEmptyRackBonus && (
                       <Text style={styles.finishBonus}>
-                        +25 for finishing first
+                        +25 finish
                       </Text>
                     )}
                     {!opponentGotEmptyRackBonus && (
@@ -551,7 +586,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   container: {
-    backgroundColor: 'rgba(27, 40, 56, 0.8)',
+    backgroundColor: 'rgba(27, 40, 56, 0.5)',
   },
   mainContent: {
     flexDirection: 'row',
@@ -684,9 +719,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  historyIcon: {
-    marginRight: 6,
-  },
   footerRight: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -731,6 +763,7 @@ const styles = StyleSheet.create({
   pendingInviteSection: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   pendingLabel: {
     color: colors.textSecondary,

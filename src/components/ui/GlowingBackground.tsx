@@ -225,19 +225,12 @@ export function GlowingBackground() {
   const randomValues = useMemo(() => {
     const shuffledColors = shuffleArray(COLOR_PAIRS);
     return {
-      colors: shuffledColors.slice(0, 4),
-      startProgress: [
-        Math.random(),
-        Math.random(),
-        Math.random(),
-        Math.random(),
-      ],
-      positionOffsets: [
-        { x: (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 100 },
-        { x: (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 100 },
-        { x: (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 100 },
-        { x: (Math.random() - 0.5) * 100, y: (Math.random() - 0.5) * 100 },
-      ],
+      colors: [...shuffledColors, ...shuffleArray(COLOR_PAIRS)].slice(0, 7),
+      startProgress: Array.from({ length: 7 }, () => Math.random()),
+      positionOffsets: Array.from({ length: 7 }, () => ({
+        x: (Math.random() - 0.5) * 100,
+        y: (Math.random() - 0.5) * 100,
+      })),
     };
   }, []);
 
@@ -245,6 +238,9 @@ export function GlowingBackground() {
   const orbSize2 = Math.min(SCREEN_WIDTH * 1.2, 460);
   const orbSize3 = Math.min(SCREEN_WIDTH * 1.4, 540);
   const orbSize4 = Math.min(SCREEN_WIDTH * 1.0, 380);
+  const orbSize5 = Math.min(SCREEN_WIDTH * 1.1, 420);
+  const orbSize6 = Math.min(SCREEN_WIDTH * 0.9, 340);
+  const orbSize7 = Math.min(SCREEN_WIDTH * 1.3, 500);
 
   return (
     <View style={styles.container} pointerEvents="none">
@@ -257,13 +253,13 @@ export function GlowingBackground() {
           SCREEN_WIDTH - orbSize1 * 0.3 + randomValues.positionOffsets[0]!.x
         }
         initialY={-orbSize1 * 0.4 + randomValues.positionOffsets[0]!.y}
-        moveRangeX={-80}
-        moveRangeY={100}
-        moveDuration={32000}
-        minScale={0.8}
-        maxScale={1.2}
-        scaleDuration={24000}
-        colorDuration={16000}
+        moveRangeX={-120}
+        moveRangeY={150}
+        moveDuration={18000}
+        minScale={0.6}
+        maxScale={1.4}
+        scaleDuration={14000}
+        colorDuration={12000}
         gradientIdPrefix="orb1"
         startProgress={randomValues.startProgress[0]}
       />
@@ -275,13 +271,13 @@ export function GlowingBackground() {
         opacity={0.35}
         initialX={-orbSize2 * 0.35 + randomValues.positionOffsets[1]!.x}
         initialY={SCREEN_HEIGHT * 0.18 + randomValues.positionOffsets[1]!.y}
-        moveRangeX={90}
-        moveRangeY={-60}
-        moveDuration={38000}
-        minScale={0.85}
-        maxScale={1.25}
-        scaleDuration={28000}
-        colorDuration={20000}
+        moveRangeX={140}
+        moveRangeY={-100}
+        moveDuration={22000}
+        minScale={0.55}
+        maxScale={1.45}
+        scaleDuration={16000}
+        colorDuration={14000}
         gradientIdPrefix="orb2"
         startProgress={randomValues.startProgress[1]}
       />
@@ -295,13 +291,13 @@ export function GlowingBackground() {
         initialY={
           SCREEN_HEIGHT - orbSize3 * 0.15 + randomValues.positionOffsets[2]!.y
         }
-        moveRangeX={70}
-        moveRangeY={-90}
-        moveDuration={35000}
-        minScale={0.82}
-        maxScale={1.18}
-        scaleDuration={22000}
-        colorDuration={14000}
+        moveRangeX={110}
+        moveRangeY={-130}
+        moveDuration={20000}
+        minScale={0.58}
+        maxScale={1.42}
+        scaleDuration={13000}
+        colorDuration={10000}
         gradientIdPrefix="orb3"
         startProgress={randomValues.startProgress[2]}
       />
@@ -313,15 +309,69 @@ export function GlowingBackground() {
         opacity={0.25}
         initialX={SCREEN_WIDTH * 0.4 + randomValues.positionOffsets[3]!.x}
         initialY={SCREEN_HEIGHT * 0.4 + randomValues.positionOffsets[3]!.y}
-        moveRangeX={-60}
-        moveRangeY={80}
-        moveDuration={42000}
-        minScale={0.88}
-        maxScale={1.15}
-        scaleDuration={30000}
-        colorDuration={18000}
+        moveRangeX={-100}
+        moveRangeY={120}
+        moveDuration={24000}
+        minScale={0.62}
+        maxScale={1.38}
+        scaleDuration={18000}
+        colorDuration={15000}
         gradientIdPrefix="orb4"
         startProgress={randomValues.startProgress[3]}
+      />
+
+      {/* Orb 5 - top left area */}
+      <GlowOrb
+        size={orbSize5}
+        colors={randomValues.colors[4]!}
+        opacity={0.3}
+        initialX={-orbSize5 * 0.4 + randomValues.positionOffsets[4]!.x}
+        initialY={-orbSize5 * 0.2 + randomValues.positionOffsets[4]!.y}
+        moveRangeX={130}
+        moveRangeY={110}
+        moveDuration={26000}
+        minScale={0.55}
+        maxScale={1.45}
+        scaleDuration={19000}
+        colorDuration={13000}
+        gradientIdPrefix="orb5"
+        startProgress={randomValues.startProgress[4]}
+      />
+
+      {/* Orb 6 - right side middle */}
+      <GlowOrb
+        size={orbSize6}
+        colors={randomValues.colors[5]!}
+        opacity={0.28}
+        initialX={SCREEN_WIDTH - orbSize6 * 0.25 + randomValues.positionOffsets[5]!.x}
+        initialY={SCREEN_HEIGHT * 0.55 + randomValues.positionOffsets[5]!.y}
+        moveRangeX={-90}
+        moveRangeY={-80}
+        moveDuration={21000}
+        minScale={0.6}
+        maxScale={1.4}
+        scaleDuration={15000}
+        colorDuration={11000}
+        gradientIdPrefix="orb6"
+        startProgress={randomValues.startProgress[5]}
+      />
+
+      {/* Orb 7 - bottom right area */}
+      <GlowOrb
+        size={orbSize7}
+        colors={randomValues.colors[6]!}
+        opacity={0.32}
+        initialX={SCREEN_WIDTH * 0.5 + randomValues.positionOffsets[6]!.x}
+        initialY={SCREEN_HEIGHT - orbSize7 * 0.3 + randomValues.positionOffsets[6]!.y}
+        moveRangeX={-85}
+        moveRangeY={-100}
+        moveDuration={23000}
+        minScale={0.57}
+        maxScale={1.43}
+        scaleDuration={17000}
+        colorDuration={12000}
+        gradientIdPrefix="orb7"
+        startProgress={randomValues.startProgress[6]}
       />
     </View>
   );

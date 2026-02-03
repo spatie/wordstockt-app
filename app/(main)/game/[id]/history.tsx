@@ -7,7 +7,27 @@ import { LoadingView } from '../../../../src/components/ui/LoadingView';
 import { Avatar } from '../../../../src/components/ui/Avatar';
 import { colors, MULTIPLIER_COLORS } from '../../../../src/config/theme';
 import { SPACING, RADIUS } from '../../../../src/config/constants';
-import type { MoveHistoryItem, MoveType, Bonus } from '../../../../src/types';
+import type { MoveHistoryItem, Bonus } from '../../../../src/types';
+
+const MINI_TILE_SIZE = 22;
+
+function MiniTile({ letter }: { letter: string }) {
+  return (
+    <View style={styles.miniTile}>
+      <Text style={styles.miniTileLetter}>{letter.toUpperCase()}</Text>
+    </View>
+  );
+}
+
+function TilesPlayedDisplay({ letters }: { letters: string[] }) {
+  return (
+    <View style={styles.tilesPlayedContainer}>
+      {letters.map((letter, idx) => (
+        <MiniTile key={idx} letter={letter} />
+      ))}
+    </View>
+  );
+}
 
 function formatRelativeTime(dateString: string): string {
   const date = new Date(dateString);
@@ -37,21 +57,6 @@ function MultiplierBadge({ type }: { type: string }) {
   );
 }
 
-function getBonusIcon(rule: string): string {
-  if (rule.includes('bingo') || rule.includes('all_tiles')) return '\u2605';
-  if (rule.includes('length') || rule.includes('tiles_played')) return '\u2666';
-  if (rule.includes('extend')) return '\u2194';
-  if (rule.includes('empty_rack')) return '\u2713';
-  return '\u2022';
-}
-
-function getBonusColor(rule: string): string {
-  if (rule.includes('bingo') || rule.includes('all_tiles')) return '#F39C12';
-  if (rule.includes('length') || rule.includes('tiles_played')) return '#27AE60';
-  if (rule.includes('extend')) return '#9B59B6';
-  if (rule.includes('empty_rack')) return '#3498DB';
-  return colors.primary;
-}
 
 function MoveCard({
   move,
@@ -62,6 +67,15 @@ function MoveCard({
 }) {
   const isPlay = move.type === 'play';
   const hasBreakdown = move.scoreBreakdown !== null;
+
+  // Get the letters played (from the longest word, which is usually the main play)
+  const playedLetters =
+    hasBreakdown && move.scoreBreakdown!.words.length > 0
+      ? [...move.scoreBreakdown!.words]
+          .sort((a, b) => b.word.length - a.word.length)[0]
+          .word.split('')
+          .slice(0, move.tilesCount)
+      : [];
 
   return (
     <View style={styles.moveCard}>
@@ -78,7 +92,7 @@ function MoveCard({
             <View style={styles.nameRow}>
               <Text style={styles.playerName}>{move.user.username}</Text>
               <View style={styles.moveNumberBadge}>
-                <Text style={styles.moveNumberText}>#{moveNumber}</Text>
+                <Text style={styles.moveNumberText}>Move #{moveNumber}</Text>
               </View>
             </View>
             <Text style={styles.moveTime}>
@@ -86,20 +100,22 @@ function MoveCard({
             </Text>
           </View>
         </View>
-        {isPlay && move.score > 0 && (
-          <View style={styles.moveScore}>
-            <Text style={styles.scoreTotalText}>+{move.score}</Text>
-            <Text style={styles.scoreLabel}>points</Text>
-          </View>
-        )}
       </View>
 
       {/* Body - depends on move type */}
       {isPlay && hasBreakdown ? (
         <View style={styles.moveBody}>
+          {/* Tiles Played Section */}
+          {playedLetters.length > 0 && (
+            <View style={styles.tilesSection}>
+              <Text style={styles.sectionLabel}>TILES PLAYED</Text>
+              <TilesPlayedDisplay letters={playedLetters} />
+            </View>
+          )}
+
           {/* Words Section */}
           <View style={styles.wordsSection}>
-            <Text style={styles.sectionLabel}>WORDS PLAYED</Text>
+            <Text style={styles.sectionLabel}>WORDS FORMED</Text>
             {move.scoreBreakdown!.words.map((wordScore, idx) => (
               <View key={idx} style={styles.wordRow}>
                 <View style={styles.wordLeft}>
@@ -138,19 +154,7 @@ function MoveCard({
               <Text style={styles.sectionLabel}>BONUSES</Text>
               {move.scoreBreakdown!.bonuses.map((bonus: Bonus, idx: number) => (
                 <View key={idx} style={styles.bonusRow}>
-                  <View style={styles.bonusLeft}>
-                    <View
-                      style={[
-                        styles.bonusIcon,
-                        { backgroundColor: getBonusColor(bonus.rule) },
-                      ]}
-                    >
-                      <Text style={styles.bonusIconText}>
-                        {getBonusIcon(bonus.rule)}
-                      </Text>
-                    </View>
-                    <Text style={styles.bonusText}>{bonus.description}</Text>
-                  </View>
+                  <Text style={styles.bonusText}>{bonus.description}</Text>
                   <Text style={styles.bonusScore}>+{bonus.points}</Text>
                 </View>
               ))}
@@ -224,9 +228,6 @@ function MoveCard({
 function EmptyState() {
   return (
     <View style={styles.emptyState}>
-      <View style={styles.emptyIcon}>
-        <Text style={styles.emptyIconText}>{'\u23F0'}</Text>
-      </View>
       <Text style={styles.emptyTitle}>History Not Available</Text>
       <Text style={styles.emptyDescription}>
         Detailed move history is only available for games started after this
@@ -301,7 +302,7 @@ export default function MoveHistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: 'transparent',
   },
   scrollView: {
     flex: 1,
@@ -324,12 +325,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   moveCard: {
-    backgroundColor: colors.backgroundLight,
+    backgroundColor: 'rgba(27, 40, 56, 0.75)',
     borderRadius: RADIUS.lg,
     marginBottom: SPACING.md,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(74, 144, 217, 0.1)',
+    borderColor: 'rgba(74, 144, 217, 0.15)',
   },
   moveHeader: {
     flexDirection: 'row',
@@ -340,6 +341,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(74, 144, 217, 0.08)',
   },
   playerInfo: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
@@ -373,24 +375,11 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 2,
   },
-  moveScore: {
-    alignItems: 'flex-end',
-  },
-  scoreTotalText: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#27AE60',
-    lineHeight: 28,
-  },
-  scoreLabel: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 2,
-  },
   moveBody: {
     padding: SPACING.md,
+  },
+  tilesSection: {
+    marginBottom: SPACING.md,
   },
   wordsSection: {
     marginBottom: SPACING.md,
@@ -407,7 +396,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: SPACING.sm,
-    backgroundColor: 'rgba(44, 62, 80, 0.4)',
+    backgroundColor: 'rgba(44, 62, 80, 0.5)',
     borderRadius: RADIUS.md,
     marginBottom: SPACING.xs,
   },
@@ -463,22 +452,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: SPACING.xs,
   },
-  bonusLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  bonusIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bonusIconText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-  },
   bonusText: {
     fontSize: 13,
     color: colors.textSecondary,
@@ -487,6 +460,28 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#F39C12',
+  },
+  tilesPlayedContainer: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  miniTile: {
+    width: MINI_TILE_SIZE,
+    height: MINI_TILE_SIZE,
+    backgroundColor: '#E8E4D8',
+    borderRadius: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderTopColor: '#F5F3EF',
+    borderLeftColor: '#F5F3EF',
+    borderBottomColor: '#B8B4AA',
+    borderRightColor: '#B8B4AA',
+  },
+  miniTileLetter: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#2C3E50',
   },
   totalBreakdown: {
     marginTop: SPACING.md,
@@ -581,19 +576,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: SPACING.xxl,
-  },
-  emptyIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(74, 144, 217, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.lg,
-  },
-  emptyIconText: {
-    fontSize: 36,
-    opacity: 0.4,
   },
   emptyTitle: {
     fontSize: 18,
