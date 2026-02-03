@@ -169,21 +169,18 @@ function GameScreenContent() {
   useEffect(() => {
     if (game && !hasAnimatedEntry.current) {
       hasAnimatedEntry.current = true;
-      // Small delay to let board start its animation first
-      setTimeout(() => {
-        Animated.parallel([
-          Animated.timing(uiEntryOpacity, {
-            toValue: 1,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-          Animated.timing(uiEntryTranslate, {
-            toValue: 0,
-            duration: 250,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      }, 100);
+      Animated.parallel([
+        Animated.timing(uiEntryOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(uiEntryTranslate, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
   }, [game, uiEntryOpacity, uiEntryTranslate]);
 

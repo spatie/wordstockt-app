@@ -13,6 +13,7 @@ import ReAnimated, {
 } from 'react-native-reanimated';
 import { Text } from 'react-native-paper';
 import { useRouter } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../../config/theme';
 import { DIMENSIONS } from '../../config/constants';
 import { ROUTES } from '../../config/routes';
@@ -70,7 +71,6 @@ function TilesBadge({ count }: { count: number }) {
   const scale = useSharedValue(1);
 
   const handlePress = useCallback(() => {
-    // Wobble animation: rotate back and forth while bouncing
     rotation.set(
       withSequence(
         withTiming(-12, { duration: 50 }),
@@ -97,7 +97,7 @@ function TilesBadge({ count }: { count: number }) {
     <Pressable onPress={handlePress}>
       <ReAnimated.View style={[styles.tilesBadge, animatedStyle]}>
         <AnimatedTilesCount count={count} />
-        <Text style={styles.tilesLabel}>{count === 1 ? 'tile' : 'tiles'}</Text>
+        <Text style={styles.tilesLabel}>in bag</Text>
       </ReAnimated.View>
     </Pressable>
   );
@@ -132,48 +132,98 @@ function StatusDots({
   );
 }
 
-function PlayerAvatar({
-  player,
-  isActive,
-}: {
-  player: Player | undefined;
-  isActive: boolean;
-}) {
-  const router = useRouter();
-  const currentUserUlid = useAuthStore((s) => s.user?.ulid);
+function ResultBadge({ won }: { won: boolean }) {
+  return (
+    <View style={[styles.resultBadge, won ? styles.wonBadge : styles.lostBadge]}>
+      <Text style={[styles.resultBadgeText, !won && styles.lostBadgeText]}>
+        {won ? 'Won' : 'Lost'}
+      </Text>
+    </View>
+  );
+}
 
-  const visible = useSharedValue(isActive ? 1 : 0);
+function AnimatedPlayerSection({
+  isActive,
+  isWinner,
+  isGameFinished,
+  avatarColor,
+  isRight,
+  children,
+}: {
+  isActive: boolean;
+  isWinner: boolean;
+  isGameFinished: boolean;
+  avatarColor: string | null | undefined;
+  isRight: boolean;
+  children: React.ReactNode;
+}) {
   const pulse = useSharedValue(1);
+  const color = avatarColor || '#4A90D9';
 
   useEffect(() => {
-    if (isActive) {
-      visible.set(withTiming(1, { duration: 300 }));
-      pulse.set(1);
+    if (isActive && !isGameFinished) {
       pulse.set(
         withRepeat(
-          withSequence(
-            withTiming(0.3, {
-              duration: 1200,
-              easing: Easing.inOut(Easing.quad),
-            }),
-            withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.quad) })
-          ),
+          withTiming(0.6, {
+            duration: 1000,
+            easing: Easing.inOut(Easing.sin),
+          }),
           -1,
-          false
+          true
         )
       );
     } else {
-      visible.set(withTiming(0, { duration: 300 }));
-      pulse.set(1);
+      pulse.set(withTiming(1, { duration: 300 }));
     }
-  }, [isActive, visible, pulse]);
+  }, [isActive, isGameFinished, pulse]);
 
-  const animatedIndicatorStyle = useAnimatedStyle(() => ({
-    opacity: visible.value * interpolate(pulse.value, [0.3, 1], [0.6, 1]),
-    shadowOpacity:
-      visible.value * interpolate(pulse.value, [0.3, 1], [0.3, 0.8]),
-    shadowRadius: interpolate(pulse.value, [0.3, 1], [6, 14]),
-  }));
+  const animatedStyle = useAnimatedStyle(() => {
+    if (isGameFinished && isWinner) {
+      return {
+        backgroundColor: 'rgba(76, 175, 80, 0.12)',
+        borderColor: 'rgba(76, 175, 80, 0.4)',
+        opacity: 1,
+      };
+    }
+    if (isActive && !isGameFinished) {
+      return {
+        backgroundColor: `rgba(${hexToRgb(color)}, ${interpolate(pulse.value, [0.6, 1], [0.1, 0.2])})`,
+        borderColor: `rgba(${hexToRgb(color)}, ${interpolate(pulse.value, [0.6, 1], [0.3, 0.6])})`,
+        opacity: 1,
+      };
+    }
+    return {
+      backgroundColor: 'transparent',
+      borderColor: 'transparent',
+      opacity: isGameFinished ? 1 : 0.55,
+    };
+  });
+
+  return (
+    <ReAnimated.View
+      style={[
+        styles.playerSection,
+        isRight && styles.playerSectionRight,
+        animatedStyle,
+      ]}
+    >
+      {children}
+    </ReAnimated.View>
+  );
+}
+
+function hexToRgb(hex: string): string {
+  'worklet';
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (result && result[1] && result[2] && result[3]) {
+    return `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
+  }
+  return '74, 144, 217';
+}
+
+function PlayerAvatar({ player }: { player: Player | undefined }) {
+  const router = useRouter();
+  const currentUserUlid = useAuthStore((s) => s.user?.ulid);
 
   const handlePress = useCallback(() => {
     if (!player?.ulid) return;
@@ -194,10 +244,6 @@ function PlayerAvatar({
       onPress={handlePress}
       disabled={!player?.ulid}
     >
-      <ReAnimated.View
-        style={[styles.activeIndicator, animatedIndicatorStyle]}
-        pointerEvents="none"
-      />
       <Avatar
         uri={player?.avatar}
         name={player?.username || '?'}
@@ -209,6 +255,73 @@ function PlayerAvatar({
 }
 
 const ANIMATION_DURATION = 150;
+
+interface FooterHistoryProps {
+  gameUlid: string;
+  lastMoveText: string | null;
+  showBonus: boolean;
+  bonus: number;
+}
+
+function FooterHistory({
+  gameUlid,
+  lastMoveText,
+  showBonus,
+  bonus,
+}: FooterHistoryProps) {
+  const router = useRouter();
+  const bonusOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    bonusOpacity.set(
+      withTiming(showBonus ? 1 : 0, {
+        duration: ANIMATION_DURATION,
+      })
+    );
+  }, [showBonus, bonusOpacity]);
+
+  const bonusAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: bonusOpacity.value,
+  }));
+
+  const handlePress = useCallback(() => {
+    router.push(ROUTES.GAME_HISTORY(gameUlid));
+  }, [router, gameUlid]);
+
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.footer,
+        pressed && styles.footerPressed,
+      ]}
+      onPress={handlePress}
+    >
+      <View style={styles.footerContent}>
+        <MaterialCommunityIcons
+          name="history"
+          size={12}
+          color="rgba(255, 255, 255, 0.4)"
+          style={styles.historyIcon}
+        />
+        <Text style={styles.lastMoveText} numberOfLines={1}>
+          {lastMoveText}
+        </Text>
+      </View>
+      <View style={styles.footerRight}>
+        {showBonus && (
+          <ReAnimated.Text style={[styles.bonusText, bonusAnimatedStyle]}>
+            {`inc. +${bonus} word length bonus`}
+          </ReAnimated.Text>
+        )}
+        <MaterialCommunityIcons
+          name="chevron-right"
+          size={14}
+          color="rgba(255, 255, 255, 0.4)"
+        />
+      </View>
+    </Pressable>
+  );
+}
 
 export function ScoreBar({
   game,
@@ -225,6 +338,7 @@ export function ScoreBar({
 
   const isMyTurn = myPlayer?.isCurrentTurn ?? false;
   const isOpponentTurn = opponent?.isCurrentTurn ?? false;
+  const isGameFinished = game.status === 'finished';
   const canInvite =
     !opponent &&
     !game.pendingInvitation &&
@@ -234,185 +348,180 @@ export function ScoreBar({
     !opponent && game.pendingInvitation && game.status === 'pending';
   const showRackCount = game.tilesRemaining === 0;
 
-  // Show +25 empty rack bonus indicator (from server flag)
+  const myPlayerWon = isGameFinished && game.winnerUlid === currentUserUlid;
+  const opponentWon = isGameFinished && game.winnerUlid === opponent?.ulid;
+
   const myPlayerGotEmptyRackBonus = myPlayer?.receivedEmptyRackBonus === true;
   const opponentGotEmptyRackBonus = opponent?.receivedEmptyRackBonus === true;
 
-  const lastMoveText = formatLastMove(
-    game.lastMove,
-    currentUserUlid,
-    opponent?.username ?? 'Opponent'
-  );
+  const lastMoveText = isGameFinished
+    ? 'Game finished'
+    : formatLastMove(
+        game.lastMove,
+        currentUserUlid,
+        opponent?.username ?? 'Opponent'
+      );
 
-  // Calculate bonus for tiles played
-  const bonus = calculateTilesPlayedBonus(tilesPlayed);
-  const showBonus = bonus > 0;
+  // Calculate bonus: either from tiles being placed now, or from the last move
+  const currentBonus = calculateTilesPlayedBonus(tilesPlayed);
+  const lastMoveBonus =
+    game.lastMove?.type === 'play' && game.lastMove.tiles
+      ? calculateTilesPlayedBonus(game.lastMove.tiles.length)
+      : 0;
 
-  // Animation for bonus display using Reanimated for consistent behavior
-  const bonusOpacity = useSharedValue(0);
-
-  useEffect(() => {
-    bonusOpacity.set(
-      withTiming(showBonus ? 1 : 0, {
-        duration: ANIMATION_DURATION,
-      })
-    );
-  }, [showBonus, bonusOpacity]);
-
-  const bonusAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: bonusOpacity.value,
-  }));
+  // Show current bonus while placing tiles, otherwise show last move bonus
+  const bonus = currentBonus > 0 ? currentBonus : lastMoveBonus;
+  const showBonus = bonus > 0 && !isGameFinished;
 
   return (
     <View style={styles.containerWrapper}>
       <BlurView intensity={40} tint="dark" style={styles.container}>
-        {/* Left player section */}
-        <View style={styles.playerSection}>
-          <PlayerAvatar player={myPlayer} isActive={isMyTurn} />
-          <View style={styles.playerInfo}>
-            <Text
-              style={[styles.playerName, isMyTurn && styles.activeName]}
-              numberOfLines={1}
-            >
-              You
-            </Text>
-            <View style={styles.scoreRow}>
-              <AnimatedScore score={myPlayer?.score ?? 0} />
-              {showRackCount && (
-                <Text style={styles.rackCount}>
-                  ({myPlayer?.rackCount ?? 0})
-                </Text>
-              )}
-            </View>
-            <StatusDots
-              hasFreeSwap={myPlayer?.hasFreeSwap}
-              hasReceivedBlank={myPlayer?.hasReceivedBlank}
-              onPress={() => setStatusModalPlayer('me')}
-            />
-            {myPlayerGotEmptyRackBonus && (
-              <Text style={styles.emptyRackBonus}>+25</Text>
-            )}
-          </View>
-        </View>
-
-        {/* Center section */}
-        <View style={styles.centerSection}>
-          <TilesBadge count={game.tilesRemaining} />
-          {lastMoveText && (
-            <Text style={styles.lastMoveText} numberOfLines={1}>
-              {lastMoveText}
-            </Text>
-          )}
-          {/* Long word bonus - same styling as lastMoveText */}
-          <ReAnimated.Text
-            style={[
-              styles.bonusText,
-              !lastMoveText && styles.bonusNoLastMove,
-              bonusAnimatedStyle,
-            ]}
+        {/* Main content */}
+        <View style={styles.mainContent}>
+          {/* Left player section */}
+          <AnimatedPlayerSection
+            isActive={isMyTurn}
+            isWinner={myPlayerWon}
+            isGameFinished={isGameFinished}
+            avatarColor={myPlayer?.avatarColor}
+            isRight={false}
           >
-            +{bonus} long word bonus
-          </ReAnimated.Text>
-          {game.status === 'finished' && (
-            <View
-              style={[
-                styles.statusChip,
-                game.winnerUlid === currentUserUlid
-                  ? styles.winChip
-                  : styles.loseChip,
-              ]}
-            >
-              <Text style={styles.statusText}>
-                {game.winnerUlid === currentUserUlid ? 'Won' : 'Lost'}
-              </Text>
-            </View>
-          )}
-          {game.status === 'active' && isMyTurn && game.turnExpiresAt && (
-            <TurnTimer expiresAt={game.turnExpiresAt} isMyTurn={isMyTurn} />
-          )}
-        </View>
-
-        {/* Right player section */}
-        <View style={[styles.playerSection, styles.playerSectionRight]}>
-          {canInvite ? (
-            <View style={styles.inviteContainer}>
-              <Text style={styles.invitePrompt}>Invite opponent</Text>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.inviteButton,
-                  pressed && { opacity: 0.5 },
-                ]}
-                onPressOut={onInvite}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Text style={styles.inviteText}>+</Text>
-              </Pressable>
-            </View>
-          ) : hasPendingInvitation ? (
-            <View style={styles.pendingInviteSection}>
-              <View style={[styles.playerInfo, styles.playerInfoRight]}>
+            <PlayerAvatar player={myPlayer} />
+            <View style={styles.playerInfo}>
+              <View style={styles.nameRow}>
                 <Text style={styles.playerName} numberOfLines={1}>
-                  {game.pendingInvitation!.invitee.username}
+                  You
                 </Text>
-                <Text style={styles.pendingLabel}>Invited</Text>
+                {isGameFinished && <ResultBadge won={myPlayerWon} />}
               </View>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.pendingAvatarContainer,
-                  pressed && { opacity: 0.7 },
-                ]}
-                onPressOut={() =>
-                  onRevokeInvitation?.(game.pendingInvitation!.ulid)
-                }
-              >
-                <SmartAvatar
-                  userUlid={game.pendingInvitation!.invitee.ulid}
-                  uri={game.pendingInvitation!.invitee.avatar}
-                  name={game.pendingInvitation!.invitee.username}
-                  size={AVATAR_SIZE}
-                  disabled
-                  backgroundColor={
-                    game.pendingInvitation!.invitee.avatarColor ?? undefined
-                  }
-                />
-                <View style={styles.revokeOverlay}>
-                  <Text style={styles.revokeIcon}>×</Text>
-                </View>
-              </Pressable>
-            </View>
-          ) : (
-            <>
-              <View style={[styles.playerInfo, styles.playerInfoRight]}>
-                <Text
-                  style={[
-                    styles.playerName,
-                    isOpponentTurn && styles.activeName,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {opponent?.username ?? 'Opponent'}
-                </Text>
-                <View style={styles.scoreRow}>
-                  {showRackCount && (
-                    <Text style={styles.rackCount}>
-                      ({opponent?.rackCount ?? 0})
-                    </Text>
-                  )}
-                  <AnimatedScore score={opponent?.score ?? 0} />
-                </View>
-                <StatusDots
-                  hasFreeSwap={opponent?.hasFreeSwap}
-                  hasReceivedBlank={opponent?.hasReceivedBlank}
-                  onPress={() => setStatusModalPlayer('opponent')}
-                />
-                {opponentGotEmptyRackBonus && (
-                  <Text style={styles.emptyRackBonus}>+25</Text>
+              <AnimatedScore score={myPlayer?.score ?? 0} />
+              <View style={styles.metaRow}>
+                {showRackCount && (
+                  <Text style={styles.rackCount}>
+                    {myPlayer?.rackCount ?? 0} tiles
+                  </Text>
+                )}
+                {myPlayerGotEmptyRackBonus && (
+                  <Text style={styles.finishBonus}>
+                    +25 for finishing first
+                  </Text>
+                )}
+                {!myPlayerGotEmptyRackBonus && (
+                  <StatusDots
+                    hasFreeSwap={myPlayer?.hasFreeSwap}
+                    hasReceivedBlank={myPlayer?.hasReceivedBlank}
+                    onPress={() => setStatusModalPlayer('me')}
+                  />
                 )}
               </View>
-              <PlayerAvatar player={opponent} isActive={isOpponentTurn} />
-            </>
-          )}
+            </View>
+          </AnimatedPlayerSection>
+
+          {/* Center section */}
+          <View style={styles.centerSection}>
+            <TilesBadge count={game.tilesRemaining} />
+            {game.status === 'active' && isMyTurn && game.turnExpiresAt && (
+              <TurnTimer expiresAt={game.turnExpiresAt} isMyTurn={isMyTurn} />
+            )}
+          </View>
+
+          {/* Right player section */}
+          <AnimatedPlayerSection
+            isActive={isOpponentTurn}
+            isWinner={opponentWon}
+            isGameFinished={isGameFinished}
+            avatarColor={opponent?.avatarColor}
+            isRight={true}
+          >
+            {canInvite ? (
+              <View style={styles.inviteContainer}>
+                <Text style={styles.invitePrompt}>Invite opponent</Text>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.inviteButton,
+                    pressed && { opacity: 0.5 },
+                  ]}
+                  onPressOut={onInvite}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Text style={styles.inviteText}>+</Text>
+                </Pressable>
+              </View>
+            ) : hasPendingInvitation ? (
+              <View style={styles.pendingInviteSection}>
+                <View style={[styles.playerInfo, styles.playerInfoRight]}>
+                  <Text style={styles.playerName} numberOfLines={1}>
+                    {game.pendingInvitation!.invitee.username}
+                  </Text>
+                  <Text style={styles.pendingLabel}>Invited</Text>
+                </View>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.pendingAvatarContainer,
+                    pressed && { opacity: 0.7 },
+                  ]}
+                  onPressOut={() =>
+                    onRevokeInvitation?.(game.pendingInvitation!.ulid)
+                  }
+                >
+                  <SmartAvatar
+                    userUlid={game.pendingInvitation!.invitee.ulid}
+                    uri={game.pendingInvitation!.invitee.avatar}
+                    name={game.pendingInvitation!.invitee.username}
+                    size={AVATAR_SIZE}
+                    disabled
+                    backgroundColor={
+                      game.pendingInvitation!.invitee.avatarColor ?? undefined
+                    }
+                  />
+                  <View style={styles.revokeOverlay}>
+                    <Text style={styles.revokeIcon}>×</Text>
+                  </View>
+                </Pressable>
+              </View>
+            ) : (
+              <>
+                <PlayerAvatar player={opponent} />
+                <View style={[styles.playerInfo, styles.playerInfoRight]}>
+                  <View style={[styles.nameRow, styles.nameRowRight]}>
+                    {isGameFinished && <ResultBadge won={opponentWon} />}
+                    <Text style={styles.playerName} numberOfLines={1}>
+                      {opponent?.username ?? 'Opponent'}
+                    </Text>
+                  </View>
+                  <AnimatedScore score={opponent?.score ?? 0} />
+                  <View style={[styles.metaRow, styles.metaRowRight]}>
+                    {opponentGotEmptyRackBonus && (
+                      <Text style={styles.finishBonus}>
+                        +25 for finishing first
+                      </Text>
+                    )}
+                    {!opponentGotEmptyRackBonus && (
+                      <StatusDots
+                        hasFreeSwap={opponent?.hasFreeSwap}
+                        hasReceivedBlank={opponent?.hasReceivedBlank}
+                        onPress={() => setStatusModalPlayer('opponent')}
+                      />
+                    )}
+                    {showRackCount && (
+                      <Text style={styles.rackCount}>
+                        {opponent?.rackCount ?? 0} tiles
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              </>
+            )}
+          </AnimatedPlayerSection>
         </View>
+
+        {/* Footer - tappable to navigate to move history */}
+        <FooterHistory
+          gameUlid={game.ulid}
+          lastMoveText={lastMoveText}
+          showBonus={showBonus}
+          bonus={bonus}
+        />
       </BlurView>
 
       <StatusInfoModal
@@ -438,31 +547,36 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
     marginTop: 8,
     marginBottom: 8,
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
   },
   container: {
+    backgroundColor: 'rgba(27, 40, 56, 0.8)',
+  },
+  mainContent: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    backgroundColor: 'rgba(27, 40, 56, 0.5)',
+    alignItems: 'stretch',
+    padding: 10,
+    gap: 6,
   },
   playerSection: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1.3,
+    gap: 8,
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   playerSectionRight: {
-    justifyContent: 'flex-end',
+    flexDirection: 'row-reverse',
   },
   playerInfo: {
-    marginLeft: 6,
     flex: 1,
+    minWidth: 0,
   },
   playerInfoRight: {
-    marginLeft: 0,
-    marginRight: 6,
     alignItems: 'flex-end',
   },
   avatarWrapper: {
@@ -471,45 +585,60 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  activeIndicator: {
-    position: 'absolute',
-    width: AVATAR_CONTAINER_SIZE,
-    height: AVATAR_CONTAINER_SIZE,
-    borderRadius: AVATAR_CONTAINER_SIZE / 2,
-    borderWidth: 3.5,
-    borderColor: colors.warning,
-    shadowColor: colors.warning,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 8,
-  },
-  playerName: {
-    color: colors.textSecondary,
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  activeName: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  scoreRow: {
+  nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: 6,
+    marginBottom: 2,
+  },
+  nameRowRight: {
+    flexDirection: 'row-reverse',
+  },
+  playerName: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 10,
+  },
+  resultBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  wonBadge: {
+    backgroundColor: '#4CAF50',
+  },
+  lostBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  resultBadgeText: {
+    color: colors.textPrimary,
+    fontSize: 8,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  lostBadgeText: {
+    color: 'rgba(255, 255, 255, 0.6)',
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 3,
+  },
+  metaRowRight: {
+    flexDirection: 'row-reverse',
   },
   rackCount: {
-    fontSize: 11,
-    color: colors.textSecondary,
-  },
-  emptyRackBonus: {
+    color: 'rgba(255, 255, 255, 0.45)',
     fontSize: 9,
+  },
+  finishBonus: {
     color: '#4CAF50',
-    fontWeight: '600',
-    marginTop: 1,
+    fontSize: 9,
+    fontWeight: '500',
   },
   statusDots: {
     flexDirection: 'row',
     gap: 3,
-    marginTop: 2,
   },
   dot: {
     width: 5,
@@ -524,54 +653,55 @@ const styles = StyleSheet.create({
   },
   centerSection: {
     alignItems: 'center',
-    paddingHorizontal: 4,
-    flex: 2.4,
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+    minWidth: 55,
   },
   tilesBadge: {
     backgroundColor: colors.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 10,
     alignItems: 'center',
   },
   tilesLabel: {
-    color: colors.textPrimary,
-    fontSize: 9,
-    opacity: 0.8,
-    marginTop: -1,
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 7,
+  },
+  footer: {
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  footerPressed: {
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+  },
+  footerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  historyIcon: {
+    marginRight: 6,
+  },
+  footerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   lastMoveText: {
-    color: colors.textSecondary,
+    color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 10,
-    marginTop: 4,
     fontStyle: 'italic',
-    textAlign: 'center',
+    flex: 1,
   },
   bonusText: {
-    color: colors.textSecondary,
-    fontSize: 10,
-    fontStyle: 'italic',
-    textAlign: 'center',
-  },
-  bonusNoLastMove: {
-    marginTop: 4,
-  },
-  statusChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    marginTop: 4,
-  },
-  winChip: {
-    backgroundColor: '#4CAF50',
-  },
-  loseChip: {
-    backgroundColor: '#E91E63',
-  },
-  statusText: {
-    color: colors.textPrimary,
-    fontSize: 10,
-    fontWeight: 'bold',
+    color: '#4CAF50',
+    fontSize: 9,
+    fontWeight: '500',
   },
   inviteContainer: {
     flexDirection: 'row',
