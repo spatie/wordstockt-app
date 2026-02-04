@@ -57,7 +57,6 @@ function MultiplierBadge({ type }: { type: string }) {
   );
 }
 
-
 function MoveCard({
   move,
   moveNumber,

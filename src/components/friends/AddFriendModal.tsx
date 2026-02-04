@@ -11,7 +11,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { BaseModal } from '../ui/BaseModal';
 import { SmartAvatar } from '../ui/SmartAvatar';
-import { useSearchUsers, type UserSearchResult } from '../../api/queries/useUsers';
+import {
+  useSearchUsers,
+  type UserSearchResult,
+} from '../../api/queries/useUsers';
 import { useAddFriend, useIsFriend } from '../../api/queries/useFriends';
 import { getApiError } from '../../api/client';
 import { colors } from '../../config/theme';
@@ -23,7 +26,12 @@ interface AddFriendModalProps {
   onSuccess: () => void;
 }
 
-type SearchState = 'empty' | 'searching' | 'found' | 'not_found' | 'already_friend';
+type SearchState =
+  | 'empty'
+  | 'searching'
+  | 'found'
+  | 'not_found'
+  | 'already_friend';
 
 export function AddFriendModal({
   visible,
@@ -71,7 +79,12 @@ export function AddFriendModal({
         setSearchState('found');
       }
     }
-  }, [searchTrigger, searchQuery.isLoading, searchQuery.isError, searchQuery.data]);
+  }, [
+    searchTrigger,
+    searchQuery.isLoading,
+    searchQuery.isError,
+    searchQuery.data,
+  ]);
 
   // Check if user is already a friend
   React.useEffect(() => {
@@ -241,7 +254,9 @@ export function AddFriendModal({
         <Pressable
           style={({ pressed }) => [
             styles.searchButton,
-            (!username.trim() || username.trim().length < 2 || searchState === 'searching') &&
+            (!username.trim() ||
+              username.trim().length < 2 ||
+              searchState === 'searching') &&
               styles.searchButtonDisabled,
             {
               opacity:
@@ -253,7 +268,11 @@ export function AddFriendModal({
             },
           ]}
           onPress={handleSearch}
-          disabled={!username.trim() || username.trim().length < 2 || searchState === 'searching'}
+          disabled={
+            !username.trim() ||
+            username.trim().length < 2 ||
+            searchState === 'searching'
+          }
         >
           {searchState === 'searching' ? (
             <ActivityIndicator size="small" color={colors.textPrimary} />
