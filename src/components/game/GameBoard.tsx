@@ -14,6 +14,7 @@ import {
   Platform,
   StatusBar,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { BoardCell } from './BoardCell';
 import { ScoreBubble } from './ScoreBubble';
 import { useDragDrop } from '../../context/DragDropContext';
@@ -217,27 +218,30 @@ export function GameBoard({
     <View style={styles.boardContainer} onLayout={handleContainerLayout}>
       {boardSize > 0 ? (
         <Animated.View
-          ref={boardRef}
           style={[
-            styles.board,
+            styles.boardWrapper,
             { width: boardSize, height: boardSize, opacity: fadeAnim },
           ]}
         >
-          {Array.from({ length: BOARD_SIZE }, (_, y) => (
-            <View key={y} style={styles.row}>
-              {Array.from({ length: BOARD_SIZE }, (_, x) => renderCell(x, y))}
+          <BlurView intensity={80} tint="dark" style={styles.boardBlur}>
+            <View ref={boardRef} style={styles.board}>
+              {Array.from({ length: BOARD_SIZE }, (_, y) => (
+                <View key={y} style={styles.row}>
+                  {Array.from({ length: BOARD_SIZE }, (_, x) => renderCell(x, y))}
+                </View>
+              ))}
+              {/* Score bubble positioned at top-left of the top-left pending tile */}
+              {/* Always render if we have a position so fade-out animation can complete */}
+              {lastScoreBubblePosition.current && (
+                <ScoreBubble
+                  score={potentialScore}
+                  x={lastScoreBubblePosition.current.x}
+                  y={lastScoreBubblePosition.current.y}
+                  cellSize={cellSize}
+                />
+              )}
             </View>
-          ))}
-          {/* Score bubble positioned at top-left of the top-left pending tile */}
-          {/* Always render if we have a position so fade-out animation can complete */}
-          {lastScoreBubblePosition.current && (
-            <ScoreBubble
-              score={potentialScore}
-              x={lastScoreBubblePosition.current.x}
-              y={lastScoreBubblePosition.current.y}
-              cellSize={cellSize}
-            />
-          )}
+          </BlurView>
         </Animated.View>
       ) : showSpinner ? (
         <ActivityIndicator size="large" color={colors.primary} />
@@ -252,12 +256,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  board: {
-    backgroundColor: colors.boardBackground,
+  boardWrapper: {
     borderRadius: 16,
-    padding: 8,
+    overflow: 'hidden',
     borderWidth: 2,
     borderColor: colors.primary,
+  },
+  boardBlur: {
+    flex: 1,
+    backgroundColor: 'rgba(27, 40, 56, 0.4)',
+  },
+  board: {
+    flex: 1,
+    padding: 8,
   },
   row: {
     flex: 1,

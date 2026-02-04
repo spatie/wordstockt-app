@@ -137,6 +137,9 @@ function GameScreenContent() {
   const uiEntryTranslate = useRef(new Animated.Value(20)).current;
   const hasAnimatedEntry = useRef(false);
 
+  // Loading transition state - keep spinner visible until we're ready to show content
+  const [isTransitioning, setIsTransitioning] = useState(true);
+
   const { data: apiGame, isLoading, error, refetch } = useGame(gameUlid);
   const setValidationResult = useGameStore((s) => s.setValidationResult);
   const revokeInvitation = useRevokeInvitation();
@@ -165,24 +168,30 @@ function GameScreenContent() {
   // Detect and recall tiles that conflict with opponent's played tiles
   useConflictingTilesRecall(game);
 
-  // Trigger UI entry animation when game loads
+  // When game loads, trigger spinner fade out (which will then trigger content fade in)
   useEffect(() => {
     if (game && !hasAnimatedEntry.current) {
       hasAnimatedEntry.current = true;
-      Animated.parallel([
-        Animated.timing(uiEntryOpacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(uiEntryTranslate, {
-          toValue: 0,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      // Spinner will fade out, then onSpinnerFadeComplete triggers content fade in
+      setIsTransitioning(false);
     }
-  }, [game, uiEntryOpacity, uiEntryTranslate]);
+  }, [game]);
+
+  // Called when spinner fade out completes - now fade in the content
+  const onSpinnerFadeComplete = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(uiEntryOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(uiEntryTranslate, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [uiEntryOpacity, uiEntryTranslate]);
 
   // Get all game interaction handlers from the hook
   const {
@@ -453,15 +462,11 @@ function GameScreenContent() {
     opponentUsername: opponent?.username,
   });
 
-  if (!USE_MOCK_DATA && isLoading) {
-    return (
-      <View style={styles.container}>
-        <LoadingView />
-      </View>
-    );
-  }
+  // Show loading spinner while loading or transitioning
+  const showSpinner = !USE_MOCK_DATA && (isLoading || isTransitioning);
 
-  if (!USE_MOCK_DATA && (error || !game)) {
+  // Show error state
+  if (!USE_MOCK_DATA && error) {
     return (
       <View style={styles.container}>
         <View style={styles.errorContainer}>
@@ -480,27 +485,27 @@ function GameScreenContent() {
     );
   }
 
-  // At this point game is always defined (either from API or mock)
-  const gameData = game!;
+  // At this point game might still be loading - we'll render content conditionally
+  const gameData = game;
 
-  // Get current player's free swap status
-  const currentPlayer = gameData.players.find((p) => p.ulid === userUlid);
+  // Get current player's free swap status (only if game is loaded)
+  const currentPlayer = gameData?.players.find((p) => p.ulid === userUlid);
   const hasFreeSwap = currentPlayer?.hasFreeSwap ?? false;
-  const canJoin = gameData.canJoin;
+  const canJoin = gameData?.canJoin ?? false;
 
   // Track if game was already finished when first loaded
-  if (wasFinishedOnLoadRef.current === null) {
+  if (gameData && wasFinishedOnLoadRef.current === null) {
     wasFinishedOnLoadRef.current = gameData.status === 'finished';
   }
 
   // Game end detection - only show modal if game just ended (not already finished on load)
-  const isGameFinished = gameData.status === 'finished';
+  const isGameFinished = gameData?.status === 'finished';
 
   // Show warning when it's the last move (determined by backend)
   // Don't show for already completed games
   const showLastMoveWarning =
-    gameData.isLastMove && !lastMoveWarningShown && !isGameFinished;
-  const didWin = isGameFinished && gameData.winnerUlid === userUlid;
+    gameData?.isLastMove && !lastMoveWarningShown && !isGameFinished;
+  const didWin = isGameFinished && gameData?.winnerUlid === userUlid;
   const gameJustEnded = isGameFinished && !wasFinishedOnLoadRef.current;
   const showGameEndModal = gameJustEnded && !gameEndModalDismissed;
 
@@ -545,206 +550,216 @@ function GameScreenContent() {
 
   return (
     <View style={styles.container}>
-      {/* Board area - wrapped so overlay can cover just this section */}
-      <View style={styles.boardSection}>
-        <Animated.View
-          style={{
-            opacity: uiEntryOpacity,
-            transform: [{ translateY: uiEntryTranslate }],
-          }}
-        >
-          <ScoreBar
-            game={gameData}
-            currentUserUlid={userUlid}
-            onInvite={() => setInviteModalVisible(true)}
-            onRevokeInvitation={handleRevokeInvitation}
-            tilesPlayed={pendingTiles.length}
-          />
-        </Animated.View>
-        <View style={styles.boardWrapper}>
-          <GameBoard
-            game={gameData}
-            onCellPress={handleCellPress}
-            onPendingTileDrag={handlePendingTileDrag}
-            onBlankTileTap={handleBlankTileTap}
-            onPlacedTileTap={handlePlacedTileTap}
-            isMyTurn={isMyTurn}
-            potentialScore={validationResult?.potential_score}
-          />
-        </View>
-        {/* Dark overlay for swap mode - only covers board section */}
-        <SwapModeDarkOverlay
-          visible={isSwapMode}
-          isExiting={isSwapExiting}
-          swapCompleted={swapCompleted}
-          onExitComplete={onSwapExitComplete}
-          hasFreeSwap={hasFreeSwap}
-        />
-      </View>
-      {canJoin ? (
-        <View style={styles.joinContainer}>
-          <Text style={styles.joinText}>
-            {invitationUlid
-              ? 'You have been invited to this game!'
-              : 'Join this game to start playing!'}
-          </Text>
-          <View style={styles.joinButtons}>
-            {invitationUlid && (
-              <Button
-                label="Decline"
-                onPress={confirmDecline}
-                variant="outline"
-                loading={isDeclining}
-                disabled={isJoining}
-                rounded
-                style={styles.declineButton}
-              />
-            )}
-            <Button
-              label="Join Game"
-              onPress={confirmJoin}
-              loading={isJoining}
-              disabled={isDeclining}
-              rounded
-              style={styles.joinButton}
-            />
-          </View>
-        </View>
-      ) : (
+      {/* Game content - only render when game data is loaded */}
+      {gameData && (
         <>
-          <Animated.View
-            style={{
-              opacity: uiEntryOpacity,
-              transform: [{ translateY: uiEntryTranslate }],
-            }}
-          >
-            <TileRack
-              tiles={gameData.myRack}
-              disabled={!isGameActive}
-              onTileDrop={handleRackTileDrop}
-            />
-          </Animated.View>
-          {/* Button area with crossfade animation */}
-          <Animated.View
-            style={[
-              styles.buttonArea,
-              {
+          {/* Board area - wrapped so overlay can cover just this section */}
+          <View style={styles.boardSection}>
+            <Animated.View
+              style={{
                 opacity: uiEntryOpacity,
                 transform: [{ translateY: uiEntryTranslate }],
-              },
-            ]}
-          >
-            {/* Action buttons - always rendered, animated opacity */}
-            <Animated.View
-              style={[
-                styles.buttonContainer,
-                { opacity: actionButtonsOpacity },
-              ]}
-              pointerEvents={isSwapMode ? 'none' : 'auto'}
+              }}
             >
-              <ActionButtons
-                onRecall={handleRecall}
-                onMix={handleMix}
-                onPass={confirmPass}
-                onPlay={confirmPlay}
-                onSwap={canSwap ? enterSwapMode : undefined}
-                onResign={confirmResign}
-                canPlay={canPlay}
-                isLoading={isSubmitting}
-                disabled={!isGameActive}
-                isMyTurn={isMyTurn}
-                hasPendingTiles={pendingTiles.length > 0}
+              <ScoreBar
+                game={gameData}
+                currentUserUlid={userUlid}
+                onInvite={() => setInviteModalVisible(true)}
+                onRevokeInvitation={handleRevokeInvitation}
+                tilesPlayed={pendingTiles.length}
               />
             </Animated.View>
-            {/* Swap buttons - only rendered during swap mode, animated opacity */}
-            {(isSwapMode || isSwapExiting) && (
+            <View style={styles.boardWrapper}>
+              <GameBoard
+                game={gameData}
+                onCellPress={handleCellPress}
+                onPendingTileDrag={handlePendingTileDrag}
+                onBlankTileTap={handleBlankTileTap}
+                onPlacedTileTap={handlePlacedTileTap}
+                isMyTurn={isMyTurn}
+                potentialScore={validationResult?.potential_score}
+              />
+            </View>
+            {/* Dark overlay for swap mode - only covers board section */}
+            <SwapModeDarkOverlay
+              visible={isSwapMode}
+              isExiting={isSwapExiting}
+              swapCompleted={swapCompleted}
+              onExitComplete={onSwapExitComplete}
+              hasFreeSwap={hasFreeSwap}
+            />
+          </View>
+          {canJoin ? (
+            <View style={styles.joinContainer}>
+              <Text style={styles.joinText}>
+                {invitationUlid
+                  ? 'You have been invited to this game!'
+                  : 'Join this game to start playing!'}
+              </Text>
+              <View style={styles.joinButtons}>
+                {invitationUlid && (
+                  <Button
+                    label="Decline"
+                    onPress={confirmDecline}
+                    variant="outline"
+                    loading={isDeclining}
+                    disabled={isJoining}
+                    rounded
+                    style={styles.declineButton}
+                  />
+                )}
+                <Button
+                  label="Join Game"
+                  onPress={confirmJoin}
+                  loading={isJoining}
+                  disabled={isDeclining}
+                  rounded
+                  style={styles.joinButton}
+                />
+              </View>
+            </View>
+          ) : (
+            <>
               <Animated.View
-                style={[
-                  styles.buttonContainer,
-                  styles.swapButtonContainer,
-                  { opacity: swapButtonsOpacity },
-                ]}
-                pointerEvents={isSwapMode && !isSwapExiting ? 'auto' : 'none'}
+                style={{
+                  opacity: uiEntryOpacity,
+                  transform: [{ translateY: uiEntryTranslate }],
+                }}
               >
-                <SwapModeButtons
-                  selectedCount={selectedSwapIndices.length}
-                  swapCompleted={swapCompleted}
-                  onSwap={handleSwap}
-                  onCancel={startSwapExit}
-                  onDismiss={startSwapExit}
-                  isLoading={isSwapping}
+                <TileRack
+                  tiles={gameData.myRack}
+                  disabled={!isGameActive}
+                  onTileDrop={handleRackTileDrop}
                 />
               </Animated.View>
-            )}
-          </Animated.View>
+              {/* Button area with crossfade animation */}
+              <Animated.View
+                style={[
+                  styles.buttonArea,
+                  {
+                    opacity: uiEntryOpacity,
+                    transform: [{ translateY: uiEntryTranslate }],
+                  },
+                ]}
+              >
+                {/* Action buttons - always rendered, animated opacity */}
+                <Animated.View
+                  style={[
+                    styles.buttonContainer,
+                    { opacity: actionButtonsOpacity },
+                  ]}
+                  pointerEvents={isSwapMode ? 'none' : 'auto'}
+                >
+                  <ActionButtons
+                    onRecall={handleRecall}
+                    onMix={handleMix}
+                    onPass={confirmPass}
+                    onPlay={confirmPlay}
+                    onSwap={canSwap ? enterSwapMode : undefined}
+                    onResign={confirmResign}
+                    canPlay={canPlay}
+                    isLoading={isSubmitting}
+                    disabled={!isGameActive}
+                    isMyTurn={isMyTurn}
+                    hasPendingTiles={pendingTiles.length > 0}
+                  />
+                </Animated.View>
+                {/* Swap buttons - only rendered during swap mode, animated opacity */}
+                {(isSwapMode || isSwapExiting) && (
+                  <Animated.View
+                    style={[
+                      styles.buttonContainer,
+                      styles.swapButtonContainer,
+                      { opacity: swapButtonsOpacity },
+                    ]}
+                    pointerEvents={isSwapMode && !isSwapExiting ? 'auto' : 'none'}
+                  >
+                    <SwapModeButtons
+                      selectedCount={selectedSwapIndices.length}
+                      swapCompleted={swapCompleted}
+                      onSwap={handleSwap}
+                      onCancel={startSwapExit}
+                      onDismiss={startSwapExit}
+                      isLoading={isSwapping}
+                    />
+                  </Animated.View>
+                )}
+              </Animated.View>
+            </>
+          )}
+          <FeedbackModal
+            visible={errorMessage !== null}
+            type="error"
+            message={errorMessage ?? ''}
+            onDismiss={clearError}
+          />
+          <FeedbackModal
+            visible={showLastMoveWarning ?? false}
+            type="warning"
+            title="Last Move"
+            message="This is your final move. The game will end after you play or pass."
+            onDismiss={() => setLastMoveWarningShown(true)}
+          />
+          <FeedbackModal
+            visible={showGameEndModal}
+            type={didWin ? 'success' : 'lost'}
+            title={didWin ? 'You Won!' : 'You Lost'}
+            message={
+              didWin
+                ? 'Congratulations! You played a great game.'
+                : 'Better luck next time!'
+            }
+            onDismiss={() => setGameEndModalDismissed(true)}
+          />
+          <InvitePlayerModal
+            visible={inviteModalVisible}
+            onClose={() => setInviteModalVisible(false)}
+            gameUlid={gameUlid}
+            onSuccess={() => {}}
+          />
+          <BlankTileModal
+            visible={blankTileSelection !== null}
+            onSelectLetter={handleBlankTileLetterSelect}
+            onDismiss={handleBlankTileDismiss}
+          />
+          <WordInfoModal
+            visible={wordInfoPosition !== null}
+            onClose={() => setWordInfoPosition(null)}
+            words={wordInfo}
+            isLoading={isWordInfoLoading}
+            language={gameData.language}
+          />
+          <AchievementModal
+            visible={
+              currentAchievement !== null &&
+              !showGameEndModal &&
+              !showLastMoveWarning
+            }
+            achievement={currentAchievement}
+            onDismiss={dismissAchievement}
+          />
+          <RematchModal
+            visible={showRematchModal}
+            opponent={
+              opponent
+                ? {
+                    username: opponent.username,
+                    avatar: opponent.avatar,
+                    avatarColor: opponent.avatarColor,
+                  }
+                : null
+            }
+            onRematch={handleRematch}
+            onDismiss={handleRematchDismiss}
+            isLoading={isCreatingRematch}
+            error={rematchError}
+          />
         </>
       )}
-      <FeedbackModal
-        visible={errorMessage !== null}
-        type="error"
-        message={errorMessage ?? ''}
-        onDismiss={clearError}
-      />
-      <FeedbackModal
-        visible={showLastMoveWarning}
-        type="warning"
-        title="Last Move"
-        message="This is your final move. The game will end after you play or pass."
-        onDismiss={() => setLastMoveWarningShown(true)}
-      />
-      <FeedbackModal
-        visible={showGameEndModal}
-        type={didWin ? 'success' : 'lost'}
-        title={didWin ? 'You Won!' : 'You Lost'}
-        message={
-          didWin
-            ? 'Congratulations! You played a great game.'
-            : 'Better luck next time!'
-        }
-        onDismiss={() => setGameEndModalDismissed(true)}
-      />
-      <InvitePlayerModal
-        visible={inviteModalVisible}
-        onClose={() => setInviteModalVisible(false)}
-        gameUlid={gameUlid}
-        onSuccess={() => {}}
-      />
-      <BlankTileModal
-        visible={blankTileSelection !== null}
-        onSelectLetter={handleBlankTileLetterSelect}
-        onDismiss={handleBlankTileDismiss}
-      />
-      <WordInfoModal
-        visible={wordInfoPosition !== null}
-        onClose={() => setWordInfoPosition(null)}
-        words={wordInfo}
-        isLoading={isWordInfoLoading}
-        language={gameData.language}
-      />
-      <AchievementModal
-        visible={
-          currentAchievement !== null &&
-          !showGameEndModal &&
-          !showLastMoveWarning
-        }
-        achievement={currentAchievement}
-        onDismiss={dismissAchievement}
-      />
-      <RematchModal
-        visible={showRematchModal}
-        opponent={
-          opponent
-            ? {
-                username: opponent.username,
-                avatar: opponent.avatar,
-                avatarColor: opponent.avatarColor,
-              }
-            : null
-        }
-        onRematch={handleRematch}
-        onDismiss={handleRematchDismiss}
-        isLoading={isCreatingRematch}
-        error={rematchError}
+      {/* Loading spinner overlay - fades out when content is ready */}
+      <LoadingView
+        visible={showSpinner}
+        onFadeOutComplete={onSpinnerFadeComplete}
       />
     </View>
   );

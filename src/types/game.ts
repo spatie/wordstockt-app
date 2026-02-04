@@ -72,6 +72,7 @@ export interface MoveHistoryItem {
   score: number;
   scoreBreakdown: ScoreBreakdown | null;
   tilesCount: number;
+  tiles: PlacedTile[] | null;
   createdAt: string;
 }
 

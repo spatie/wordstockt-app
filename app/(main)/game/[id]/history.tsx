@@ -68,9 +68,10 @@ function MoveCard({
   const isPlay = move.type === 'play';
   const hasBreakdown = move.scoreBreakdown !== null;
 
-  // Get the letters played (from the longest word, which is usually the main play)
-  const playedLetters =
-    hasBreakdown && move.scoreBreakdown!.words.length > 0
+  // Get the letters played from actual tiles, or fall back to inference for older moves
+  const playedLetters = move.tiles
+    ? move.tiles.map((t) => t.letter)
+    : hasBreakdown && move.scoreBreakdown!.words.length > 0
       ? [...move.scoreBreakdown!.words]
           .sort((a, b) => b.word.length - a.word.length)[0]
           .word.split('')

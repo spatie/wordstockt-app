@@ -6,7 +6,7 @@ export const colors = {
   background: '#0D1B2A', // Main dark navy background
   backgroundLight: '#1B2838', // Slightly lighter for cards/sections
   boardBackground: '#1B2838', // Board container background
-  cellBackground: '#2C3E50', // Empty cell background
+  cellBackground: 'rgba(44, 62, 80, 0.5)', // Empty cell background (semi-transparent)
 
   // Accent colors
   primary: '#4A90D9', // Blue accent color
@@ -68,9 +68,9 @@ export const theme = {
 
 export const MULTIPLIER_COLORS = {
   '3W': '#C0392B', // Deep crimson for Triple Word
-  '2W': '#E67E22', // Carrot orange for Double Word (hue shift, not just lighter)
+  '2W': '#E67E22', // Carrot orange for Double Word
   '3L': '#1A5276', // Deep navy for Triple Letter
-  '2L': '#3498DB', // Bright cerulean for Double Letter (clearly brighter)
+  '2L': '#3498DB', // Bright cerulean for Double Letter
   STAR: '#F39C12', // Golden for center star
 } as const;
 
