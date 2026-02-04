@@ -672,7 +672,9 @@ function GameScreenContent() {
                       styles.swapButtonContainer,
                       { opacity: swapButtonsOpacity },
                     ]}
-                    pointerEvents={isSwapMode && !isSwapExiting ? 'auto' : 'none'}
+                    pointerEvents={
+                      isSwapMode && !isSwapExiting ? 'auto' : 'none'
+                    }
                   >
                     <SwapModeButtons
                       selectedCount={selectedSwapIndices.length}
