@@ -228,7 +228,9 @@ export function GameBoard({
             <View ref={boardRef} style={styles.board}>
               {Array.from({ length: BOARD_SIZE }, (_, y) => (
                 <View key={y} style={styles.row}>
-                  {Array.from({ length: BOARD_SIZE }, (_, x) => renderCell(x, y))}
+                  {Array.from({ length: BOARD_SIZE }, (_, x) =>
+                    renderCell(x, y)
+                  )}
                 </View>
               ))}
               {/* Score bubble positioned at top-left of the top-left pending tile */}

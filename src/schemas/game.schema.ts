@@ -400,13 +400,14 @@ export function transformMoveHistoryItem(
       ? transformScoreBreakdown(data.score_breakdown)
       : null,
     tilesCount: data.tiles_count,
-    tiles: data.tiles?.map((t) => ({
-      letter: t.letter,
-      points: t.points,
-      x: t.x ?? 0,
-      y: t.y ?? 0,
-      isBlank: t.is_blank ?? false,
-    })) ?? null,
+    tiles:
+      data.tiles?.map((t) => ({
+        letter: t.letter,
+        points: t.points,
+        x: t.x ?? 0,
+        y: t.y ?? 0,
+        isBlank: t.is_blank ?? false,
+      })) ?? null,
     createdAt: data.created_at,
   };
 }
