@@ -223,6 +223,7 @@ export function GameBoard({
             { width: boardSize, height: boardSize, opacity: fadeAnim },
           ]}
         >
+          <View style={styles.boardClip}>
           <BlurView intensity={80} tint="dark" style={styles.boardBlur}>
             <View ref={boardRef} style={styles.board}>
               {Array.from({ length: BOARD_SIZE }, (_, y) => (
@@ -242,6 +243,7 @@ export function GameBoard({
               )}
             </View>
           </BlurView>
+          </View>
         </Animated.View>
       ) : showSpinner ? (
         <ActivityIndicator size="large" color={colors.primary} />
@@ -258,13 +260,22 @@ const styles = StyleSheet.create({
   },
   boardWrapper: {
     borderRadius: 16,
+    shadowColor: '#ffffff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  boardClip: {
+    flex: 1,
+    borderRadius: 16,
     overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: colors.primary,
+    borderWidth: 1,
+    borderColor: 'rgba(74, 144, 217, 0.5)',
   },
   boardBlur: {
     flex: 1,
-    backgroundColor: 'rgba(27, 40, 56, 0.4)',
+    backgroundColor: 'rgba(27, 40, 56, 0.1)',
   },
   board: {
     flex: 1,
