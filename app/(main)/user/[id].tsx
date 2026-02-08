@@ -27,6 +27,7 @@ import {
   StatRow,
   HeadToHeadCard,
 } from '../../../src/components/stats';
+import { LAYOUT } from '../../../src/config/constants';
 
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -280,6 +281,9 @@ export default function UserProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    maxWidth: LAYOUT.contentMaxWidth,
+    width: '100%',
+    alignSelf: 'center' as const,
   },
   scrollView: {
     flex: 1,

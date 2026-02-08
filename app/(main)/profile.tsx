@@ -26,6 +26,7 @@ import {
   StatsSection,
   StatRow,
 } from '../../src/components/stats';
+import { LAYOUT } from '../../src/config/constants';
 import { Avatar } from '../../src/components/ui/Avatar';
 import { AvatarColorPicker } from '../../src/components/ui/AvatarColorPicker';
 import { AnimatedSaveButton } from '../../src/components/ui/AnimatedSaveButton';
@@ -444,6 +445,9 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    maxWidth: LAYOUT.contentMaxWidth,
+    width: '100%',
+    alignSelf: 'center' as const,
   },
   scrollView: {
     flex: 1,

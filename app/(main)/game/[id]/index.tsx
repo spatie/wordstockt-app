@@ -42,6 +42,7 @@ import {
 import { InvitePlayerModal } from '../../../../src/components/game/InvitePlayerModal';
 import { BlankTileModal } from '../../../../src/components/game/BlankTileModal';
 import { WordInfoModal } from '../../../../src/components/game/WordInfoModal';
+import { DictionaryLookupModal } from '../../../../src/components/game/DictionaryLookupModal';
 import { LoadingView } from '../../../../src/components/ui/LoadingView';
 import { FeedbackModal } from '../../../../src/components/ui/FeedbackModal';
 import { AchievementModal } from '../../../../src/components/ui/AchievementModal';
@@ -49,7 +50,7 @@ import { RematchModal } from '../../../../src/components/ui/RematchModal';
 import { Button } from '../../../../src/components/ui/Button';
 import { showConfirm } from '../../../../src/utils/alerts';
 import { colors } from '../../../../src/config/theme';
-import { SPACING, RADIUS } from '../../../../src/config/constants';
+import { SPACING, RADIUS, LAYOUT } from '../../../../src/config/constants';
 import { ROUTES } from '../../../../src/config/routes';
 import { mockGame } from '../../../../src/config/mockData';
 
@@ -114,6 +115,7 @@ function GameScreenContent() {
     store.clearForGame(gameUlid);
   }, [gameUlid]);
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
+  const [dictionaryModalVisible, setDictionaryModalVisible] = useState(false);
   const [lastMoveWarningShown, setLastMoveWarningShown] = useState(false);
   const [gameEndModalDismissed, setGameEndModalDismissed] = useState(false);
   const [rematchDismissed, setRematchDismissed] = useState(false);
@@ -657,6 +659,7 @@ function GameScreenContent() {
                     onPlay={confirmPlay}
                     onSwap={canSwap ? enterSwapMode : undefined}
                     onResign={confirmResign}
+                    onDictionary={() => setDictionaryModalVisible(true)}
                     canPlay={canPlay}
                     isLoading={isSubmitting}
                     disabled={!isGameActive}
@@ -729,6 +732,11 @@ function GameScreenContent() {
             onClose={() => setWordInfoPosition(null)}
             words={wordInfo}
             isLoading={isWordInfoLoading}
+            language={gameData.language}
+          />
+          <DictionaryLookupModal
+            visible={dictionaryModalVisible}
+            onClose={() => setDictionaryModalVisible(false)}
             language={gameData.language}
           />
           <AchievementModal
@@ -826,6 +834,9 @@ const styles = StyleSheet.create({
     padding: SPACING.xl,
     alignItems: 'center',
     gap: SPACING.lg,
+    maxWidth: LAYOUT.gameControlsMaxWidth,
+    width: '100%',
+    alignSelf: 'center' as const,
   },
   joinText: {
     fontSize: 16,

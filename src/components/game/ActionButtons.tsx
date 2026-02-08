@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -7,7 +7,17 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  withSpring,
+  interpolateColor,
+  Easing,
+} from 'react-native-reanimated';
 import { colors } from '../../config/theme';
+import { LAYOUT } from '../../config/constants';
 
 interface ActionButtonsProps {
   onRecall: () => void;
@@ -16,6 +26,7 @@ interface ActionButtonsProps {
   onMix?: () => void;
   onSwap?: () => void;
   onResign?: () => void;
+  onDictionary?: () => void;
   canPlay: boolean;
   isLoading: boolean;
   disabled: boolean;
@@ -35,28 +46,45 @@ function SmallActionButton({
   onPress: () => void;
   disabled: boolean;
 }) {
+  const opacity = useSharedValue(disabled ? 0.5 : 1);
+
+  useEffect(() => {
+    opacity.value = withTiming(disabled ? 0.5 : 1, { duration: 200 });
+  }, [disabled, opacity]);
+
+  const wrapperStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.smallActionButton,
-        { opacity: pressed && !disabled ? 0.7 : disabled ? 0.5 : 1 },
-      ]}
-      onPress={onPress}
-      disabled={disabled}
-    >
-      <Ionicons
-        name={iconName}
-        size={18}
-        color={disabled ? colors.textMuted : colors.textPrimary}
-      />
-      <Text
-        style={[styles.smallActionLabel, disabled && styles.actionTextDisabled]}
+    <Animated.View style={[styles.smallActionButtonWrapper, wrapperStyle]}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.smallActionButton,
+          pressed && !disabled && { opacity: 0.7 },
+        ]}
+        onPress={onPress}
+        disabled={disabled}
       >
-        {label}
-      </Text>
-    </Pressable>
+        <Ionicons
+          name={iconName}
+          size={16}
+          color={disabled ? colors.textMuted : colors.textPrimary}
+        />
+        <Text
+          style={[
+            styles.smallActionLabel,
+            disabled && styles.actionTextDisabled,
+          ]}
+        >
+          {label}
+        </Text>
+      </Pressable>
+    </Animated.View>
   );
 }
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function ActionButtons({
   onRecall,
@@ -65,6 +93,7 @@ export function ActionButtons({
   onMix,
   onSwap,
   onResign,
+  onDictionary,
   canPlay,
   isLoading,
   disabled,
@@ -72,62 +101,90 @@ export function ActionButtons({
   pendingScore = 0,
   hasPendingTiles = false,
 }: ActionButtonsProps) {
-  // Mix is always available when game is active
-  // Recall only available when there are tiles on the board
-  // Swap/Pass require it to be your turn
-  // Play requires canPlay (which already includes isMyTurn check)
   const turnDisabled = disabled || !isMyTurn;
   const recallDisabled = disabled || !hasPendingTiles;
+  const playActive = canPlay && !disabled && isMyTurn;
+
+  // PLAY button animations
+  // progress: 0 = disabled, 1 = active
+  const playProgress = useSharedValue(playActive ? 1 : 0);
+  const pulseScale = useSharedValue(1);
+
+  useEffect(() => {
+    if (playActive) {
+      playProgress.value = withTiming(1, { duration: 250 });
+      pulseScale.value = withRepeat(
+        withTiming(1.05, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        true
+      );
+    } else {
+      playProgress.value = withTiming(0, { duration: 250 });
+      pulseScale.value = withSpring(1, { damping: 15, stiffness: 120 });
+    }
+  }, [playActive, playProgress, pulseScale]);
+
+  const playAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }],
+    backgroundColor: interpolateColor(
+      playProgress.value,
+      [0, 1],
+      [colors.buttonSecondary, colors.primary]
+    ),
+    shadowOpacity: playProgress.value * 0.4,
+  }));
 
   return (
     <View style={styles.container}>
-      {/* Left side action buttons - now separate */}
-      <View style={styles.leftActions}>
-        <SmallActionButton
-          iconName="arrow-undo-outline"
-          label="Recall"
-          onPress={onRecall}
-          disabled={recallDisabled}
-        />
-        <SmallActionButton
-          iconName="shuffle-outline"
-          label="Mix"
-          onPress={onMix ?? (() => {})}
-          disabled={disabled}
-        />
-        <SmallActionButton
-          iconName="swap-horizontal-outline"
-          label="Swap"
-          onPress={onSwap ?? (() => {})}
-          disabled={turnDisabled}
-        />
-        <SmallActionButton
-          iconName="play-skip-forward-outline"
-          label="Pass"
-          onPress={onPass}
-          disabled={turnDisabled}
-        />
-        <SmallActionButton
-          iconName="flag-outline"
-          label="Resign"
-          onPress={onResign ?? (() => {})}
-          disabled={disabled}
-        />
+      {/* Grid of action buttons (3x2) */}
+      <View style={styles.grid}>
+        <View style={styles.gridRow}>
+          <SmallActionButton
+            iconName="arrow-undo-outline"
+            label="Recall"
+            onPress={onRecall}
+            disabled={recallDisabled}
+          />
+          <SmallActionButton
+            iconName="swap-horizontal-outline"
+            label="Swap"
+            onPress={onSwap ?? (() => {})}
+            disabled={turnDisabled}
+          />
+          <SmallActionButton
+            iconName="play-skip-forward-outline"
+            label="Pass"
+            onPress={onPass}
+            disabled={turnDisabled}
+          />
+        </View>
+        <View style={styles.gridRow}>
+          <SmallActionButton
+            iconName="shuffle-outline"
+            label="Mix"
+            onPress={onMix ?? (() => {})}
+            disabled={disabled}
+          />
+          <SmallActionButton
+            iconName="book-outline"
+            label="Dict"
+            onPress={onDictionary ?? (() => {})}
+            disabled={disabled}
+          />
+          <SmallActionButton
+            iconName="flag-outline"
+            label="Resign"
+            onPress={onResign ?? (() => {})}
+            disabled={disabled}
+          />
+        </View>
       </View>
 
-      {/* Play button */}
-      <Pressable
-        style={({ pressed }) => [
+      {/* Round PLAY button */}
+      <AnimatedPressable
+        style={[
           styles.playButton,
-          (!canPlay || disabled) && styles.playButtonDisabled,
-          {
-            opacity:
-              pressed && canPlay && !disabled
-                ? 0.7
-                : !canPlay || disabled
-                  ? 0.6
-                  : 1,
-          },
+          playAnimatedStyle,
         ]}
         onPress={onPlay}
         disabled={!canPlay || disabled}
@@ -135,7 +192,7 @@ export function ActionButtons({
         {isLoading ? (
           <ActivityIndicator color={colors.textPrimary} />
         ) : (
-          <>
+          <View style={styles.playContent}>
             <Text
               style={[
                 styles.playText,
@@ -145,78 +202,91 @@ export function ActionButtons({
               PLAY
             </Text>
             {pendingScore > 0 && (
-              <View style={styles.pointsBadge}>
-                <Text style={styles.pointsText}>{pendingScore}pts</Text>
-              </View>
+              <Text
+                style={[
+                  styles.playScore,
+                  (!canPlay || disabled) && styles.playTextDisabled,
+                ]}
+              >
+                {pendingScore}
+              </Text>
             )}
-          </>
+          </View>
         )}
-      </Pressable>
+      </AnimatedPressable>
     </View>
   );
 }
 
+const PLAY_SIZE = 72;
+
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 8,
     paddingHorizontal: 16,
-    paddingBottom: 20,
-    gap: 8,
+    paddingBottom: 16,
+    gap: 10,
+    maxWidth: LAYOUT.gameControlsMaxWidth,
+    width: '100%',
+    alignSelf: 'center',
   },
-  leftActions: {
+  grid: {
+    flex: 1,
+    gap: 5,
+  },
+  gridRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+    gap: 5,
+  },
+  smallActionButtonWrapper: {
+    flex: 1,
   },
   smallActionButton: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 8,
+    paddingVertical: 5,
     backgroundColor: colors.backgroundLight,
     borderRadius: 10,
-    minWidth: 48,
   },
   smallActionLabel: {
-    fontSize: 10,
+    fontSize: 9,
     color: colors.textSecondary,
+    marginTop: 1,
   },
   actionTextDisabled: {
     color: colors.textMuted,
   },
   playButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    width: PLAY_SIZE,
+    height: PLAY_SIZE,
+    borderRadius: PLAY_SIZE / 2,
     backgroundColor: colors.primary,
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 24,
-    gap: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  playButtonDisabled: {
-    backgroundColor: colors.buttonSecondary,
+  playContent: {
+    alignItems: 'center',
   },
   playText: {
     color: colors.textPrimary,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 'bold',
     letterSpacing: 1,
   },
   playTextDisabled: {
     color: colors.textMuted,
   },
-  pointsBadge: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  pointsText: {
-    color: colors.textPrimary,
+  playScore: {
+    color: 'rgba(255,255,255,0.7)',
     fontSize: 11,
     fontWeight: '600',
+    marginTop: 1,
   },
 });

@@ -36,6 +36,7 @@ import {
   GAP,
   SPRING_CONFIG,
   SPRING_CONFIG_FAST,
+  LAYOUT,
 } from '../../config/constants';
 import { colors } from '../../config/theme';
 import type { Tile as TileType } from '../../types';
@@ -366,6 +367,9 @@ const styles = StyleSheet.create({
     marginTop: 12,
     backgroundColor: 'transparent',
     borderRadius: 12,
+    maxWidth: LAYOUT.gameControlsMaxWidth,
+    width: '100%',
+    alignSelf: 'center',
   },
   slotsContainer: {
     height: SLOT_WIDTH,

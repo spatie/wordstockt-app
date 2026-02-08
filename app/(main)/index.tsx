@@ -52,7 +52,7 @@ import {
 import { TabBar } from '../../src/components/ui/TabBar';
 import { getApiError } from '../../src/api/client';
 import { colors } from '../../src/config/theme';
-import { SPACING, RADIUS } from '../../src/config/constants';
+import { SPACING, RADIUS, LAYOUT } from '../../src/config/constants';
 import { ROUTES } from '../../src/config/routes';
 
 type TabValue = 'active' | 'public' | 'completed';
@@ -546,6 +546,9 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    maxWidth: LAYOUT.contentMaxWidth,
+    width: '100%',
+    alignSelf: 'center' as const,
   },
   listContent: {
     flexGrow: 1,

@@ -19,7 +19,7 @@ import { PasswordInput } from '../../src/components/form/PasswordInput';
 import { MainLogo } from '../../src/components/ui/MainLogo';
 import { FloatingTiles } from '../../src/components/ui/FloatingTiles';
 import { colors } from '../../src/config/theme';
-import { SPACING, RADIUS, DIMENSIONS } from '../../src/config/constants';
+import { SPACING, RADIUS, DIMENSIONS, LAYOUT } from '../../src/config/constants';
 import { ROUTES } from '../../src/config/routes';
 
 function GlowingLogo() {
@@ -225,6 +225,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xxl,
     paddingTop: 20,
     alignItems: 'center',
+    maxWidth: LAYOUT.authFormMaxWidth,
+    width: '100%',
+    alignSelf: 'center',
   },
   logoContainer: {
     marginTop: 40,

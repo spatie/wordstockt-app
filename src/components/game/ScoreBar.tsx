@@ -15,7 +15,7 @@ import { Text } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../../config/theme';
-import { DIMENSIONS } from '../../config/constants';
+import { DIMENSIONS, LAYOUT } from '../../config/constants';
 import { ROUTES } from '../../config/routes';
 import { useAuthStore } from '../../stores/authStore';
 import { Avatar } from '../ui/Avatar';
@@ -581,6 +581,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderRadius: 16,
     overflow: 'hidden',
+    maxWidth: LAYOUT.gameControlsMaxWidth,
+    width: '100%',
+    alignSelf: 'center',
   },
   container: {
     backgroundColor: 'rgba(27, 40, 56, 0.5)',

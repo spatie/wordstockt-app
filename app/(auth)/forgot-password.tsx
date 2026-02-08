@@ -16,7 +16,7 @@ import { FormInput } from '../../src/components/form/FormInput';
 import { MainLogo } from '../../src/components/ui/MainLogo';
 import { FloatingTiles } from '../../src/components/ui/FloatingTiles';
 import { colors } from '../../src/config/theme';
-import { SPACING, RADIUS, DIMENSIONS } from '../../src/config/constants';
+import { SPACING, RADIUS, DIMENSIONS, LAYOUT } from '../../src/config/constants';
 
 export default function ForgotPasswordScreen() {
   const [identifier, setIdentifier] = useState('');
@@ -154,6 +154,9 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: SPACING.xxl,
     alignItems: 'center',
+    maxWidth: LAYOUT.authFormMaxWidth,
+    width: '100%',
+    alignSelf: 'center',
   },
   logoContainer: {
     marginTop: 20,

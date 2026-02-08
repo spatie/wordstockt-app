@@ -17,7 +17,7 @@ import { FriendCard } from '../../src/components/friends/FriendCard';
 import { AddFriendModal } from '../../src/components/friends/AddFriendModal';
 import { useSnackbar } from '../../src/components/ui/SnackbarProvider';
 import { colors } from '../../src/config/theme';
-import { SPACING, RADIUS } from '../../src/config/constants';
+import { SPACING, RADIUS, LAYOUT } from '../../src/config/constants';
 import { ROUTES } from '../../src/config/routes';
 import type { Friend } from '../../src/types';
 
@@ -131,6 +131,9 @@ export default function FriendsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    maxWidth: LAYOUT.contentMaxWidth,
+    width: '100%',
+    alignSelf: 'center' as const,
   },
   loadingContainer: {
     flex: 1,

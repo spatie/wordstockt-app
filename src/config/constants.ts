@@ -59,6 +59,13 @@ export const DIMENSIONS = {
   modalInputHeight: 48,
 } as const;
 
+// Layout constraints
+export const LAYOUT = {
+  authFormMaxWidth: 500,
+  gameControlsMaxWidth: 600,
+  contentMaxWidth: 700,
+} as const;
+
 // Logo tile sizes
 export const LOGO_TILE_SIZES = {
   small: { tile: 24, font: 14 },

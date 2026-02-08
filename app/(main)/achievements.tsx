@@ -12,7 +12,7 @@ import { useAchievements } from '../../src/api/queries/useAchievements';
 import { ErrorView } from '../../src/components/ui/ErrorView';
 import { Card } from '../../src/components/ui/Card';
 import { colors } from '../../src/config/theme';
-import { SPACING } from '../../src/config/constants';
+import { SPACING, LAYOUT } from '../../src/config/constants';
 import type { UserAchievement } from '../../src/types';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -187,6 +187,9 @@ export default function AchievementsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    maxWidth: LAYOUT.contentMaxWidth,
+    width: '100%',
+    alignSelf: 'center' as const,
   },
   loadingContainer: {
     flex: 1,

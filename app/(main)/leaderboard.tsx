@@ -20,7 +20,7 @@ import { Card } from '../../src/components/ui/Card';
 import { TabBar } from '../../src/components/ui/TabBar';
 import { SmartAvatar } from '../../src/components/ui/SmartAvatar';
 import { colors } from '../../src/config/theme';
-import { SPACING } from '../../src/config/constants';
+import { SPACING, LAYOUT } from '../../src/config/constants';
 import type { LeaderboardEntry, LeaderboardType } from '../../src/types';
 
 interface LeaderboardEntryCardProps {
@@ -303,6 +303,9 @@ export default function LeaderboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    maxWidth: LAYOUT.contentMaxWidth,
+    width: '100%',
+    alignSelf: 'center' as const,
   },
   contentContainer: {
     flex: 1,
