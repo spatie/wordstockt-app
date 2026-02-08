@@ -182,10 +182,7 @@ export function ActionButtons({
 
       {/* Round PLAY button */}
       <AnimatedPressable
-        style={[
-          styles.playButton,
-          playAnimatedStyle,
-        ]}
+        style={[styles.playButton, playAnimatedStyle]}
         onPress={onPlay}
         disabled={!canPlay || disabled}
       >

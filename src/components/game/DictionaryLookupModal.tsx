@@ -234,7 +234,9 @@ export function DictionaryLookupModal({
             </View>
           ) : (
             <Button
-              label={requestWord.isPending ? 'Requesting...' : 'Request Addition'}
+              label={
+                requestWord.isPending ? 'Requesting...' : 'Request Addition'
+              }
               onPress={handleRequest}
               variant="outline"
               size="md"
