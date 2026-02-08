@@ -224,27 +224,27 @@ export function GameBoard({
           ]}
         >
           <View style={styles.boardClip}>
-          <BlurView intensity={80} tint="dark" style={styles.boardBlur}>
-            <View ref={boardRef} style={styles.board}>
-              {Array.from({ length: BOARD_SIZE }, (_, y) => (
-                <View key={y} style={styles.row}>
-                  {Array.from({ length: BOARD_SIZE }, (_, x) =>
-                    renderCell(x, y)
-                  )}
-                </View>
-              ))}
-              {/* Score bubble positioned at top-left of the top-left pending tile */}
-              {/* Always render if we have a position so fade-out animation can complete */}
-              {lastScoreBubblePosition.current && (
-                <ScoreBubble
-                  score={potentialScore}
-                  x={lastScoreBubblePosition.current.x}
-                  y={lastScoreBubblePosition.current.y}
-                  cellSize={cellSize}
-                />
-              )}
-            </View>
-          </BlurView>
+            <BlurView intensity={80} tint="dark" style={styles.boardBlur}>
+              <View ref={boardRef} style={styles.board}>
+                {Array.from({ length: BOARD_SIZE }, (_, y) => (
+                  <View key={y} style={styles.row}>
+                    {Array.from({ length: BOARD_SIZE }, (_, x) =>
+                      renderCell(x, y)
+                    )}
+                  </View>
+                ))}
+                {/* Score bubble positioned at top-left of the top-left pending tile */}
+                {/* Always render if we have a position so fade-out animation can complete */}
+                {lastScoreBubblePosition.current && (
+                  <ScoreBubble
+                    score={potentialScore}
+                    x={lastScoreBubblePosition.current.x}
+                    y={lastScoreBubblePosition.current.y}
+                    cellSize={cellSize}
+                  />
+                )}
+              </View>
+            </BlurView>
           </View>
         </Animated.View>
       ) : showSpinner ? (
