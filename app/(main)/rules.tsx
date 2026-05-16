@@ -122,14 +122,14 @@ export default function RulesScreen() {
           </View>
         </RuleCard>
 
-        {/* Bingo Bonus */}
-        <RuleCard title="Bingo Bonus">
+        {/* Bingo */}
+        <RuleCard title="Bingo">
           <Text style={styles.ruleText}>
-            Use all 7 tiles from your rack in a single turn to earn a{' '}
-            <Text style={styles.highlight}>+50 point bonus</Text>! This is
-            called a &quot;Bingo&quot;. Combined with the tiles played bonus
-            (+100 for 7 tiles), you&apos;ll get a massive{' '}
-            <Text style={styles.highlight}>+150 total bonus</Text>!
+            Using all 7 tiles from your rack in a single turn is called a{' '}
+            <Text style={styles.highlight}>&quot;Bingo&quot;</Text>. It earns
+            the top tiles played bonus of{' '}
+            <Text style={styles.highlight}>+100 points</Text> (see below) and
+            unlocks the Bingo achievement.
           </Text>
         </RuleCard>
 

@@ -775,8 +775,11 @@ const styles = StyleSheet.create({
   },
   revokeOverlay: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? -6 : -2,
-    right: -2,
+    // Android clips children to the rounded `playerSection` (borderRadius),
+    // so the badge must stay within the avatar's bounds. iOS doesn't clip,
+    // so it can keep floating slightly outside the avatar.
+    top: Platform.OS === 'android' ? 0 : -2,
+    right: Platform.OS === 'android' ? 0 : -2,
     width: 14,
     height: 14,
     borderRadius: 7,
