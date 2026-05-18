@@ -24,7 +24,7 @@
             "supportsTablet": true,
             "bundleIdentifier": "com.wordstockt.app",
             "backgroundColor": "#0D1B2A",
-            "buildNumber": "73",
+            "buildNumber": "75",
             "associatedDomains": [
                 "webcredentials:wordstockt.com",
                 "applinks:wordstockt.com"
@@ -46,7 +46,7 @@
             }
         },
         "android": {
-            "versionCode": 62,
+            "versionCode": 63,
             "googleServicesFile": "./google-services.json",
             "adaptiveIcon": {
                 "foregroundImage": "./assets/adaptive-icon.png",
