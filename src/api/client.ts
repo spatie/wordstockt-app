@@ -25,12 +25,17 @@ apiClient.interceptors.request.use(async (config) => {
   }
 
   // Mobile only: lets the backend track which devices a user is logged in on.
+  // Best-effort telemetry, so a failure here must never block the request.
   if (!isWeb) {
-    config.headers['X-Device-Id'] = await getDeviceId();
-    const { platform, osVersion, model } = getDeviceMetadata();
-    config.headers['X-Platform'] = platform;
-    config.headers['X-OS-Version'] = osVersion;
-    config.headers['X-Device-Model'] = model;
+    try {
+      config.headers['X-Device-Id'] = await getDeviceId();
+      const { platform, osVersion, model } = getDeviceMetadata();
+      config.headers['X-Platform'] = platform;
+      config.headers['X-OS-Version'] = osVersion;
+      config.headers['X-Device-Model'] = model;
+    } catch {
+      // Ignore: device headers are optional metadata.
+    }
   }
 
   return config;
