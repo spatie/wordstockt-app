@@ -9,6 +9,10 @@ interface FilteredGames {
   awaitingOpponentGames: GameListItem[];
 }
 
+function hasOtherPlayers(game: GameListItem): boolean {
+  return game.players.filter((player) => !player.isMe).length > 0;
+}
+
 export function useFilteredGames(
   games: GameListItem[] | undefined
 ): FilteredGames {
@@ -28,15 +32,15 @@ export function useFilteredGames(
     );
     const completedGames = games.filter((g) => g.status === 'finished');
 
-    // Games awaiting opponent: pending status with no opponent
+    // Games awaiting players: pending with no other players joined yet
     const awaitingOpponentGames = activeGames.filter(
-      (g) => g.status === 'pending' && !g.opponent
+      (g) => g.status === 'pending' && !hasOtherPlayers(g)
     );
 
-    // Games with opponents
-    const gamesWithOpponent = activeGames.filter((g) => g.opponent);
-    const yourTurnGames = gamesWithOpponent.filter((g) => g.isMyTurn);
-    const opponentTurnGames = gamesWithOpponent.filter((g) => !g.isMyTurn);
+    // Games that have at least one other player joined
+    const gamesWithPlayers = activeGames.filter(hasOtherPlayers);
+    const yourTurnGames = gamesWithPlayers.filter((g) => g.isMyTurn);
+    const opponentTurnGames = gamesWithPlayers.filter((g) => !g.isMyTurn);
 
     return {
       activeGames,

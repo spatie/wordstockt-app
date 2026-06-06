@@ -487,6 +487,7 @@ function GameScreenContent() {
   } = useRematch({
     game: apiGame,
     opponentUsername: opponent?.username,
+    currentUserUlid: userUlid,
   });
 
   // Show loading spinner while loading or transitioning
