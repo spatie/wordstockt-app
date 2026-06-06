@@ -12,6 +12,9 @@ export interface Player {
   score: number;
   rackCount: number;
   isCurrentTurn: boolean;
+  turnOrder?: number;
+  hasLeft?: boolean;
+  leftReason?: string | null;
   hasFreeSwap?: boolean;
   hasReceivedBlank?: boolean;
   receivedEmptyRackBonus?: boolean;
@@ -90,6 +93,7 @@ export interface Game {
   ulid: string;
   language: string;
   status: GameStatus;
+  maxPlayers: number;
   board: (PlacedTile | null)[][];
   boardTemplate: SquareType[][];
   players: Player[];
@@ -115,18 +119,24 @@ export interface GameListPendingInvitation {
   };
 }
 
+export interface GameListPlayer {
+  ulid: string;
+  username: string;
+  avatar: string | null;
+  avatarColor: string | null;
+  score: number;
+  isCurrentTurn: boolean;
+  isMe: boolean;
+  hasLeft: boolean;
+}
+
 export interface GameListItem {
   ulid: string;
   language: string;
   status: GameStatus;
-  opponent: {
-    ulid: string;
-    username: string;
-    avatar: string | null;
-    avatarColor: string | null;
-  } | null;
+  maxPlayers: number;
+  players: GameListPlayer[];
   myScore: number;
-  opponentScore: number;
   isMyTurn: boolean;
   winnerUlid: string | null;
   updatedAt: string;

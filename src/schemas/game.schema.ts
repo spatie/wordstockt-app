@@ -26,6 +26,9 @@ const PlayerSchema = z
     score: z.number(),
     rack_count: z.number(),
     is_current_turn: z.boolean(),
+    turn_order: z.number().optional(),
+    has_left: z.boolean().optional(),
+    left_reason: z.string().nullish(),
     has_free_swap: z.boolean().optional(),
     has_received_blank: z.boolean().optional(),
     received_empty_rack_bonus: z.boolean().optional(),
@@ -76,6 +79,7 @@ export const GameSchema = z
     ulid: z.string(),
     language: z.string(),
     status: z.enum(['pending', 'active', 'finished']),
+    max_players: z.number(),
     board: z.array(z.array(BoardTileSchema.nullable())),
     board_template: z.array(z.array(SquareTypeSchema)),
     players: z.array(PlayerSchema),
@@ -111,6 +115,9 @@ function transformPlayer(data: z.infer<typeof PlayerSchema>): Player {
     score: data.score,
     rackCount: data.rack_count,
     isCurrentTurn: data.is_current_turn,
+    turnOrder: data.turn_order,
+    hasLeft: data.has_left,
+    leftReason: data.left_reason ?? null,
     hasFreeSwap: data.has_free_swap,
     hasReceivedBlank: data.has_received_blank,
     receivedEmptyRackBonus: data.received_empty_rack_bonus,
@@ -139,6 +146,7 @@ export function transformGame(data: GameResponse): Game {
     ulid: data.ulid,
     language: data.language,
     status: data.status,
+    maxPlayers: data.max_players,
     board: data.board.map((row, y) =>
       row.map((cell, x) => (cell ? { ...transformTile(cell), x, y } : null))
     ),
@@ -172,17 +180,22 @@ export const GameListItemSchema = z
     ulid: z.string(),
     language: z.string(),
     status: z.enum(['pending', 'active', 'finished']),
-    opponent: z
-      .object({
-        ulid: z.string(),
-        username: z.string(),
-        avatar: z.string().nullable(),
-        avatar_color: z.string().nullish(),
-      })
-      .passthrough()
-      .nullable(),
+    max_players: z.number(),
+    players: z.array(
+      z
+        .object({
+          ulid: z.string(),
+          username: z.string(),
+          avatar: z.string().nullable(),
+          avatar_color: z.string().nullish(),
+          score: z.number(),
+          is_current_turn: z.boolean(),
+          is_me: z.boolean(),
+          has_left: z.boolean(),
+        })
+        .passthrough()
+    ),
     my_score: z.number(),
-    opponent_score: z.number(),
     is_my_turn: z.boolean(),
     winner_ulid: z.string().nullable(),
     updated_at: z.string(),
@@ -202,16 +215,18 @@ export function transformGameListItem(
     ulid: data.ulid,
     language: data.language,
     status: data.status,
-    opponent: data.opponent
-      ? {
-          ulid: data.opponent.ulid,
-          username: data.opponent.username,
-          avatar: data.opponent.avatar,
-          avatarColor: data.opponent.avatar_color ?? null,
-        }
-      : null,
+    maxPlayers: data.max_players,
+    players: data.players.map((p) => ({
+      ulid: p.ulid,
+      username: p.username,
+      avatar: p.avatar,
+      avatarColor: p.avatar_color ?? null,
+      score: p.score,
+      isCurrentTurn: p.is_current_turn,
+      isMe: p.is_me,
+      hasLeft: p.has_left,
+    })),
     myScore: data.my_score,
-    opponentScore: data.opponent_score,
     isMyTurn: data.is_my_turn,
     winnerUlid: data.winner_ulid,
     updatedAt: data.updated_at,
@@ -264,6 +279,8 @@ export const PendingGameSchema = z
     language: z.string(),
     creator: z.string(),
     created_at: z.string(),
+    max_players: z.number().optional().default(2),
+    players_joined: z.number().optional().default(1),
   })
   .passthrough();
 
@@ -274,6 +291,8 @@ export interface PendingGame {
   language: string;
   creator: string;
   createdAt: string;
+  maxPlayers: number;
+  playersJoined: number;
 }
 
 export function transformPendingGame(data: PendingGameResponse): PendingGame {
@@ -282,6 +301,8 @@ export function transformPendingGame(data: PendingGameResponse): PendingGame {
     language: data.language,
     creator: data.creator,
     createdAt: data.created_at,
+    maxPlayers: data.max_players,
+    playersJoined: data.players_joined,
   };
 }
 
