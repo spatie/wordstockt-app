@@ -15,6 +15,7 @@ export interface Player {
   turnOrder?: number;
   hasLeft?: boolean;
   leftReason?: string | null;
+  consecutivePasses?: number;
   hasFreeSwap?: boolean;
   hasReceivedBlank?: boolean;
   receivedEmptyRackBonus?: boolean;

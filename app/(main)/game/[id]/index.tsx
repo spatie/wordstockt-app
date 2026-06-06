@@ -255,11 +255,19 @@ function GameScreenContent() {
   } = useGameInteractions({ game, gameUlid, userUlid });
 
   const confirmPass = () => {
+    // In a 3-4 player game, passing on two of your own turns in a row removes
+    // you from the game, so warn when this pass would be the second.
+    const myPlayer = game?.players.find((p) => p.ulid === userUlid);
+    const willBeRemoved =
+      (game?.players.length ?? 0) > 2 && (myPlayer?.consecutivePasses ?? 0) >= 1;
+
     showConfirm(
-      'Pass Turn',
-      'Are you sure you want to pass your turn?',
+      willBeRemoved ? 'Pass and leave the game?' : 'Pass Turn',
+      willBeRemoved
+        ? 'You passed last turn. Passing again will remove you from the game.'
+        : 'Are you sure you want to pass your turn?',
       handlePass,
-      'Pass',
+      willBeRemoved ? 'Pass & leave' : 'Pass',
       'destructive'
     );
   };
