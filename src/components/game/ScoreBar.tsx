@@ -211,17 +211,13 @@ function AnimatedPlayerSection({
       };
     }
     // Active player gets colored box with pulse, inactive gets nothing.
-    // Format the alpha with toFixed so a near-zero value (while fading out) is
-    // never serialized in scientific notation, which Reanimated cannot parse.
-    const bgAlpha = (
-      interpolate(pulse.value, [0.6, 1], [0.1, 0.2]) * boxOpacity.value
-    ).toFixed(3);
-    const borderAlpha = (
-      interpolate(pulse.value, [0.6, 1], [0.3, 0.6]) * boxOpacity.value
-    ).toFixed(3);
+    const bgAlpha =
+      interpolate(pulse.value, [0.6, 1], [0.1, 0.2]) * boxOpacity.value;
+    const borderAlpha =
+      interpolate(pulse.value, [0.6, 1], [0.3, 0.6]) * boxOpacity.value;
     return {
-      backgroundColor: `rgba(${rgbR}, ${rgbG}, ${rgbB}, ${bgAlpha})`,
-      borderColor: `rgba(${rgbR}, ${rgbG}, ${rgbB}, ${borderAlpha})`,
+      backgroundColor: rgbaWithAlpha(rgbR, rgbG, rgbB, bgAlpha),
+      borderColor: rgbaWithAlpha(rgbR, rgbG, rgbB, borderAlpha),
       opacity: 1,
     };
   });
@@ -235,6 +231,23 @@ function AnimatedPlayerSection({
 
 // Plain JS (NOT a worklet): parse hex once, memoized per color in the component.
 // The regex is expensive and must not run inside the per-frame animation worklet.
+/**
+ * Build an `rgba()` string with the alpha formatted to a fixed number of
+ * decimals. An animated alpha fading toward 0 can otherwise be serialized in
+ * scientific notation (e.g. `3.4e-7`), which Reanimated's color parser rejects
+ * and throws an uncaught error on. Safe to call from a Reanimated worklet.
+ */
+export function rgbaWithAlpha(
+  r: number,
+  g: number,
+  b: number,
+  alpha: number
+): string {
+  'worklet';
+
+  return `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(3)})`;
+}
+
 function hexToRgbComponents(hex: string): [number, number, number] {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (result && result[1] && result[2] && result[3]) {
