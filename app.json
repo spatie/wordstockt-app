@@ -2,7 +2,7 @@
   "expo": {
     "name": "WordStockt",
     "slug": "wordstockt",
-    "version": "1.6.0",
+    "version": "1.7.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -18,7 +18,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.wordstockt.app",
       "backgroundColor": "#0D1B2A",
-      "buildNumber": "77",
+      "buildNumber": "78",
       "associatedDomains": [
         "webcredentials:wordstockt.com",
         "applinks:wordstockt.com"

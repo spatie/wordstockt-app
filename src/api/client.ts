@@ -1,4 +1,5 @@
 import axios, { isAxiosError, AxiosError } from 'axios';
+import Constants from 'expo-constants';
 import { ZodError } from 'zod';
 import { API_BASE_URL } from '../config/api';
 import { useAuthStore } from '../stores/authStore';
@@ -10,6 +11,8 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
+    // Lets the backend gate version-specific features (e.g. 3-4 player games).
+    'X-App-Version': Constants.expoConfig?.version ?? '',
   },
 });
 
