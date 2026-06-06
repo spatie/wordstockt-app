@@ -8,10 +8,12 @@ import {
   transformPendingGame,
   PublicGameSchema,
   transformPublicGame,
+  GameSchema,
+  transformGame,
   type PendingGame,
 } from '../../schemas/game.schema';
 import { safeParse } from '../../schemas/safeParse';
-import type { GameListItem, PublicGame } from '../../types';
+import type { Game, GameListItem, PublicGame } from '../../types';
 import { gameKeys } from './queryKeys';
 
 // Re-export for backwards compatibility
@@ -110,6 +112,24 @@ export function useJoinGame() {
       return data;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gameKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: gameKeys.pending() });
+      queryClient.invalidateQueries({ queryKey: gameKeys.public() });
+    },
+  });
+}
+
+export function useStartGame() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (gameUlid: string): Promise<Game> => {
+      const { data } = await apiClient.post(`/games/${gameUlid}/start`);
+      const validated = safeParse(GameSchema, data.data, 'useStartGame');
+      return transformGame(validated);
+    },
+    onSuccess: (game) => {
+      queryClient.setQueryData(gameKeys.detail(game.ulid), game);
       queryClient.invalidateQueries({ queryKey: gameKeys.lists() });
       queryClient.invalidateQueries({ queryKey: gameKeys.pending() });
       queryClient.invalidateQueries({ queryKey: gameKeys.public() });
