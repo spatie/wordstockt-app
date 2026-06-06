@@ -174,6 +174,7 @@ export const createMockGame = (): Game => ({
   lastMove: null,
   turnExpiresAt: null,
   pendingInvitation: null,
+  pendingInvitations: [],
   isPublic: false,
   canJoin: false,
 });

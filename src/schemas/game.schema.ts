@@ -7,6 +7,7 @@ import type {
   Tile,
   MoveHistoryItem,
   ScoreBreakdown,
+  PendingInvitation,
 } from '../types';
 
 const TileSchema = z
@@ -91,12 +92,27 @@ export const GameSchema = z
     last_move: MoveSchema.nullable(),
     turn_expires_at: z.string().nullable().optional(),
     pending_invitation: PendingInvitationSchema.nullable().optional(),
+    pending_invitations: z.array(PendingInvitationSchema).optional(),
     is_public: z.boolean(),
     can_join: z.boolean(),
   })
   .passthrough();
 
 export type GameResponse = z.infer<typeof GameSchema>;
+
+function transformInvitation(
+  data: z.infer<typeof PendingInvitationSchema>
+): PendingInvitation {
+  return {
+    ulid: data.ulid,
+    invitee: {
+      ulid: data.invitee.ulid,
+      username: data.invitee.username,
+      avatar: data.invitee.avatar,
+      avatarColor: data.invitee.avatar_color ?? null,
+    },
+  };
+}
 
 function transformTile(data: z.infer<typeof TileSchema>): Tile {
   return {
@@ -160,16 +176,11 @@ export function transformGame(data: GameResponse): Game {
     lastMove: data.last_move ? transformMove(data.last_move) : null,
     turnExpiresAt: data.turn_expires_at ?? null,
     pendingInvitation: data.pending_invitation
-      ? {
-          ulid: data.pending_invitation.ulid,
-          invitee: {
-            ulid: data.pending_invitation.invitee.ulid,
-            username: data.pending_invitation.invitee.username,
-            avatar: data.pending_invitation.invitee.avatar,
-            avatarColor: data.pending_invitation.invitee.avatar_color ?? null,
-          },
-        }
+      ? transformInvitation(data.pending_invitation)
       : null,
+    pendingInvitations: (data.pending_invitations ?? []).map(
+      transformInvitation
+    ),
     isPublic: data.is_public,
     canJoin: data.can_join,
   };

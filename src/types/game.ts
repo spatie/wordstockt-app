@@ -105,6 +105,7 @@ export interface Game {
   lastMove: Move | null;
   turnExpiresAt: string | null;
   pendingInvitation: PendingInvitation | null;
+  pendingInvitations: PendingInvitation[];
   isPublic: boolean;
   canJoin: boolean;
 }

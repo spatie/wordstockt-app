@@ -170,6 +170,7 @@ export const mockGame = (overrides?: Partial<Game>): Game => ({
   lastMove: null,
   turnExpiresAt: null,
   pendingInvitation: null,
+  pendingInvitations: [],
   isPublic: false,
   canJoin: false,
   ...overrides,

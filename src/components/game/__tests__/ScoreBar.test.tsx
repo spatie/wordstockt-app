@@ -89,6 +89,7 @@ const createMockGame = (overrides: Partial<Game> = {}): Game => ({
   lastMove: null,
   turnExpiresAt: null,
   pendingInvitation: null,
+  pendingInvitations: [],
   isPublic: false,
   canJoin: false,
   ...overrides,
@@ -222,21 +223,67 @@ describe('ScoreBar', () => {
           turnOrder: 1,
         }),
       ],
-      pendingInvitation: {
-        ulid: 'inv-1',
-        invitee: {
-          ulid: 'invitee-1',
-          username: 'Invitee',
-          avatar: null,
-          avatarColor: null,
+      pendingInvitations: [
+        {
+          ulid: 'inv-1',
+          invitee: {
+            ulid: 'invitee-1',
+            username: 'Invitee',
+            avatar: null,
+            avatarColor: null,
+          },
         },
-      },
+      ],
     });
 
     render(<ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />);
 
     expect(screen.getByText('PENDING')).toBeTruthy();
     expect(screen.getByText('Invitee')).toBeTruthy();
+  });
+
+  it('shows a pending seat for every outstanding invitation', () => {
+    const game = createMockGame({
+      status: 'pending',
+      maxPlayers: 4,
+      players: [
+        makePlayer({
+          ulid: '01hxyz000000000player01',
+          username: 'creator',
+          score: 0,
+          isCurrentTurn: true,
+          turnOrder: 1,
+        }),
+      ],
+      pendingInvitations: [
+        {
+          ulid: 'inv-marvin',
+          invitee: {
+            ulid: 'invitee-marvin',
+            username: 'marvin',
+            avatar: null,
+            avatarColor: null,
+          },
+        },
+        {
+          ulid: 'inv-jessica',
+          invitee: {
+            ulid: 'invitee-jessica',
+            username: 'jessica',
+            avatar: null,
+            avatarColor: null,
+          },
+        },
+      ],
+    });
+
+    render(<ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />);
+
+    // Both invitees appear as pending seats, plus one remaining open "Invite" seat.
+    expect(screen.getByText('marvin')).toBeTruthy();
+    expect(screen.getByText('jessica')).toBeTruthy();
+    expect(screen.getAllByText('PENDING')).toHaveLength(2);
+    expect(screen.getByText('Invite')).toBeTruthy();
   });
 
   it('does not show invite seats when the game is active', () => {

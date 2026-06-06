@@ -548,7 +548,7 @@ export function ScoreBar({
   const canStartNow = isPending && isCreator && game.players.length >= 2;
 
   // Open seats are the slots not yet filled and not awaiting a pending invite.
-  const pendingInvitationCount = game.pendingInvitation ? 1 : 0;
+  const pendingInvitationCount = game.pendingInvitations.length;
   const openSeatCount = Math.max(
     0,
     game.maxPlayers - game.players.length - pendingInvitationCount
@@ -591,12 +591,14 @@ export function ScoreBar({
             />
           ))}
 
-          {isPending && game.pendingInvitation && (
-            <PendingSeatChip
-              invitation={game.pendingInvitation}
-              onRevoke={onRevokeInvitation}
-            />
-          )}
+          {isPending &&
+            game.pendingInvitations.map((invitation) => (
+              <PendingSeatChip
+                key={invitation.ulid}
+                invitation={invitation}
+                onRevoke={onRevokeInvitation}
+              />
+            ))}
 
           {Array.from({ length: openSeats }).map((_, index) => (
             <InviteSeatChip key={`invite-seat-${index}`} onInvite={onInvite} />
