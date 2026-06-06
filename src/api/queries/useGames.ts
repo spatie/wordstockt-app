@@ -82,6 +82,7 @@ interface CreateGameParams {
   board_type?: 'standard' | 'no_bonuses' | 'custom';
   board_template?: (string | null)[][];
   is_public?: boolean;
+  max_players?: number;
 }
 
 export function useCreateGame() {

@@ -25,6 +25,7 @@ export interface CreateGameParams {
   board_type: BoardType;
   board_template?: SquareType[][];
   is_public?: boolean;
+  max_players?: number;
 }
 
 interface CreateGameModalProps {
@@ -127,6 +128,7 @@ export function CreateGameModal({
   );
   const [isPublic, setIsPublic] = useState(false);
   const [showPublicInfo, setShowPublicInfo] = useState(false);
+  const [maxPlayers, setMaxPlayers] = useState(2);
 
   // Sync language with preference when modal opens
   useEffect(() => {
@@ -164,6 +166,7 @@ export function CreateGameModal({
       board_template:
         boardType === 'custom' ? (customTemplate ?? undefined) : undefined,
       is_public: isPublic,
+      max_players: maxPlayers,
     });
   };
 
@@ -174,6 +177,7 @@ export function CreateGameModal({
     setCustomTemplate(null);
     setIsPublic(false);
     setShowPublicInfo(false);
+    setMaxPlayers(2);
     onClose();
   };
 
@@ -208,6 +212,21 @@ export function CreateGameModal({
         ]}
         style={styles.segmentedButtons}
       />
+
+      <Text style={styles.label}>Players</Text>
+      <SegmentedButtons
+        value={String(maxPlayers)}
+        onValueChange={(value) => setMaxPlayers(Number(value))}
+        buttons={[
+          { value: '2', label: '2' },
+          { value: '3', label: '3' },
+          { value: '4', label: '4' },
+        ]}
+        style={styles.playersSegmentedButtons}
+      />
+      <Text style={styles.playersHint}>
+        You&apos;ll invite players after creating the game.
+      </Text>
 
       <Text style={styles.label}>Board</Text>
       <View style={styles.boardOptions}>
@@ -313,6 +332,14 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   segmentedButtons: {
+    marginBottom: SPACING.xxl,
+  },
+  playersSegmentedButtons: {
+    marginBottom: SPACING.sm,
+  },
+  playersHint: {
+    fontSize: 12,
+    color: colors.textSecondary,
     marginBottom: SPACING.xxl,
   },
   boardOptions: {
