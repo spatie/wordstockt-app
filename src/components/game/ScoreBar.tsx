@@ -30,6 +30,7 @@ import { TurnTimer } from './TurnTimer';
 import { AnimatedScore } from './AnimatedScore';
 import { AnimatedTilesCount } from './AnimatedTilesCount';
 import { StatusInfoModal } from './StatusInfoModal';
+import { useStartGame } from '../../api/queries/useGames';
 import { calculateTilesPlayedBonus } from '../../utils/scoring';
 import type { Game, Move, Player } from '../../types';
 
@@ -39,11 +40,15 @@ const AVATAR_CONTAINER_SIZE = DIMENSIONS.avatarScoreBarContainer;
 function formatLastMove(
   move: Move | null,
   currentUserUlid: string | undefined,
-  opponentName: string
+  players: Player[]
 ): string | null {
   if (!move) return null;
 
-  const actor = move.userUlid === currentUserUlid ? 'You' : opponentName;
+  const actorPlayer = players.find((p) => p.ulid === move.userUlid);
+  const actor =
+    move.userUlid === currentUserUlid
+      ? 'You'
+      : (actorPlayer?.username ?? 'Opponent');
 
   switch (move.type) {
     case 'play': {
@@ -155,14 +160,12 @@ function AnimatedPlayerSection({
   isWinner,
   isGameFinished,
   avatarColor,
-  isRight,
   children,
 }: {
   isActive: boolean;
   isWinner: boolean;
   isGameFinished: boolean;
   avatarColor: string | null | undefined;
-  isRight: boolean;
   children: React.ReactNode;
 }) {
   const pulse = useSharedValue(1);
@@ -220,13 +223,7 @@ function AnimatedPlayerSection({
   });
 
   return (
-    <ReAnimated.View
-      style={[
-        styles.playerSection,
-        isRight && styles.playerSectionRight,
-        animatedStyle,
-      ]}
-    >
+    <ReAnimated.View style={[styles.playerSection, animatedStyle]}>
       {children}
     </ReAnimated.View>
   );
@@ -246,7 +243,13 @@ function hexToRgbComponents(hex: string): [number, number, number] {
   return [74, 144, 217];
 }
 
-function PlayerAvatar({ player }: { player: Player | undefined }) {
+function PlayerAvatar({
+  player,
+  dimmed,
+}: {
+  player: Player | undefined;
+  dimmed?: boolean;
+}) {
   const router = useRouter();
   const currentUserUlid = useAuthStore((s) => s.user?.ulid);
 
@@ -269,12 +272,149 @@ function PlayerAvatar({ player }: { player: Player | undefined }) {
       onPress={handlePress}
       disabled={!player?.ulid}
     >
-      <Avatar
-        uri={player?.avatar}
-        name={player?.username || '?'}
-        size={AVATAR_SIZE}
-        backgroundColor={player?.avatarColor ?? undefined}
-      />
+      <View style={dimmed ? styles.dimmedAvatar : undefined}>
+        <Avatar
+          uri={player?.avatar}
+          name={player?.username || '?'}
+          size={AVATAR_SIZE}
+          backgroundColor={
+            dimmed ? colors.textMuted : (player?.avatarColor ?? undefined)
+          }
+        />
+      </View>
+    </Pressable>
+  );
+}
+
+/**
+ * A single player chip in the score-bar row: avatar, name, score, status dots
+ * (or a "LEFT" tag for departed players) and a turn highlight on the active
+ * player. Used for every joined seat regardless of the player count.
+ */
+function PlayerChip({
+  player,
+  isSelf,
+  isGameFinished,
+  isWinner,
+  onStatusPress,
+  showRackCount,
+}: {
+  player: Player;
+  isSelf: boolean;
+  isGameFinished: boolean;
+  isWinner: boolean;
+  onStatusPress: () => void;
+  showRackCount: boolean;
+}) {
+  const hasLeft = player.hasLeft === true;
+  const isActive = !hasLeft && player.isCurrentTurn;
+  const gotEmptyRackBonus = player.receivedEmptyRackBonus === true;
+
+  return (
+    <AnimatedPlayerSection
+      isActive={isActive}
+      isWinner={!hasLeft && isWinner}
+      isGameFinished={isGameFinished}
+      avatarColor={player.avatarColor}
+    >
+      <View style={[styles.chip, hasLeft && styles.chipLeft]}>
+        <PlayerAvatar player={player} dimmed={hasLeft} />
+        <View style={styles.playerInfo}>
+          <View style={styles.nameRow}>
+            <Text style={styles.playerName} numberOfLines={1}>
+              {isSelf ? 'You' : player.username}
+            </Text>
+            {isGameFinished && !hasLeft && <ResultBadge won={isWinner} />}
+          </View>
+          <AnimatedScore
+            score={player.score ?? 0}
+            style={hasLeft ? styles.leftScore : undefined}
+          />
+          <View style={styles.metaRow}>
+            {hasLeft && <Text style={styles.leftTag}>LEFT</Text>}
+            {!hasLeft && showRackCount && (
+              <Text style={styles.rackCount}>
+                {player.rackCount ?? 0} tiles
+              </Text>
+            )}
+            {!hasLeft && gotEmptyRackBonus && (
+              <Text style={styles.finishBonus}>+25 finish</Text>
+            )}
+            {!hasLeft && !gotEmptyRackBonus && (
+              <StatusDots
+                hasFreeSwap={player.hasFreeSwap}
+                hasReceivedBlank={player.hasReceivedBlank}
+                onPress={onStatusPress}
+              />
+            )}
+          </View>
+        </View>
+      </View>
+    </AnimatedPlayerSection>
+  );
+}
+
+/** Greyed-out chip for a seat with an outstanding invitation. */
+function PendingSeatChip({
+  invitation,
+  onRevoke,
+}: {
+  invitation: NonNullable<Game['pendingInvitation']>;
+  onRevoke?: (invitationUlid: string) => void;
+}) {
+  return (
+    <View style={[styles.playerSection, styles.placeholderSection]}>
+      <View style={styles.chip}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.pendingAvatarContainer,
+            pressed && { opacity: 0.7 },
+          ]}
+          onPressOut={() => onRevoke?.(invitation.ulid)}
+        >
+          <SmartAvatar
+            userUlid={invitation.invitee.ulid}
+            uri={invitation.invitee.avatar}
+            name={invitation.invitee.username}
+            size={AVATAR_SIZE}
+            disabled
+            backgroundColor={invitation.invitee.avatarColor ?? undefined}
+          />
+          {onRevoke && (
+            <View style={styles.revokeOverlay}>
+              <Text style={styles.revokeIcon}>×</Text>
+            </View>
+          )}
+        </Pressable>
+        <View style={styles.playerInfo}>
+          <Text style={styles.playerName} numberOfLines={1}>
+            {invitation.invitee.username}
+          </Text>
+          <Text style={styles.pendingTag}>PENDING</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/** Dashed "Invite +" placeholder for an open seat. */
+function InviteSeatChip({ onInvite }: { onInvite?: () => void }) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.playerSection,
+        styles.inviteSeat,
+        pressed && { opacity: 0.6 },
+      ]}
+      onPressOut={onInvite}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+    >
+      <View style={styles.inviteButton}>
+        <Text style={styles.inviteText}>+</Text>
+      </View>
+      <Text style={styles.invitePrompt} numberOfLines={1}>
+        Invite
+      </Text>
     </Pressable>
   );
 }
@@ -381,37 +521,47 @@ export function ScoreBar({
   onRevokeInvitation,
   tilesPlayed = 0,
 }: ScoreBarProps) {
-  const [statusModalPlayer, setStatusModalPlayer] = useState<
-    'me' | 'opponent' | null
+  const [statusModalPlayerUlid, setStatusModalPlayerUlid] = useState<
+    string | null
   >(null);
-  const myPlayer = game.players.find((p) => p.ulid === currentUserUlid);
-  const opponent = game.players.find((p) => p.ulid !== currentUserUlid);
+  const startGame = useStartGame();
 
-  const isMyTurn = myPlayer?.isCurrentTurn ?? false;
-  const isOpponentTurn = opponent?.isCurrentTurn ?? false;
   const isGameFinished = game.status === 'finished';
-  const canInvite =
-    !opponent &&
-    !game.pendingInvitation &&
-    game.status === 'pending' &&
-    onInvite;
-  const hasPendingInvitation =
-    !opponent && game.pendingInvitation && game.status === 'pending';
+  const isPending = game.status === 'pending';
   const showRackCount = game.tilesRemaining === 0;
 
-  const myPlayerWon = isGameFinished && game.winnerUlid === currentUserUlid;
-  const opponentWon = isGameFinished && game.winnerUlid === opponent?.ulid;
+  // Original roster, ordered by turn order so the layout stays stable even when
+  // a player leaves (a left player keeps their cell, never collapsing the row).
+  const orderedPlayers = useMemo(
+    () =>
+      [...game.players].sort((a, b) => (a.turnOrder ?? 0) - (b.turnOrder ?? 0)),
+    [game.players]
+  );
 
-  const myPlayerGotEmptyRackBonus = myPlayer?.receivedEmptyRackBonus === true;
-  const opponentGotEmptyRackBonus = opponent?.receivedEmptyRackBonus === true;
+  const myPlayer = game.players.find((p) => p.ulid === currentUserUlid);
+  const isMyTurn = myPlayer?.isCurrentTurn ?? false;
+
+  // The creator is the first player (turn_order === 1, falling back to first in
+  // the roster). Only they can manually start a pending game.
+  const creator = orderedPlayers[0];
+  const isCreator = creator?.ulid === currentUserUlid;
+  const canStartNow = isPending && isCreator && game.players.length >= 2;
+
+  // Open seats are the slots not yet filled and not awaiting a pending invite.
+  const pendingInvitationCount = game.pendingInvitation ? 1 : 0;
+  const openSeatCount = Math.max(
+    0,
+    game.maxPlayers - game.players.length - pendingInvitationCount
+  );
+  const openSeats = isPending ? openSeatCount : 0;
+
+  const statusModalPlayer = game.players.find(
+    (p) => p.ulid === statusModalPlayerUlid
+  );
 
   const lastMoveText = isGameFinished
     ? 'Game finished'
-    : formatLastMove(
-        game.lastMove,
-        currentUserUlid,
-        opponent?.username ?? 'Opponent'
-      );
+    : formatLastMove(game.lastMove, currentUserUlid, game.players);
 
   // Calculate bonus: either from tiles being placed now, or from the last move
   const currentBonus = calculateTilesPlayedBonus(tilesPlayed);
@@ -427,139 +577,63 @@ export function ScoreBar({
   return (
     <View style={styles.containerWrapper}>
       <BlurView intensity={40} tint="dark" style={styles.container}>
-        {/* Main content */}
-        <View style={styles.mainContent}>
-          {/* Left player section */}
-          <AnimatedPlayerSection
-            isActive={isMyTurn}
-            isWinner={myPlayerWon}
-            isGameFinished={isGameFinished}
-            avatarColor={myPlayer?.avatarColor}
-            isRight={false}
-          >
-            <PlayerAvatar player={myPlayer} />
-            <View style={styles.playerInfo}>
-              <View style={styles.nameRow}>
-                <Text style={styles.playerName} numberOfLines={1}>
-                  You
-                </Text>
-                {isGameFinished && <ResultBadge won={myPlayerWon} />}
-              </View>
-              <AnimatedScore score={myPlayer?.score ?? 0} />
-              <View style={styles.metaRow}>
-                {showRackCount && (
-                  <Text style={styles.rackCount}>
-                    {myPlayer?.rackCount ?? 0} tiles
-                  </Text>
-                )}
-                {myPlayerGotEmptyRackBonus && (
-                  <Text style={styles.finishBonus}>+25 finish</Text>
-                )}
-                {!myPlayerGotEmptyRackBonus && (
-                  <StatusDots
-                    hasFreeSwap={myPlayer?.hasFreeSwap}
-                    hasReceivedBlank={myPlayer?.hasReceivedBlank}
-                    onPress={() => setStatusModalPlayer('me')}
-                  />
-                )}
-              </View>
-            </View>
-          </AnimatedPlayerSection>
+        {/* Equal-chip row keyed to the original roster size */}
+        <View style={styles.mainContent} key={`roster-${game.maxPlayers}`}>
+          {orderedPlayers.map((player) => (
+            <PlayerChip
+              key={player.ulid}
+              player={player}
+              isSelf={player.ulid === currentUserUlid}
+              isGameFinished={isGameFinished}
+              isWinner={game.winnerUlid === player.ulid}
+              showRackCount={showRackCount}
+              onStatusPress={() => setStatusModalPlayerUlid(player.ulid)}
+            />
+          ))}
 
-          {/* Center section */}
-          <View style={styles.centerSection}>
-            <TilesBadge count={game.tilesRemaining} />
+          {isPending && game.pendingInvitation && (
+            <PendingSeatChip
+              invitation={game.pendingInvitation}
+              onRevoke={onRevokeInvitation}
+            />
+          )}
+
+          {Array.from({ length: openSeats }).map((_, index) => (
+            <InviteSeatChip key={`invite-seat-${index}`} onInvite={onInvite} />
+          ))}
+        </View>
+
+        {/* Info row: tiles in bag, turn timer / start now */}
+        <View style={styles.infoRow}>
+          <View style={styles.infoLeft}>
+            {!isPending && <TilesBadge count={game.tilesRemaining} />}
             {game.status === 'active' && isMyTurn && game.turnExpiresAt && (
               <TurnTimer expiresAt={game.turnExpiresAt} isMyTurn={isMyTurn} />
             )}
           </View>
-
-          {/* Right player section */}
-          <AnimatedPlayerSection
-            isActive={isOpponentTurn}
-            isWinner={opponentWon}
-            isGameFinished={isGameFinished}
-            avatarColor={opponent?.avatarColor}
-            isRight={true}
-          >
-            {canInvite ? (
-              <View style={styles.inviteContainer}>
-                <Text style={styles.invitePrompt}>Invite opponent</Text>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.inviteButton,
-                    pressed && { opacity: 0.5 },
-                  ]}
-                  onPressOut={onInvite}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <Text style={styles.inviteText}>+</Text>
-                </Pressable>
-              </View>
-            ) : hasPendingInvitation ? (
-              <View style={styles.pendingInviteSection}>
-                <View style={[styles.playerInfo, styles.playerInfoRight]}>
-                  <Text style={styles.playerName} numberOfLines={1}>
-                    {game.pendingInvitation!.invitee.username}
-                  </Text>
-                  <Text style={styles.pendingLabel}>Invited</Text>
-                </View>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.pendingAvatarContainer,
-                    pressed && { opacity: 0.7 },
-                  ]}
-                  onPressOut={() =>
-                    onRevokeInvitation?.(game.pendingInvitation!.ulid)
-                  }
-                >
-                  <SmartAvatar
-                    userUlid={game.pendingInvitation!.invitee.ulid}
-                    uri={game.pendingInvitation!.invitee.avatar}
-                    name={game.pendingInvitation!.invitee.username}
-                    size={AVATAR_SIZE}
-                    disabled
-                    backgroundColor={
-                      game.pendingInvitation!.invitee.avatarColor ?? undefined
-                    }
-                  />
-                  <View style={styles.revokeOverlay}>
-                    <Text style={styles.revokeIcon}>×</Text>
-                  </View>
-                </Pressable>
-              </View>
-            ) : (
-              <>
-                <PlayerAvatar player={opponent} />
-                <View style={[styles.playerInfo, styles.playerInfoRight]}>
-                  <View style={[styles.nameRow, styles.nameRowRight]}>
-                    {isGameFinished && <ResultBadge won={opponentWon} />}
-                    <Text style={styles.playerName} numberOfLines={1}>
-                      {opponent?.username ?? 'Opponent'}
-                    </Text>
-                  </View>
-                  <AnimatedScore score={opponent?.score ?? 0} />
-                  <View style={[styles.metaRow, styles.metaRowRight]}>
-                    {opponentGotEmptyRackBonus && (
-                      <Text style={styles.finishBonus}>+25 finish</Text>
-                    )}
-                    {!opponentGotEmptyRackBonus && (
-                      <StatusDots
-                        hasFreeSwap={opponent?.hasFreeSwap}
-                        hasReceivedBlank={opponent?.hasReceivedBlank}
-                        onPress={() => setStatusModalPlayer('opponent')}
-                      />
-                    )}
-                    {showRackCount && (
-                      <Text style={styles.rackCount}>
-                        {opponent?.rackCount ?? 0} tiles
-                      </Text>
-                    )}
-                  </View>
-                </View>
-              </>
+          <View style={styles.infoRight}>
+            {canStartNow && (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.startButton,
+                  startGame.isPending && styles.startButtonDisabled,
+                  pressed && { opacity: 0.7 },
+                ]}
+                onPressOut={() => {
+                  if (startGame.isPending) return;
+                  startGame.mutate(game.ulid);
+                }}
+                disabled={startGame.isPending}
+              >
+                <MaterialCommunityIcons
+                  name="play"
+                  size={13}
+                  color={colors.textPrimary}
+                />
+                <Text style={styles.startButtonText}>Start now</Text>
+              </Pressable>
             )}
-          </AnimatedPlayerSection>
+          </View>
         </View>
 
         {/* Footer - tappable to navigate to move history */}
@@ -572,18 +646,10 @@ export function ScoreBar({
       </BlurView>
 
       <StatusInfoModal
-        visible={statusModalPlayer !== null}
-        onClose={() => setStatusModalPlayer(null)}
-        showBlankPending={
-          statusModalPlayer === 'me'
-            ? myPlayer?.hasReceivedBlank === false
-            : opponent?.hasReceivedBlank === false
-        }
-        showFreeSwap={
-          statusModalPlayer === 'me'
-            ? myPlayer?.hasFreeSwap === true
-            : opponent?.hasFreeSwap === true
-        }
+        visible={statusModalPlayer !== undefined}
+        onClose={() => setStatusModalPlayerUlid(null)}
+        showBlankPending={statusModalPlayer?.hasReceivedBlank === false}
+        showFreeSwap={statusModalPlayer?.hasFreeSwap === true}
       />
     </View>
   );
@@ -611,23 +677,28 @@ const styles = StyleSheet.create({
   },
   playerSection: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    padding: 10,
+    minWidth: 0,
+    padding: 8,
     borderRadius: 12,
     borderWidth: 2,
     borderColor: 'transparent',
+    justifyContent: 'center',
   },
-  playerSectionRight: {
-    flexDirection: 'row-reverse',
+  placeholderSection: {
+    justifyContent: 'center',
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    minWidth: 0,
+  },
+  chipLeft: {
+    opacity: 0.55,
   },
   playerInfo: {
     flex: 1,
     minWidth: 0,
-  },
-  playerInfoRight: {
-    alignItems: 'flex-end',
   },
   avatarWrapper: {
     width: AVATAR_CONTAINER_SIZE,
@@ -635,18 +706,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  dimmedAvatar: {
+    opacity: 0.6,
+  },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     marginBottom: 2,
   },
-  nameRowRight: {
-    flexDirection: 'row-reverse',
-  },
   playerName: {
     color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 10,
+  },
+  leftScore: {
+    opacity: 0.6,
   },
   resultBadge: {
     paddingHorizontal: 6,
@@ -674,9 +748,6 @@ const styles = StyleSheet.create({
     gap: 5,
     marginTop: 3,
   },
-  metaRowRight: {
-    flexDirection: 'row-reverse',
-  },
   rackCount: {
     color: 'rgba(255, 255, 255, 0.45)',
     fontSize: 9,
@@ -685,6 +756,22 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     fontSize: 9,
     fontWeight: '500',
+  },
+  leftTag: {
+    color: colors.textMuted,
+    fontSize: 8,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  pendingTag: {
+    color: colors.textSecondary,
+    fontSize: 8,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginTop: 3,
+    fontStyle: 'italic',
   },
   statusDots: {
     flexDirection: 'row',
@@ -701,11 +788,25 @@ const styles = StyleSheet.create({
   swapDot: {
     backgroundColor: '#4A90D9',
   },
-  centerSection: {
+  infoRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-    minWidth: 55,
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingBottom: 8,
+    minHeight: 4,
+    gap: 8,
+  },
+  infoLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+    minWidth: 0,
+  },
+  infoRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   tilesBadge: {
     backgroundColor: colors.primary,
@@ -717,6 +818,23 @@ const styles = StyleSheet.create({
   tilesLabel: {
     color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 7,
+  },
+  startButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  startButtonDisabled: {
+    opacity: 0.5,
+  },
+  startButtonText: {
+    color: colors.textPrimary,
+    fontSize: 11,
+    fontWeight: '600',
   },
   footer: {
     backgroundColor: 'rgba(0, 0, 0, 0.2)',
@@ -750,15 +868,18 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '500',
   },
-  inviteContainer: {
+  inviteSeat: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderStyle: 'dashed',
   },
   invitePrompt: {
     color: colors.textSecondary,
     fontSize: 11,
-    marginRight: 8,
   },
   inviteButton: {
     width: AVATAR_SIZE,
@@ -774,16 +895,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     lineHeight: 18,
-  },
-  pendingInviteSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  pendingLabel: {
-    color: colors.textSecondary,
-    fontSize: 10,
-    fontStyle: 'italic',
   },
   pendingAvatarContainer: {
     position: 'relative',
