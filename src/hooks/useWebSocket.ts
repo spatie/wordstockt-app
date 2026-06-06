@@ -20,6 +20,16 @@ export function useWebSocket(gameUlid: string | null) {
         });
       }
 
+      if (message.event === 'game.started') {
+        console.log('[WS] Game started, refreshing game');
+        queryClient.invalidateQueries({
+          queryKey: gameKeys.detail(gameUlid),
+        });
+        queryClient.invalidateQueries({
+          queryKey: gameKeys.lists(),
+        });
+      }
+
       if (message.event === 'game.invitation.accepted') {
         console.log('[WS] Invitation accepted, refreshing game');
         queryClient.invalidateQueries({
