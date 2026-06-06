@@ -70,7 +70,7 @@ export function AnimatedSplash({
 
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',

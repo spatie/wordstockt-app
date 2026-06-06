@@ -128,7 +128,7 @@ export function FloatingTiles() {
 
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   floatingTile: {
     position: 'absolute',

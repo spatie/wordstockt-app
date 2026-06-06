@@ -343,7 +343,7 @@ export function SwapModeButtons({
 
 const styles = StyleSheet.create({
   darkOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     backdropFilter: 'blur(8px)',
   },
   darkOverlayNative: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     // iOS: lighter bg since BlurView provides real blur
     // Android: darker bg since BlurView doesn't support blur
     backgroundColor:

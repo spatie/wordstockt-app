@@ -107,7 +107,7 @@ describe('ChangePasswordScreen', () => {
     fireEvent.changeText(confirmPasswordInput, 'newpassword123');
 
     // Find the button by its text and get the touchable parent
-    const buttonText = screen.getAllByText('Change Password')[1]; // Second one is the button text
+    const buttonText = screen.getAllByText('Change Password')[1]!; // Second one is the button text
     const submitButton = buttonText.parent;
     fireEvent.press(submitButton!);
 
@@ -158,7 +158,7 @@ describe('ChangePasswordScreen', () => {
     fireEvent.changeText(newPasswordInput, 'newpassword123');
     fireEvent.changeText(confirmPasswordInput, 'newpassword123');
 
-    const buttonText = screen.getAllByText('Change Password')[1];
+    const buttonText = screen.getAllByText('Change Password')[1]!;
     const submitButton = buttonText.parent;
     fireEvent.press(submitButton!);
 
