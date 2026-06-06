@@ -102,6 +102,7 @@ export function useSwapTiles() {
     },
     onSuccess: (game) => {
       queryClient.setQueryData(gameKeys.detail(game.ulid), game);
+      queryClient.invalidateQueries({ queryKey: gameKeys.lists() });
     },
   });
 }

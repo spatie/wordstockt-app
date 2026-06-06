@@ -18,6 +18,9 @@ interface SnackbarState {
   visible: boolean;
   message: string;
   type: SnackbarType;
+  // Monotonically increasing id so that showing the same message twice in a
+  // row still re-triggers the show animation + auto-dismiss timer.
+  id: number;
 }
 
 interface SnackbarContextValue {
@@ -42,6 +45,7 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
     visible: false,
     message: '',
     type: 'info',
+    id: 0,
   });
 
   const translateY = useRef(new Animated.Value(-100)).current;
@@ -55,7 +59,12 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
         clearTimeout(timeoutRef.current);
       }
 
-      setState({ visible: true, message, type });
+      setState((prev) => ({
+        visible: true,
+        message,
+        type,
+        id: prev.id + 1,
+      }));
     },
     []
   );
@@ -103,7 +112,7 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [state.visible, state.message, translateY, opacity, hideSnackbar]);
+  }, [state.visible, state.id, translateY, opacity, hideSnackbar]);
 
   const config = {
     success: {

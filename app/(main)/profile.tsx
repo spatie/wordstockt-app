@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -44,6 +44,20 @@ export default function ProfileScreen() {
   const [email, setEmail] = useState(user?.email ?? '');
   const [avatarColor, setAvatarColor] = useState(user?.avatarColor ?? null);
   const [error, setError] = useState<string | null>(null);
+
+  // Resync the form when the user identity changes (e.g. account switch or the
+  // current user's record is replaced from the server/websocket). Keyed on
+  // user.ulid so in-progress edits to the same account aren't wiped.
+  const syncedUserUlid = useRef(user?.ulid);
+  useEffect(() => {
+    if (user && user.ulid !== syncedUserUlid.current) {
+      syncedUserUlid.current = user.ulid;
+      setUsername(user.username ?? '');
+      setEmail(user.email ?? '');
+      setAvatarColor(user.avatarColor ?? null);
+      setError(null);
+    }
+  }, [user]);
 
   useFocusEffect(
     useCallback(() => {

@@ -22,12 +22,9 @@ const FEATURE_MESSAGES: Record<RestrictedFeature, string> = {
 export function useGuestRestriction() {
   const isGuest = useAuthStore((s) => s.isGuest);
 
-  const checkAccess = useCallback(
-    (feature: RestrictedFeature): boolean => {
-      return !isGuest;
-    },
-    [isGuest]
-  );
+  const checkAccess = useCallback((): boolean => {
+    return !isGuest;
+  }, [isGuest]);
 
   const showUpgradePrompt = useCallback((feature?: RestrictedFeature) => {
     const featureText = feature

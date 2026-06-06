@@ -144,22 +144,24 @@ export default function HomeScreen() {
   );
 
   // Navigate to last game on mount only (for app resume)
-  // Using a ref to capture the initial value to avoid re-running when lastGameUlid changes
-  const initialLastGameUlid = useRef(
-    useNavigationStore.getState().lastGameUlid
+  // Lazy init so getState() runs once, not on every render.
+  const [initialLastGameUlid] = useState(
+    () => useNavigationStore.getState().lastGameUlid
   );
+  const hasNavigatedToLastGame = useRef(false);
   useEffect(() => {
-    if (initialLastGameUlid.current) {
-      const gameUlid = initialLastGameUlid.current;
-      initialLastGameUlid.current = null;
-      clearLastGameUlid();
-      // Small delay to ensure index is in navigation stack before pushing
-      // This ensures router.canGoBack() works correctly on game screen
-      setTimeout(() => {
-        push(ROUTES.GAME(gameUlid));
-      }, 50);
+    if (!initialLastGameUlid || hasNavigatedToLastGame.current) {
+      return;
     }
-  }, [clearLastGameUlid, push]);
+    hasNavigatedToLastGame.current = true;
+    clearLastGameUlid();
+    // Small delay to ensure index is in navigation stack before pushing
+    // This ensures router.canGoBack() works correctly on game screen
+    const timeout = setTimeout(() => {
+      push(ROUTES.GAME(initialLastGameUlid));
+    }, 50);
+    return () => clearTimeout(timeout);
+  }, [initialLastGameUlid, clearLastGameUlid, push]);
 
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<TabValue>('active');

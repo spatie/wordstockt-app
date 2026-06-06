@@ -107,6 +107,7 @@ export function useRevokeInvitation() {
       await apiClient.delete(`/invitations/${invitationUlid}`);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: invitationKeys.lists() });
       queryClient.invalidateQueries({ queryKey: gameKeys.all });
     },
   });

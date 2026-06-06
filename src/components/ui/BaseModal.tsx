@@ -50,9 +50,16 @@ export function BaseModal({
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const blurAnim = useRef(new Animated.Value(0)).current;
+  // Track whether the modal is currently mounted/shown without making it a
+  // reactive dependency of the animation effect. This lets us skip the
+  // close animation when the modal was never opened, while keeping the effect
+  // driven solely by the external `visible` prop.
+  const isShownRef = useRef(visible);
 
   useEffect(() => {
     if (visible) {
+      isShownRef.current = true;
+
       // Set initial values before showing modal to prevent flicker
       scaleAnim.setValue(0.85);
       opacityAnim.setValue(0);
@@ -77,7 +84,9 @@ export function BaseModal({
           useNativeDriver: true,
         }),
       ]).start();
-    } else if (modalVisible) {
+    } else if (isShownRef.current) {
+      isShownRef.current = false;
+
       Animated.parallel([
         Animated.timing(scaleAnim, {
           toValue: 0.9,
@@ -93,7 +102,7 @@ export function BaseModal({
         setModalVisible(false);
       });
     }
-  }, [visible, backdropBlur, blurAnim, scaleAnim, opacityAnim, modalVisible]);
+  }, [visible, backdropBlur, blurAnim, scaleAnim, opacityAnim]);
 
   // iOS: lighter bg when blur is enabled since BlurView provides real blur
   // Android: use full opacity since BlurView doesn't support blur

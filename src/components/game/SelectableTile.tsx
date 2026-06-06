@@ -33,6 +33,18 @@ export function SelectableTile({
   const selectedTileRef = useRef<TileType | null>(null);
   const [displayTile, setDisplayTile] = useState(tile);
   const [isAnimatingSwap, setIsAnimatingSwap] = useState(false);
+  const isMountedRef = useRef(true);
+
+  // Track mount state and stop animations on unmount so queued callbacks
+  // don't call setState on an unmounted component.
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      liftAnim.stopAnimation();
+      fadeAnim.stopAnimation();
+    };
+  }, [liftAnim, fadeAnim]);
 
   // Capture tile when it becomes selected (this is the "old" tile before swap)
   useEffect(() => {
@@ -69,7 +81,8 @@ export function SelectableTile({
           toValue: 0,
           duration: ANIMATION_DURATION,
           useNativeDriver: Platform.OS !== 'web',
-        }).start(() => {
+        }).start(({ finished }) => {
+          if (!finished || !isMountedRef.current) return;
           // Switch to new tile and fade in
           setDisplayTile(tile);
 
@@ -77,7 +90,8 @@ export function SelectableTile({
             toValue: 1,
             duration: ANIMATION_DURATION,
             useNativeDriver: Platform.OS !== 'web',
-          }).start(() => {
+          }).start(({ finished: fadeInFinished }) => {
+            if (!fadeInFinished || !isMountedRef.current) return;
             setIsAnimatingSwap(false);
             selectedTileRef.current = null;
           });

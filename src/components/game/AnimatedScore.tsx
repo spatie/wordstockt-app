@@ -152,8 +152,10 @@ export function AnimatedScore({
   return (
     <Animated.View style={[styles.container, style, containerStyle]}>
       {digits.map((digit, index) => (
+        // Key by place value (position from the RIGHT) so a given column keeps a
+        // stable key across digit-count boundaries (e.g. 9 -> 10, 99 -> 100).
         <AnimatedDigit
-          key={`pos-${index}`}
+          key={`pos-${digits.length - 1 - index}`}
           digit={digit}
           digitIndex={index}
           totalDigits={digits.length}

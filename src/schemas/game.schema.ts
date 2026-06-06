@@ -400,14 +400,18 @@ export function transformMoveHistoryItem(
       ? transformScoreBreakdown(data.score_breakdown)
       : null,
     tilesCount: data.tiles_count,
+    // Only include tiles with coordinates (swap moves don't have x/y);
+    // drop coordinate-less tiles rather than placing a phantom tile at (0,0).
     tiles:
-      data.tiles?.map((t) => ({
-        letter: t.letter,
-        points: t.points,
-        x: t.x ?? 0,
-        y: t.y ?? 0,
-        isBlank: t.is_blank ?? false,
-      })) ?? null,
+      data.tiles
+        ?.filter((t) => t.x !== undefined && t.y !== undefined)
+        .map((t) => ({
+          letter: t.letter,
+          points: t.points,
+          x: t.x!,
+          y: t.y!,
+          isBlank: t.is_blank ?? false,
+        })) ?? null,
     createdAt: data.created_at,
   };
 }

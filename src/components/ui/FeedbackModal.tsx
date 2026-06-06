@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { BaseModal } from './BaseModal';
 import { Button } from './Button';
@@ -55,13 +55,14 @@ export function FeedbackModal({
   onDismiss,
   buttonText,
 }: FeedbackModalProps) {
-  const [displayMessage, setDisplayMessage] = useState(message);
-
-  useEffect(() => {
-    if (visible && message) {
-      setDisplayMessage(message);
-    }
-  }, [visible, message]);
+  // Keep the last non-empty message so it stays visible during the fade-out
+  // (when the parent clears `message` while closing). Using a ref avoids an
+  // extra render / stale frame compared to mirroring the prop into state.
+  const lastMessageRef = useRef(message);
+  if (message) {
+    lastMessageRef.current = message;
+  }
+  const displayMessage = message || lastMessageRef.current;
 
   const config = typeConfig[type];
   const showIcon = type !== 'lost';

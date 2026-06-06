@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Stack, Redirect, useSegments, useRouter } from 'expo-router';
+import { Stack, Redirect, useSegments } from 'expo-router';
 import { PaperProvider } from 'react-native-paper';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '../src/api/queryClient';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
@@ -32,20 +33,10 @@ let hasSplashCompleted = false;
 // Track if we've ever had auth loaded - helps distinguish cold start from logout
 let hasEverLoadedAuth = false;
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 2,
-      staleTime: 30_000,
-    },
-  },
-});
-
 function RootLayoutNav() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const user = useAuthStore((s) => s.user);
   const segments = useSegments();
-  const router = useRouter();
 
   usePushNotifications();
   useDeepLinks();
@@ -54,20 +45,21 @@ function RootLayoutNav() {
   useCurrentUser();
 
   const inAuthGroup = segments[0] === '(auth)';
-  const isOnVerifyScreen = segments[1] === 'verify-email';
+  const isOnVerifyScreen = (segments as string[])[1] === 'verify-email';
 
-  useEffect(() => {
-    if (isAuthenticated && inAuthGroup && !isOnVerifyScreen) {
-      router.replace('/(main)');
-    }
-  }, [isAuthenticated, inAuthGroup, isOnVerifyScreen, router]);
-
+  // All routing decisions are made declaratively during render so there is no
+  // post-render navigation flash. Order matters: the grace-period check takes
+  // precedence over sending an authenticated user out of the auth group.
   if (!isAuthenticated && !inAuthGroup) {
     return <Redirect href="/(auth)/login" />;
   }
 
   if (isAuthenticated && isGracePeriodExpired(user) && !isOnVerifyScreen) {
     return <Redirect href="/(auth)/verify-email" />;
+  }
+
+  if (isAuthenticated && inAuthGroup && !isOnVerifyScreen) {
+    return <Redirect href="/(main)" />;
   }
 
   return (

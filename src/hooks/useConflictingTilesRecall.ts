@@ -21,6 +21,14 @@ export function useConflictingTilesRecall(game: Game | undefined) {
   // Store previous board state to detect changes
   const prevBoardRef = useRef<BoardState | null>(null);
 
+  // Keep latest pending tiles / rack permutation in refs so the detection
+  // effect can read them without re-running when only local pending state
+  // changes. The effect should react to opponent board changes only.
+  const pendingTilesRef = useRef(pendingTiles);
+  pendingTilesRef.current = pendingTiles;
+  const rackPermutationRef = useRef(rackPermutation);
+  rackPermutationRef.current = rackPermutation;
+
   // Remove specific tiles from pending (by their positions)
   const removeConflictingTiles = useCallback(
     (positions: { x: number; y: number }[]) => {
@@ -46,10 +54,14 @@ export function useConflictingTilesRecall(game: Game | undefined) {
     []
   );
 
-  useEffect(() => {
-    if (!game) return;
+  // Detection reacts to opponent board changes only (not to local pending-tile
+  // / rack-permutation updates, which are read via refs below).
+  const board = game?.board;
 
-    const currentBoard = game.board;
+  useEffect(() => {
+    if (!board) return;
+
+    const currentBoard = board;
     const prevBoard = prevBoardRef.current;
 
     // Skip on first render
@@ -78,7 +90,7 @@ export function useConflictingTilesRecall(game: Game | undefined) {
     }
 
     // Find pending tiles that conflict with newly occupied positions
-    const conflictingTiles = pendingTiles.filter((pending) =>
+    const conflictingTiles = pendingTilesRef.current.filter((pending) =>
       newlyOccupiedPositions.some(
         (pos) => pos.x === pending.x && pos.y === pending.y
       )
@@ -88,7 +100,7 @@ export function useConflictingTilesRecall(game: Game | undefined) {
       // Prepare tiles for animation (need visualSlot for rack position)
       const tilesToRecall = conflictingTiles.map((t) => ({
         ...t,
-        visualSlot: rackPermutation.indexOf(t.rackIndex),
+        visualSlot: rackPermutationRef.current.indexOf(t.rackIndex),
       }));
 
       // Capture positions to remove for the callback closure
@@ -113,11 +125,5 @@ export function useConflictingTilesRecall(game: Game | undefined) {
 
     // Update ref with current board
     prevBoardRef.current = currentBoard;
-  }, [
-    game,
-    pendingTiles,
-    rackPermutation,
-    startRecallAnimation,
-    removeConflictingTiles,
-  ]);
+  }, [board, startRecallAnimation, removeConflictingTiles]);
 }

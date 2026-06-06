@@ -106,26 +106,36 @@ const createEmptyBoard = () =>
     .fill(null)
     .map(() => Array(15).fill(null));
 
-export const mockGame: Game = {
+// Board with a couple of placed words (QUARTZ + ZEBRA crossing)
+const createMockBoard = () => {
+  const board = createEmptyBoard();
+  // Add some placed tiles - QUARTZ word
+  board[7]![3] = { letter: 'Q', points: 10, isBlank: false };
+  board[7]![4] = { letter: 'U', points: 1, isBlank: false };
+  board[7]![5] = { letter: 'A', points: 1, isBlank: false };
+  board[7]![6] = { letter: 'R', points: 1, isBlank: false };
+  board[7]![7] = { letter: 'T', points: 1, isBlank: false };
+  board[7]![8] = { letter: 'Z', points: 10, isBlank: false };
+  // ZEBRA crossing
+  board[7]![9] = { letter: 'E', points: 1, isBlank: false };
+  board[7]![10] = { letter: 'B', points: 3, isBlank: false };
+  board[7]![11] = { letter: 'R', points: 1, isBlank: false };
+  board[8]![9] = { letter: 'A', points: 1, isBlank: false };
+  return board;
+};
+
+/**
+ * Returns a fresh, fully independent mock game.
+ *
+ * Each call builds new board/rack/player arrays so callers can mutate the
+ * result without affecting any other consumer. Prefer this over a shared
+ * module-level object to avoid cross-render/cross-game state leakage.
+ */
+export const createMockGame = (): Game => ({
   ulid: '01hxyz123456789abcdefgh',
   language: 'en',
   status: 'active',
-  board: (() => {
-    const board = createEmptyBoard();
-    // Add some placed tiles - QUARTZ word
-    board[7]![3] = { letter: 'Q', points: 10, isBlank: false };
-    board[7]![4] = { letter: 'U', points: 1, isBlank: false };
-    board[7]![5] = { letter: 'A', points: 1, isBlank: false };
-    board[7]![6] = { letter: 'R', points: 1, isBlank: false };
-    board[7]![7] = { letter: 'T', points: 1, isBlank: false };
-    board[7]![8] = { letter: 'Z', points: 10, isBlank: false };
-    // ZEBRA crossing
-    board[7]![9] = { letter: 'E', points: 1, isBlank: false };
-    board[7]![10] = { letter: 'B', points: 3, isBlank: false };
-    board[7]![11] = { letter: 'R', points: 1, isBlank: false };
-    board[8]![9] = { letter: 'A', points: 1, isBlank: false };
-    return board;
-  })(),
+  board: createMockBoard(),
   boardTemplate: createBoardTemplate(),
   players: [
     {
@@ -165,4 +175,13 @@ export const mockGame: Game = {
   pendingInvitation: null,
   isPublic: false,
   canJoin: false,
-};
+});
+
+/**
+ * Shared mock game instance.
+ *
+ * Kept for backward compatibility with existing imports
+ * (`app/(main)/game/[id]/index.tsx`). New code should call `createMockGame()`
+ * to get an isolated copy. This instance is built fresh at module load.
+ */
+export const mockGame: Game = createMockGame();

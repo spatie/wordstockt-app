@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
@@ -169,9 +170,10 @@ export function useLogout() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => {
+    onMutate: () => {
       setLoggingOut(true);
-
+    },
+    mutationFn: async () => {
       // Get push token with timeout to prevent hanging
       let pushToken: string | null = null;
       try {
@@ -199,7 +201,7 @@ export function useCurrentUser() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const setUser = useAuthStore((s) => s.setUser);
 
-  return useQuery({
+  const query = useQuery({
     queryKey: authKeys.currentUser(),
     queryFn: async (): Promise<User> => {
       const { data } = await apiClient.get('/auth/user');
@@ -208,29 +210,38 @@ export function useCurrentUser() {
         data,
         'useCurrentUser'
       );
-      const user = transformUser(validated.data);
-
-      // Only update store if user data actually changed to prevent unnecessary re-renders
-      const currentUser = useAuthStore.getState().user;
-      const hasChanged =
-        !currentUser ||
-        currentUser.ulid !== user.ulid ||
-        currentUser.username !== user.username ||
-        currentUser.email !== user.email ||
-        currentUser.isGuest !== user.isGuest ||
-        currentUser.emailVerifiedAt !== user.emailVerifiedAt ||
-        currentUser.avatar !== user.avatar ||
-        currentUser.avatarColor !== user.avatarColor;
-
-      if (hasChanged) {
-        setUser(user);
-      }
-
-      return user;
+      return transformUser(validated.data);
     },
     enabled: isAuthenticated,
     staleTime: 5 * 60 * 1000,
   });
+
+  const user = query.data;
+
+  // Sync the fetched user into the auth store as a side effect, but only when
+  // the user data actually changed to prevent unnecessary re-renders.
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const currentUser = useAuthStore.getState().user;
+    const hasChanged =
+      !currentUser ||
+      currentUser.ulid !== user.ulid ||
+      currentUser.username !== user.username ||
+      currentUser.email !== user.email ||
+      currentUser.isGuest !== user.isGuest ||
+      currentUser.emailVerifiedAt !== user.emailVerifiedAt ||
+      currentUser.avatar !== user.avatar ||
+      currentUser.avatarColor !== user.avatarColor;
+
+    if (hasChanged) {
+      setUser(user);
+    }
+  }, [user, setUser]);
+
+  return query;
 }
 
 interface UpdateProfileParams {
@@ -348,8 +359,10 @@ export function useDeleteAccount() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => {
+    onMutate: () => {
       setLoggingOut(true);
+    },
+    mutationFn: async () => {
       await apiClient.delete('/auth/user');
     },
     onSettled: () => {

@@ -13,7 +13,8 @@ import { Button } from '../../../src/components/ui/Button';
 import { SmartAvatar } from '../../../src/components/ui/SmartAvatar';
 
 export default function InviteConfirmScreen() {
-  const { code } = useLocalSearchParams<{ code: string }>();
+  const { code: codeParam } = useLocalSearchParams<{ code: string | string[] }>();
+  const code = Array.isArray(codeParam) ? codeParam[0] : codeParam;
   const router = useRouter();
   const { data: inviteLink, isLoading, error } = useInviteLinkDetails(code);
   const redeemInviteLink = useRedeemInviteLink();

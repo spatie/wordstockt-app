@@ -275,6 +275,7 @@ export function TileRack({ tiles, disabled, onTileDrop }: TileRackProps) {
   const rackRef = useRef<View>(null);
   const { setRackLayout, isDragging, updateRackTiles } = useDragDrop();
   const [rackLayout, setLocalRackLayout] = useState<RackLayout | null>(null);
+  const measureTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sync tiles to shared values for worklet-based hit testing
   // Use useLayoutEffect to ensure tiles are synced before paint
@@ -306,10 +307,25 @@ export function TileRack({ tiles, disabled, onTileDrop }: TileRackProps) {
 
   const handleLayout = useCallback(
     (_event: LayoutChangeEvent) => {
-      setTimeout(measureRack, 100);
+      if (measureTimeoutRef.current !== null) {
+        clearTimeout(measureTimeoutRef.current);
+      }
+      measureTimeoutRef.current = setTimeout(() => {
+        measureTimeoutRef.current = null;
+        measureRack();
+      }, 100);
     },
     [measureRack]
   );
+
+  // Clear any pending measure timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (measureTimeoutRef.current !== null) {
+        clearTimeout(measureTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Re-measure when drag starts
   useEffect(() => {

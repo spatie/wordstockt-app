@@ -30,24 +30,31 @@ import {
 import { LAYOUT } from '../../../src/config/constants';
 
 export default function UserProfileScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id } = useLocalSearchParams<{ id: string | string[] }>();
   const router = useRouter();
-  const userUlid = id || '';
+  const userUlid = (Array.isArray(id) ? id[0] : id) || '';
   const currentUserUlid = useAuthStore((s) => s.user?.ulid);
   const [errorModal, setErrorModal] = useState<{
     visible: boolean;
     message: string;
   }>({ visible: false, message: '' });
 
-  const { data: user, isLoading, error } = useUserProfile(userUlid);
+  // Don't fetch profile data for the user's own profile (they get redirected).
+  const isOwnProfile = userUlid.length > 0 && userUlid === currentUserUlid;
+  // Empty ulid disables the hooks (they gate on userUlid.length > 0).
+  const queryUlid = isOwnProfile ? '' : userUlid;
+
+  const { data: user, isLoading, error } = useUserProfile(queryUlid);
   const { data: friendStatus, isLoading: isCheckingFriend } =
-    useIsFriend(userUlid);
+    useIsFriend(queryUlid);
   const addFriend = useAddFriend();
   const removeFriend = useRemoveFriend();
 
-  const { data: stats, isLoading: statsLoading } = useUserStats(userUlid);
+  const { data: stats, isLoading: statsLoading } = useUserStats(queryUlid, {
+    enabled: !isOwnProfile,
+  });
   const { data: headToHeadData = [], isLoading: h2hLoading } =
-    useHeadToHead(userUlid);
+    useHeadToHead(queryUlid);
 
   // Filter head-to-head to only show the record against the current user
   const myHeadToHead = currentUserUlid

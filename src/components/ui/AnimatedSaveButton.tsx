@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, ActivityIndicator, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -40,6 +40,27 @@ export function AnimatedSaveButton({
   const [showSpinner, setShowSpinner] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const spinnerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const successCallbackTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const revertTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearAllTimeouts = useCallback(() => {
+    if (spinnerTimeoutRef.current) {
+      clearTimeout(spinnerTimeoutRef.current);
+      spinnerTimeoutRef.current = null;
+    }
+    if (successCallbackTimeoutRef.current) {
+      clearTimeout(successCallbackTimeoutRef.current);
+      successCallbackTimeoutRef.current = null;
+    }
+    if (revertTimeoutRef.current) {
+      clearTimeout(revertTimeoutRef.current);
+      revertTimeoutRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => clearAllTimeouts, [clearAllTimeouts]);
 
   const colorProgress = useSharedValue(0);
   const labelOpacity = useSharedValue(1);
@@ -53,6 +74,9 @@ export function AnimatedSaveButton({
 
   const handlePress = useCallback(async () => {
     if (disabled || isPending || showSuccess) return;
+
+    // Clear any timeouts left over from a previous press before re-scheduling
+    clearAllTimeouts();
 
     setIsPending(true);
 
@@ -86,13 +110,13 @@ export function AnimatedSaveButton({
 
       // Call onSuccess callback after a short delay (if provided)
       if (onSuccess) {
-        setTimeout(() => {
+        successCallbackTimeoutRef.current = setTimeout(() => {
           onSuccess();
         }, 800);
       }
 
       // Revert after duration
-      setTimeout(() => {
+      revertTimeoutRef.current = setTimeout(() => {
         colorProgress.set(withTiming(0, { duration: 300 }));
         labelOpacity.set(withTiming(1, { duration: 200 }));
         successOpacity.set(
@@ -121,6 +145,7 @@ export function AnimatedSaveButton({
     scale,
     successDuration,
     resetToIdle,
+    clearAllTimeouts,
   ]);
 
   const handlePressIn = useCallback(() => {

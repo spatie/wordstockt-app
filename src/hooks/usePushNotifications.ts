@@ -81,18 +81,29 @@ export function usePushNotifications() {
   );
   const responseListener = useRef<Notifications.EventSubscription | null>(null);
 
+  // Read the latest registerToken/router via refs so the effect does not
+  // re-run (churning listeners) when their identities change.
+  const registerTokenRef = useRef(registerToken);
+  const routerRef = useRef(router);
+  registerTokenRef.current = registerToken;
+  routerRef.current = router;
+
   useEffect(() => {
     if (!isAuthenticated) return;
+
+    let isActive = true;
+    let navigationTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const checkAndRegister = () => {
       registerForPushNotificationsAsync()
         .then((token) => {
+          if (!isActive) return;
           if (token) {
             console.log(
               '[Push] Registering token:',
               token.substring(0, 20) + '...'
             );
-            registerToken(
+            registerTokenRef.current(
               {
                 token,
                 deviceName: Device.deviceName ?? undefined,
@@ -145,24 +156,32 @@ export function usePushNotifications() {
         const data = response.notification.request.content.data;
         if (data?.type === 'invitation') {
           useNavigationStore.getState().clearLastGameUlid();
-          router.replace('/(main)');
+          routerRef.current.replace('/(main)');
         } else if (data?.game_ulid) {
           // Clear app resume state to prevent race condition with HomeScreen's
           // app resume logic (both use 50ms setTimeout to navigate to a game)
           useNavigationStore.getState().clearLastGameUlid();
           // Navigate to games list first, then push to game
           // This ensures back button is always available
-          router.replace('/(main)');
-          setTimeout(() => {
-            router.push(`/(main)/game/${data.game_ulid}`);
+          routerRef.current.replace('/(main)');
+          if (navigationTimeout) {
+            clearTimeout(navigationTimeout);
+          }
+          navigationTimeout = setTimeout(() => {
+            routerRef.current.push(`/(main)/game/${data.game_ulid}`);
           }, 50);
         }
       });
 
     return () => {
+      isActive = false;
+      if (navigationTimeout) {
+        clearTimeout(navigationTimeout);
+        navigationTimeout = null;
+      }
       appStateSubscription.remove();
       notificationListener.current?.remove();
       responseListener.current?.remove();
     };
-  }, [isAuthenticated, registerToken, router]);
+  }, [isAuthenticated]);
 }

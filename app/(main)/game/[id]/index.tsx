@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -62,12 +62,13 @@ const USE_MOCK_DATA = false;
 const BUTTON_FADE_DURATION = 200;
 
 function GameScreenContent() {
-  const { id, invitation: invitationUlid } = useLocalSearchParams<{
-    id: string;
-    invitation?: string;
+  const { id, invitation } = useLocalSearchParams<{
+    id: string | string[];
+    invitation?: string | string[];
   }>();
   const router = useRouter();
-  const gameUlid = id ?? '';
+  const gameUlid = (Array.isArray(id) ? id[0] : id) ?? '';
+  const invitationUlid = Array.isArray(invitation) ? invitation[0] : invitation;
   const userUlid = useAuthStore((s) => s.user?.ulid) ?? '';
   const setLastGameUlid = useNavigationStore((s) => s.setLastGameUlid);
   const clearLastGameUlid = useNavigationStore((s) => s.clearLastGameUlid);
@@ -128,7 +129,11 @@ function GameScreenContent() {
     x: number;
     y: number;
   } | null>(null);
-  const wasFinishedOnLoadRef = useRef<boolean | null>(null);
+  // null = not yet determined (game data hasn't loaded). Resolved once in an
+  // effect when game data first becomes available.
+  const [wasFinishedOnLoad, setWasFinishedOnLoad] = useState<boolean | null>(
+    null
+  );
 
   // Animation values for button crossfade
   const actionButtonsOpacity = useRef(new Animated.Value(1)).current;
@@ -162,13 +167,27 @@ function GameScreenContent() {
   }, [isLoading, error, clearLastGameUlid, router]);
 
   // Use mock data for UI testing
-  const game = USE_MOCK_DATA ? { ...mockGame, ulid: gameUlid } : apiGame;
+  const game = useMemo(
+    () => (USE_MOCK_DATA ? { ...mockGame, ulid: gameUlid } : apiGame),
+    [apiGame, gameUlid]
+  );
 
   // Connect to WebSocket for real-time updates (skip in mock mode)
   useWebSocket(USE_MOCK_DATA ? null : gameUlid);
 
   // Detect and recall tiles that conflict with opponent's played tiles
   useConflictingTilesRecall(game);
+
+  // Record whether the game was already finished the first time it loads.
+  // Used to distinguish "game just ended while viewing" from "opened an
+  // already-finished game" (the latter must not show the game-end modal).
+  useEffect(() => {
+    if (game) {
+      setWasFinishedOnLoad((prev) =>
+        prev === null ? game.status === 'finished' : prev
+      );
+    }
+  }, [game]);
 
   // When game loads, trigger spinner fade out (which will then trigger content fade in)
   useEffect(() => {
@@ -495,11 +514,6 @@ function GameScreenContent() {
   const hasFreeSwap = currentPlayer?.hasFreeSwap ?? false;
   const canJoin = gameData?.canJoin ?? false;
 
-  // Track if game was already finished when first loaded
-  if (gameData && wasFinishedOnLoadRef.current === null) {
-    wasFinishedOnLoadRef.current = gameData.status === 'finished';
-  }
-
   // Game end detection - only show modal if game just ended (not already finished on load)
   const isGameFinished = gameData?.status === 'finished';
 
@@ -508,7 +522,9 @@ function GameScreenContent() {
   const showLastMoveWarning =
     gameData?.isLastMove && !lastMoveWarningShown && !isGameFinished;
   const didWin = isGameFinished && gameData?.winnerUlid === userUlid;
-  const gameJustEnded = isGameFinished && !wasFinishedOnLoadRef.current;
+  // Only "just ended" once we've recorded that it was NOT finished on load.
+  // While undetermined (null), this stays false so the modal never flashes.
+  const gameJustEnded = isGameFinished && wasFinishedOnLoad === false;
   const showGameEndModal = gameJustEnded && !gameEndModalDismissed;
 
   // Calculate final scores for game end modal
@@ -523,20 +539,6 @@ function GameScreenContent() {
     currentAchievement === null &&
     !rematchDismissed &&
     opponent !== undefined;
-
-  // Debug: Log rematch conditions when game is finished
-  if (isGameFinished) {
-    console.log('[RematchDebug]', {
-      isGameFinished,
-      gameJustEnded,
-      wasFinishedOnLoadRef: wasFinishedOnLoadRef.current,
-      gameEndModalDismissed,
-      currentAchievement: currentAchievement?.name ?? null,
-      rematchDismissed,
-      opponentDefined: opponent !== undefined,
-      showRematchModal,
-    });
-  }
 
   const handleRematch = async () => {
     const newGameUlid = await createRematch();

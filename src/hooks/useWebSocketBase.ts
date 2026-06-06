@@ -37,7 +37,6 @@ export function useWebSocketBase({
   const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isConnectingRef = useRef(false);
   const isMountedRef = useRef(true);
-  const connectRef = useRef<(() => void) | null>(null);
 
   const tokenRef = useRef(token);
   const channelIdRef = useRef(channelId);
@@ -77,7 +76,13 @@ export function useWebSocketBase({
         reconnectTimeoutRef.current = null;
       }
       if (wsRef.current) {
-        wsRef.current.close();
+        // Detach handlers so the deliberate close does not trigger a reconnect.
+        const closing = wsRef.current;
+        closing.onopen = null;
+        closing.onmessage = null;
+        closing.onerror = null;
+        closing.onclose = null;
+        closing.close();
         wsRef.current = null;
       }
       socketIdRef.current = null;
@@ -216,8 +221,6 @@ export function useWebSocketBase({
       wsRef.current = ws;
     };
 
-    connectRef.current = connect;
-
     if (channelIdRef.current && tokenRef.current) {
       connect();
     }
@@ -236,17 +239,13 @@ export function useWebSocketBase({
 
     return () => {
       isMountedRef.current = false;
-      connectRef.current = null;
       subscription.remove();
       disconnect();
     };
-  }, [logPrefix]);
-
-  useEffect(() => {
-    if (channelId && token && connectRef.current) {
-      connectRef.current();
-    }
-  }, [channelId, token]);
+    // Re-run the connection lifecycle when the channel or token changes so the
+    // socket disconnects from the old channel/token and reconnects with the new
+    // values. logPrefix is included because closures log it.
+  }, [channelId, token, logPrefix]);
 
   const isConnected = useCallback(() => {
     return wsRef.current?.readyState === WebSocket.OPEN;

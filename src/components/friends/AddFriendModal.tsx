@@ -86,12 +86,29 @@ export function AddFriendModal({
     searchQuery.data,
   ]);
 
-  // Check if user is already a friend
+  // Check if user is already a friend. Only trust `friendCheck.data` once the
+  // friend-check query has actually settled (`isSuccess`) for the CURRENT
+  // foundUser. When `foundUser` changes, React Query returns the previous
+  // key's cached data for a render before the new query resolves, so without
+  // this guard we could flag a brand-new user as "already friends".
   React.useEffect(() => {
-    if (searchState === 'found' && friendCheck.data?.isFriend) {
+    if (
+      searchState === 'found' &&
+      friendCheck.isSuccess &&
+      friendCheck.data?.isFriend
+    ) {
       setSearchState('already_friend');
     }
-  }, [searchState, friendCheck.data?.isFriend]);
+  }, [searchState, friendCheck.isSuccess, friendCheck.data?.isFriend]);
+
+  const handleClose = useCallback(() => {
+    setUsername('');
+    setSearchTrigger('');
+    setSearchState('empty');
+    setFoundUser(null);
+    addFriend.reset();
+    onClose();
+  }, [onClose, addFriend]);
 
   const handleAddFriend = useCallback(async () => {
     if (!foundUser) return;
@@ -103,16 +120,7 @@ export function AddFriendModal({
     } catch {
       // Error handled by mutation state
     }
-  }, [foundUser, addFriend, onSuccess]);
-
-  const handleClose = useCallback(() => {
-    setUsername('');
-    setSearchTrigger('');
-    setSearchState('empty');
-    setFoundUser(null);
-    addFriend.reset();
-    onClose();
-  }, [onClose, addFriend]);
+  }, [foundUser, addFriend, onSuccess, handleClose]);
 
   const errorMessage = addFriend.error
     ? getApiError(addFriend.error).message

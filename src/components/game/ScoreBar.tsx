@@ -1,4 +1,10 @@
-import React, { useEffect, useCallback, useState, useRef } from 'react';
+import React, {
+  useEffect,
+  useCallback,
+  useState,
+  useRef,
+  useMemo,
+} from 'react';
 import { View, StyleSheet, Pressable, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import ReAnimated, {
@@ -163,6 +169,10 @@ function AnimatedPlayerSection({
   const boxOpacity = useSharedValue(isActive ? 1 : 0);
   const color = avatarColor || '#4A90D9';
 
+  // Precompute rgb components once per color (regex parsing must not run in the
+  // per-frame animation worklet).
+  const [rgbR, rgbG, rgbB] = useMemo(() => hexToRgbComponents(color), [color]);
+
   useEffect(() => {
     if (isActive && !isGameFinished) {
       boxOpacity.set(withTiming(1, { duration: 300 }));
@@ -203,8 +213,8 @@ function AnimatedPlayerSection({
     const borderAlpha =
       interpolate(pulse.value, [0.6, 1], [0.3, 0.6]) * boxOpacity.value;
     return {
-      backgroundColor: `rgba(${hexToRgb(color)}, ${bgAlpha})`,
-      borderColor: `rgba(${hexToRgb(color)}, ${borderAlpha})`,
+      backgroundColor: `rgba(${rgbR}, ${rgbG}, ${rgbB}, ${bgAlpha})`,
+      borderColor: `rgba(${rgbR}, ${rgbG}, ${rgbB}, ${borderAlpha})`,
       opacity: 1,
     };
   });
@@ -222,13 +232,18 @@ function AnimatedPlayerSection({
   );
 }
 
-function hexToRgb(hex: string): string {
-  'worklet';
+// Plain JS (NOT a worklet): parse hex once, memoized per color in the component.
+// The regex is expensive and must not run inside the per-frame animation worklet.
+function hexToRgbComponents(hex: string): [number, number, number] {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (result && result[1] && result[2] && result[3]) {
-    return `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
+    return [
+      parseInt(result[1], 16),
+      parseInt(result[2], 16),
+      parseInt(result[3], 16),
+    ];
   }
-  return '74, 144, 217';
+  return [74, 144, 217];
 }
 
 function PlayerAvatar({ player }: { player: Player | undefined }) {
