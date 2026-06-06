@@ -135,6 +135,7 @@ export const createMockGame = (): Game => ({
   ulid: '01hxyz123456789abcdefgh',
   language: 'en',
   status: 'active',
+  maxPlayers: 2,
   board: createMockBoard(),
   boardTemplate: createBoardTemplate(),
   players: [

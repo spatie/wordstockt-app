@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GameCard } from '../GameCard';
-import type { GameListItem } from '../../../types';
+import type { GameListItem, GameListPlayer } from '../../../types';
 
 // Mock @expo/vector-icons
 jest.mock('@expo/vector-icons', () => ({
@@ -48,18 +49,39 @@ jest.mock('../../game/TurnTimer', () => ({
   },
 }));
 
+const MY_ULID = '01hxyz000000000player01';
+const OPPONENT_ULID = '01hxyz00000000opponent';
+
+const mockPlayer = (
+  overrides: Partial<GameListPlayer> = {}
+): GameListPlayer => ({
+  ulid: OPPONENT_ULID,
+  username: 'opponent_user',
+  avatar: null,
+  avatarColor: null,
+  score: 95,
+  isCurrentTurn: false,
+  isMe: false,
+  hasLeft: false,
+  ...overrides,
+});
+
 const mockGame: GameListItem = {
   ulid: '01hxyz000000000game0001',
   language: 'en',
   status: 'active',
-  opponent: {
-    ulid: '01hxyz00000000opponent',
-    username: 'opponent_user',
-    avatar: null,
-    avatarColor: null,
-  },
+  maxPlayers: 2,
+  players: [
+    mockPlayer({
+      ulid: MY_ULID,
+      username: 'me',
+      score: 120,
+      isCurrentTurn: true,
+      isMe: true,
+    }),
+    mockPlayer({ ulid: OPPONENT_ULID, username: 'opponent_user', score: 95 }),
+  ],
   myScore: 120,
-  opponentScore: 95,
   isMyTurn: true,
   winnerUlid: null,
   updatedAt: new Date().toISOString(),
@@ -69,71 +91,91 @@ const mockGame: GameListItem = {
   isPublic: false,
 };
 
-describe('GameCard', () => {
-  const mockOnPress = jest.fn();
+function renderCard(game: GameListItem, userUlid = MY_ULID) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <GameCard game={game} userUlid={userUlid} onPress={mockOnPress} />
+    </QueryClientProvider>
+  );
+}
 
+const mockOnPress = jest.fn();
+
+describe('GameCard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('renders opponent name', () => {
-    render(
-      <GameCard
-        game={mockGame}
-        userUlid="01hxyz000000000player01"
-        onPress={mockOnPress}
-      />
-    );
+    renderCard(mockGame);
 
     // Multiple elements may contain the name (avatar + card), check at least one exists
     expect(screen.getAllByText('opponent_user').length).toBeGreaterThan(0);
   });
 
   it('renders scores correctly', () => {
-    render(
-      <GameCard
-        game={mockGame}
-        userUlid="01hxyz000000000player01"
-        onPress={mockOnPress}
-      />
-    );
+    renderCard(mockGame);
 
-    expect(screen.getByText(/120/)).toBeTruthy();
-    expect(screen.getByText(/95/)).toBeTruthy();
+    expect(screen.getByText('120')).toBeTruthy();
+    expect(screen.getByText('95')).toBeTruthy();
+  });
+
+  it('shows all three scores for a 3-player game and marks the left player', () => {
+    const threePlayerGame: GameListItem = {
+      ...mockGame,
+      maxPlayers: 3,
+      players: [
+        mockPlayer({
+          ulid: MY_ULID,
+          username: 'me',
+          score: 214,
+          isCurrentTurn: true,
+          isMe: true,
+        }),
+        mockPlayer({ ulid: '01player02', username: 'jess', score: 289 }),
+        mockPlayer({
+          ulid: '01player03',
+          username: 'tom',
+          score: 176,
+          hasLeft: true,
+        }),
+      ],
+    };
+
+    renderCard(threePlayerGame);
+
+    expect(screen.getByText('214')).toBeTruthy();
+    expect(screen.getByText('289')).toBeTruthy();
+
+    const leftScore = screen.getByText('176');
+    expect(leftScore).toBeTruthy();
+    // The left player's score is struck-through.
+    const flattened = Array.isArray(leftScore.props.style)
+      ? Object.assign({}, ...leftScore.props.style.filter(Boolean))
+      : leftScore.props.style;
+    expect(flattened.textDecorationLine).toBe('line-through');
+
+    // The other players' names are comma-joined in the header.
+    expect(screen.getAllByText('jess, tom').length).toBeGreaterThan(0);
   });
 
   it('renders last move description', () => {
-    render(
-      <GameCard
-        game={mockGame}
-        userUlid="01hxyz000000000player01"
-        onPress={mockOnPress}
-      />
-    );
+    renderCard(mockGame);
 
     expect(screen.getByText('played "HELLO" +12')).toBeTruthy();
   });
 
   it('renders time ago', () => {
-    render(
-      <GameCard
-        game={mockGame}
-        userUlid="01hxyz000000000player01"
-        onPress={mockOnPress}
-      />
-    );
+    renderCard(mockGame);
 
     expect(screen.getByText('2 hours ago')).toBeTruthy();
   });
 
   it('calls onPress when card is pressed', () => {
-    render(
-      <GameCard
-        game={mockGame}
-        userUlid="01hxyz000000000player01"
-        onPress={mockOnPress}
-      />
-    );
+    renderCard(mockGame);
 
     const playButton = screen.getByText('Play');
     fireEvent.press(playButton);
@@ -142,13 +184,7 @@ describe('GameCard', () => {
   });
 
   it('shows Play button for active games when it is my turn', () => {
-    render(
-      <GameCard
-        game={mockGame}
-        userUlid="01hxyz000000000player01"
-        onPress={mockOnPress}
-      />
-    );
+    renderCard(mockGame);
 
     expect(screen.getByText('Play')).toBeTruthy();
   });
@@ -160,73 +196,95 @@ describe('GameCard', () => {
       lastMoveDescription: 'opponent_user played HELLO for 12 points',
     };
 
-    render(
-      <GameCard
-        game={opponentTurnGame}
-        userUlid="01hxyz000000000player01"
-        onPress={mockOnPress}
-      />
-    );
+    renderCard(opponentTurnGame);
 
     expect(screen.getByText('View')).toBeTruthy();
     expect(screen.getByText('You played "HELLO" +12')).toBeTruthy();
   });
 
-  it('shows Won badge for finished games when user won', () => {
+  it('shows Won badge and placement for finished games when user won', () => {
     const finishedGame: GameListItem = {
       ...mockGame,
       status: 'finished',
-      winnerUlid: '01hxyz000000000player01',
+      winnerUlid: MY_ULID,
     };
 
-    render(
-      <GameCard
-        game={finishedGame}
-        userUlid="01hxyz000000000player01"
-        onPress={mockOnPress}
-      />
-    );
+    renderCard(finishedGame);
 
     expect(screen.getByText('Won')).toBeTruthy();
+    expect(screen.getByText('1st of 2')).toBeTruthy();
   });
 
   it('shows Lost badge for finished games when user lost', () => {
     const finishedGame: GameListItem = {
       ...mockGame,
       status: 'finished',
-      winnerUlid: '01hxyz00000000opponent',
+      winnerUlid: OPPONENT_ULID,
+      players: [
+        mockPlayer({
+          ulid: MY_ULID,
+          username: 'me',
+          score: 95,
+          isMe: true,
+        }),
+        mockPlayer({
+          ulid: OPPONENT_ULID,
+          username: 'opponent_user',
+          score: 120,
+        }),
+      ],
     };
 
-    render(
-      <GameCard
-        game={finishedGame}
-        userUlid="01hxyz000000000player01"
-        onPress={mockOnPress}
-      />
-    );
+    renderCard(finishedGame);
 
     expect(screen.getByText('Lost')).toBeTruthy();
+    expect(screen.getByText('2nd of 2')).toBeTruthy();
   });
 
-  it('shows invite text when no opponent', () => {
+  it('shows invite text when no other players', () => {
     const pendingGame: GameListItem = {
       ...mockGame,
-      opponent: null,
+      maxPlayers: 2,
+      players: [
+        mockPlayer({
+          ulid: MY_ULID,
+          username: 'me',
+          score: 0,
+          isCurrentTurn: false,
+          isMe: true,
+        }),
+      ],
       status: 'pending',
       lastMoveDescription: null,
       isPublic: false,
     };
 
-    render(
-      <GameCard
-        game={pendingGame}
-        userUlid="01hxyz000000000player01"
-        onPress={mockOnPress}
-      />
-    );
+    renderCard(pendingGame);
 
     expect(screen.getByText('Invite a player')).toBeTruthy();
     expect(screen.getByText('Tap to find an opponent')).toBeTruthy();
+  });
+
+  it('shows Start now button for the creator of a pending game with 2+ players', () => {
+    const pendingGame: GameListItem = {
+      ...mockGame,
+      maxPlayers: 3,
+      status: 'pending',
+      lastMoveDescription: null,
+      players: [
+        mockPlayer({
+          ulid: MY_ULID,
+          username: 'me',
+          score: 0,
+          isMe: true,
+        }),
+        mockPlayer({ ulid: '01player02', username: 'jess', score: 0 }),
+      ],
+    };
+
+    renderCard(pendingGame);
+
+    expect(screen.getByText('Start now')).toBeTruthy();
   });
 
   it('shows "Game in progress" when no last move description', () => {
@@ -235,13 +293,7 @@ describe('GameCard', () => {
       lastMoveDescription: null,
     };
 
-    render(
-      <GameCard
-        game={gameInProgress}
-        userUlid="01hxyz000000000player01"
-        onPress={mockOnPress}
-      />
-    );
+    renderCard(gameInProgress);
 
     expect(screen.getByText('Game in progress')).toBeTruthy();
   });
@@ -253,13 +305,7 @@ describe('GameCard', () => {
       turnExpiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
     };
 
-    render(
-      <GameCard
-        game={gameWithTimer}
-        userUlid="01hxyz000000000player01"
-        onPress={mockOnPress}
-      />
-    );
+    renderCard(gameWithTimer);
 
     expect(screen.getByTestId('turn-timer')).toBeTruthy();
   });
@@ -271,13 +317,7 @@ describe('GameCard', () => {
       turnExpiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
     };
 
-    render(
-      <GameCard
-        game={gameNotMyTurn}
-        userUlid="01hxyz000000000player01"
-        onPress={mockOnPress}
-      />
-    );
+    renderCard(gameNotMyTurn);
 
     expect(screen.queryByTestId('turn-timer')).toBeNull();
   });
@@ -289,13 +329,7 @@ describe('GameCard', () => {
       turnExpiresAt: null,
     };
 
-    render(
-      <GameCard
-        game={gameNoExpiry}
-        userUlid="01hxyz000000000player01"
-        onPress={mockOnPress}
-      />
-    );
+    renderCard(gameNoExpiry);
 
     expect(screen.queryByTestId('turn-timer')).toBeNull();
   });
@@ -304,17 +338,11 @@ describe('GameCard', () => {
     const finishedGame: GameListItem = {
       ...mockGame,
       status: 'finished',
-      winnerUlid: '01hxyz000000000player01',
+      winnerUlid: MY_ULID,
       turnExpiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
     };
 
-    render(
-      <GameCard
-        game={finishedGame}
-        userUlid="01hxyz000000000player01"
-        onPress={mockOnPress}
-      />
-    );
+    renderCard(finishedGame);
 
     // Timer should not render even if turnExpiresAt is set because isMyTurn logic
     // won't apply for finished games in the card display

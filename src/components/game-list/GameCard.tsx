@@ -8,7 +8,8 @@ import { TurnTimer } from '../game/TurnTimer';
 import { timeAgo } from '../../utils/timeAgo';
 import { colors } from '../../config/theme';
 import { RADIUS, SPACING } from '../../config/constants';
-import type { GameListItem } from '../../types';
+import { useStartGame } from '../../api/queries/useGames';
+import type { GameListItem, GameListPlayer } from '../../types';
 
 interface GameCardProps {
   game: GameListItem;
@@ -16,6 +17,10 @@ interface GameCardProps {
   onPress: (gameUlid: string) => void;
   onDelete?: (gameUlid: string) => void;
 }
+
+const AVATAR_SIZE = 32;
+const AVATAR_OVERLAP = 20;
+const MAX_HEADER_AVATARS = 3;
 
 function formatLastMove(
   description: string | null,
@@ -50,16 +55,77 @@ function formatLastMove(
   return description;
 }
 
+/**
+ * Ordinal placement (e.g. "1st of 4") for the current user in a finished game.
+ *
+ * Players are ranked by score descending; players who left rank last,
+ * ordered among themselves by their frozen score. Ties share a rank.
+ */
+function computePlacement(
+  players: GameListPlayer[],
+  userUlid: string | undefined
+): string | null {
+  const me = players.find((p) => p.isMe || p.ulid === userUlid);
+  if (!me) {
+    return null;
+  }
+
+  const ranked = [...players].sort((a, b) => {
+    if (a.hasLeft !== b.hasLeft) {
+      return a.hasLeft ? 1 : -1;
+    }
+    return b.score - a.score;
+  });
+
+  let rank = 1;
+  for (let i = 0; i < ranked.length; i++) {
+    const player = ranked[i]!;
+    if (
+      i > 0 &&
+      (ranked[i - 1]!.score !== player.score ||
+        ranked[i - 1]!.hasLeft !== player.hasLeft)
+    ) {
+      rank = i + 1;
+    }
+    if (player.ulid === me.ulid) {
+      return `${ordinal(rank)} of ${players.length}`;
+    }
+  }
+
+  return null;
+}
+
+function ordinal(n: number): string {
+  const suffixes = ['th', 'st', 'nd', 'rd'];
+  const value = n % 100;
+  return `${n}${suffixes[(value - 20) % 10] ?? suffixes[value] ?? suffixes[0]}`;
+}
+
 export const GameCard = memo(function GameCard({
   game,
   userUlid,
   onPress,
   onDelete,
 }: GameCardProps) {
+  const startGame = useStartGame();
+
   const isCompleted = game.status === 'finished';
   const isWinner = game.winnerUlid === userUlid;
-  const isAwaitingOpponent = game.status === 'pending' && !game.opponent;
-  const hasPendingInvitation = isAwaitingOpponent && game.pendingInvitation;
+
+  const otherPlayers = game.players.filter((p) => !p.isMe);
+  const isAwaitingPlayers =
+    game.status === 'pending' && otherPlayers.length === 0;
+  const hasPendingInvitation = isAwaitingPlayers && game.pendingInvitation;
+
+  // The creator is the first player in the roster. They can manually start a
+  // pending game once at least one other player has joined (>= 2 total).
+  const isCreator = game.players[0]?.ulid === userUlid;
+  const canStartNow =
+    game.status === 'pending' && isCreator && game.players.length >= 2;
+
+  const placement = isCompleted
+    ? computePlacement(game.players, userUlid)
+    : null;
 
   const handlePress = useCallback(() => {
     onPress(game.ulid);
@@ -69,8 +135,15 @@ export const GameCard = memo(function GameCard({
     onDelete?.(game.ulid);
   }, [onDelete, game.ulid]);
 
-  // Determine what to show in the avatar/name area
-  const getDisplayInfo = () => {
+  const handleStart = useCallback(() => {
+    if (startGame.isPending) {
+      return;
+    }
+    startGame.mutate(game.ulid);
+  }, [startGame, game.ulid]);
+
+  // Determine what to show in the avatar/name area for empty/pending states.
+  const getEmptyStateInfo = () => {
     if (hasPendingInvitation) {
       return {
         name: game.pendingInvitation!.invitee.username,
@@ -81,31 +154,31 @@ export const GameCard = memo(function GameCard({
         showInvitedBadge: true,
       };
     }
-    if (isAwaitingOpponent) {
-      return {
-        name: game.isPublic ? 'Public game' : 'Invite a player',
-        avatar: null,
-        avatarColor: null,
-        ulid: undefined,
-        subtitle: game.isPublic
-          ? 'Waiting for someone to join...'
-          : 'Tap to find an opponent',
-        showInviteIcon: !game.isPublic,
-        showPublicIcon: game.isPublic,
-      };
-    }
     return {
-      name: game.opponent?.username || 'Unknown',
-      avatar: game.opponent?.avatar,
-      avatarColor: game.opponent?.avatarColor,
-      ulid: game.opponent?.ulid,
-      subtitle: isCompleted
-        ? null
-        : formatLastMove(game.lastMoveDescription, game.status, game.isMyTurn),
+      name: game.isPublic ? 'Public game' : 'Invite a player',
+      avatar: null,
+      avatarColor: null,
+      ulid: undefined,
+      subtitle: game.isPublic
+        ? 'Waiting for someone to join...'
+        : 'Tap to find an opponent',
+      showInviteIcon: !game.isPublic,
+      showPublicIcon: game.isPublic,
     };
   };
 
-  const displayInfo = getDisplayInfo();
+  const emptyState = isAwaitingPlayers ? getEmptyStateInfo() : null;
+
+  // For a pending game that already has other players joined (but isn't full),
+  // show how many seats are still open.
+  const openSeats = game.maxPlayers - game.players.length;
+  const headerNames = otherPlayers.map((p) => p.username).join(', ');
+  const subtitle =
+    game.status === 'pending' && openSeats > 0
+      ? `Waiting for ${openSeats} player${openSeats > 1 ? 's' : ''}…`
+      : isCompleted
+        ? null
+        : formatLastMove(game.lastMoveDescription, game.status, game.isMyTurn);
 
   return (
     <Card
@@ -114,33 +187,54 @@ export const GameCard = memo(function GameCard({
       style={[!game.isMyTurn && styles.opponentTurnCard]}
     >
       <View style={styles.cardTop}>
-        {displayInfo.showPublicIcon ? (
-          <View style={styles.publicIconContainer}>
-            <Ionicons name="globe-outline" size={18} color={colors.primary} />
-          </View>
-        ) : displayInfo.showInviteIcon ? (
-          <View style={styles.inviteIconContainer}>
-            <Ionicons name="person-add" size={18} color={colors.primary} />
-          </View>
+        {emptyState ? (
+          emptyState.showPublicIcon ? (
+            <View style={styles.publicIconContainer}>
+              <Ionicons name="globe-outline" size={18} color={colors.primary} />
+            </View>
+          ) : emptyState.showInviteIcon ? (
+            <View style={styles.inviteIconContainer}>
+              <Ionicons name="person-add" size={18} color={colors.primary} />
+            </View>
+          ) : (
+            <SmartAvatar
+              userUlid={emptyState.ulid}
+              uri={emptyState.avatar}
+              name={emptyState.name}
+              size={AVATAR_SIZE}
+              backgroundColor={emptyState.avatarColor ?? undefined}
+            />
+          )
         ) : (
-          <SmartAvatar
-            userUlid={displayInfo.ulid}
-            uri={displayInfo.avatar}
-            name={displayInfo.name}
-            size={32}
-            backgroundColor={displayInfo.avatarColor ?? undefined}
-          />
+          <View style={styles.avatarStack}>
+            {otherPlayers.slice(0, MAX_HEADER_AVATARS).map((player, index) => (
+              <View
+                key={player.ulid}
+                style={index > 0 ? { marginLeft: -AVATAR_OVERLAP } : undefined}
+              >
+                <SmartAvatar
+                  userUlid={player.ulid}
+                  uri={player.avatar}
+                  name={player.username}
+                  size={AVATAR_SIZE}
+                  backgroundColor={player.avatarColor ?? undefined}
+                />
+              </View>
+            ))}
+          </View>
         )}
         <View style={styles.cardInfo}>
           <View style={styles.nameRow}>
-            <Text style={styles.opponentName}>{displayInfo.name}</Text>
-            {displayInfo.showInvitedBadge && (
+            <Text style={styles.opponentName} numberOfLines={1}>
+              {emptyState ? emptyState.name : headerNames}
+            </Text>
+            {emptyState?.showInvitedBadge && (
               <View style={styles.invitedBadge}>
                 <Text style={styles.invitedBadgeText}>INVITED</Text>
               </View>
             )}
           </View>
-          {displayInfo.subtitle && (
+          {(emptyState ? emptyState.subtitle : subtitle) && (
             <Text
               style={[
                 styles.lastMove,
@@ -148,17 +242,30 @@ export const GameCard = memo(function GameCard({
               ]}
               numberOfLines={1}
             >
-              {displayInfo.subtitle}
+              {emptyState ? emptyState.subtitle : subtitle}
             </Text>
           )}
         </View>
-        {!isAwaitingOpponent && (
+        {!isAwaitingPlayers && (
           <View style={styles.scoreContainer}>
-            <Text style={styles.scoreLabel}>SCORE</Text>
+            <Text style={styles.scoreLabel}>SCORES</Text>
             <View style={styles.scoreBox}>
               <Text style={styles.scoreText}>
-                {game.myScore} <Text style={styles.scoreVs}>vs</Text>{' '}
-                {game.opponentScore}
+                {game.players.map((player, index) => (
+                  <Text key={player.ulid}>
+                    {index > 0 && (
+                      <Text style={styles.scoreSeparator}> · </Text>
+                    )}
+                    <Text
+                      style={[
+                        player.isMe && styles.scoreMine,
+                        player.hasLeft && styles.scoreLeft,
+                      ]}
+                    >
+                      {player.score}
+                    </Text>
+                  </Text>
+                ))}
               </Text>
             </View>
           </View>
@@ -172,7 +279,7 @@ export const GameCard = memo(function GameCard({
           </Text>
           <Text style={styles.timeSeparator}>•</Text>
           <Text style={styles.timeText}>{timeAgo(game.updatedAt)}</Text>
-          {!isCompleted && !isAwaitingOpponent && game.turnExpiresAt && (
+          {!isCompleted && !isAwaitingPlayers && game.turnExpiresAt && (
             <>
               <Text style={styles.timerSeparator}>•</Text>
               <TurnTimer
@@ -185,17 +292,22 @@ export const GameCard = memo(function GameCard({
           )}
         </View>
         {isCompleted ? (
-          <View
-            style={[
-              styles.outcomeBadge,
-              isWinner ? styles.wonBadge : styles.lostBadge,
-            ]}
-          >
-            <Text style={styles.outcomeText}>{isWinner ? 'Won' : 'Lost'}</Text>
+          <View style={styles.outcomeRow}>
+            {placement && <Text style={styles.placementText}>{placement}</Text>}
+            <View
+              style={[
+                styles.outcomeBadge,
+                isWinner ? styles.wonBadge : styles.lostBadge,
+              ]}
+            >
+              <Text style={styles.outcomeText}>
+                {isWinner ? 'Won' : 'Lost'}
+              </Text>
+            </View>
           </View>
-        ) : isAwaitingOpponent ? (
+        ) : game.status === 'pending' ? (
           <View style={styles.actionButtons}>
-            {onDelete && (
+            {onDelete && isAwaitingPlayers && (
               <Button
                 label="Delete"
                 onPress={handleDelete}
@@ -205,13 +317,25 @@ export const GameCard = memo(function GameCard({
                 style={styles.deleteButton}
               />
             )}
-            <Button
-              label={hasPendingInvitation ? 'Open' : 'Invite'}
-              onPress={handlePress}
-              size="sm"
-              rounded
-              style={styles.playButton}
-            />
+            {canStartNow && (
+              <Button
+                label="Start now"
+                onPress={handleStart}
+                loading={startGame.isPending}
+                size="sm"
+                rounded
+                style={styles.playButton}
+              />
+            )}
+            {!canStartNow && (
+              <Button
+                label={hasPendingInvitation ? 'Open' : 'Invite'}
+                onPress={handlePress}
+                size="sm"
+                rounded
+                style={styles.playButton}
+              />
+            )}
           </View>
         ) : (
           <Button
@@ -232,6 +356,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
+  avatarStack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   cardInfo: {
     flex: 1,
     marginLeft: SPACING.md,
@@ -246,11 +374,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: colors.textPrimary,
+    flexShrink: 1,
   },
   inviteIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
     backgroundColor: colors.backgroundLight,
     borderWidth: 1.5,
     borderColor: colors.primary,
@@ -259,9 +388,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   publicIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
     backgroundColor: colors.primary + '20',
     justifyContent: 'center',
     alignItems: 'center',
@@ -298,12 +427,19 @@ const styles = StyleSheet.create({
   },
   scoreText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '400',
+    color: colors.textSecondary,
+  },
+  scoreMine: {
+    fontWeight: '700',
     color: colors.textPrimary,
   },
-  scoreVs: {
-    fontSize: 12,
-    color: colors.textSecondary,
+  scoreLeft: {
+    textDecorationLine: 'line-through',
+    color: colors.textMuted,
+  },
+  scoreSeparator: {
+    color: colors.textMuted,
     fontWeight: '400',
   },
   cardDivider: {
@@ -348,6 +484,16 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     paddingHorizontal: SPACING.md,
+  },
+  outcomeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  placementText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textSecondary,
   },
   outcomeBadge: {
     paddingHorizontal: SPACING.lg,
