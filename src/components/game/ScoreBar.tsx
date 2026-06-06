@@ -538,11 +538,19 @@ export function ScoreBar({
     [game.players]
   );
 
+  // Display order: the current user is always first ("You" on the left, like a
+  // two-player game), then the remaining players in turn order.
+  const displayPlayers = useMemo(() => {
+    const mine = orderedPlayers.filter((p) => p.ulid === currentUserUlid);
+    const others = orderedPlayers.filter((p) => p.ulid !== currentUserUlid);
+    return [...mine, ...others];
+  }, [orderedPlayers, currentUserUlid]);
+
   const myPlayer = game.players.find((p) => p.ulid === currentUserUlid);
   const isMyTurn = myPlayer?.isCurrentTurn ?? false;
 
-  // The creator is the first player (turn_order === 1, falling back to first in
-  // the roster). Only they can manually start a pending game.
+  // The creator is the player with the lowest turn order (turn_order === 1).
+  // Only they can manually start a pending game.
   const creator = orderedPlayers[0];
   const isCreator = creator?.ulid === currentUserUlid;
   const canStartNow = isPending && isCreator && game.players.length >= 2;
@@ -579,7 +587,7 @@ export function ScoreBar({
       <BlurView intensity={40} tint="dark" style={styles.container}>
         {/* Equal-chip row keyed to the original roster size */}
         <View style={styles.mainContent} key={`roster-${game.maxPlayers}`}>
-          {orderedPlayers.map((player) => (
+          {displayPlayers.map((player) => (
             <PlayerChip
               key={player.ulid}
               player={player}
@@ -605,15 +613,19 @@ export function ScoreBar({
           ))}
         </View>
 
-        {/* Info row: tiles in bag, turn timer / start now */}
+        {/* Info row: turn timer (left) / tiles in bag (centered) / start now (right) */}
         <View style={styles.infoRow}>
-          <View style={styles.infoLeft}>
-            {!isPending && <TilesBadge count={game.tilesRemaining} />}
+          <View style={styles.infoSide}>
             {game.status === 'active' && isMyTurn && game.turnExpiresAt && (
               <TurnTimer expiresAt={game.turnExpiresAt} isMyTurn={isMyTurn} />
             )}
           </View>
-          <View style={styles.infoRight}>
+          {!isPending && (
+            <View style={styles.infoCenter}>
+              <TilesBadge count={game.tilesRemaining} />
+            </View>
+          )}
+          <View style={[styles.infoSide, styles.infoSideRight]}>
             {canStartNow && (
               <Pressable
                 style={({ pressed }) => [
@@ -799,16 +811,19 @@ const styles = StyleSheet.create({
     minHeight: 4,
     gap: 8,
   },
-  infoLeft: {
+  infoSide: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     flex: 1,
     minWidth: 0,
   },
-  infoRight: {
-    flexDirection: 'row',
+  infoSideRight: {
+    justifyContent: 'flex-end',
+  },
+  infoCenter: {
     alignItems: 'center',
+    justifyContent: 'center',
   },
   tilesBadge: {
     backgroundColor: colors.primary,
