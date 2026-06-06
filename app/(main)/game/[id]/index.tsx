@@ -259,7 +259,8 @@ function GameScreenContent() {
     // you from the game, so warn when this pass would be the second.
     const myPlayer = game?.players.find((p) => p.ulid === userUlid);
     const willBeRemoved =
-      (game?.players.length ?? 0) > 2 && (myPlayer?.consecutivePasses ?? 0) >= 1;
+      (game?.players.length ?? 0) > 2 &&
+      (myPlayer?.consecutivePasses ?? 0) >= 1;
 
     showConfirm(
       willBeRemoved ? 'Pass and leave the game?' : 'Pass Turn',

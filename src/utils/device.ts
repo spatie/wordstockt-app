@@ -59,7 +59,11 @@ export function getDeviceId(): Promise<string> {
   return pendingDeviceId;
 }
 
-export function getDeviceMetadata(): { platform: string; osVersion: string; model: string } {
+export function getDeviceMetadata(): {
+  platform: string;
+  osVersion: string;
+  model: string;
+} {
   return {
     platform: Platform.OS,
     osVersion: Device.osVersion ?? '',

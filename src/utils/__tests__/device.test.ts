@@ -17,7 +17,9 @@ describe('device', () => {
   it('generates a uuid-shaped device id and persists it', async () => {
     const deviceId = await device.getDeviceId();
 
-    expect(deviceId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(deviceId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+    );
     expect(await storage.getItem('device-id')).toBe(deviceId);
   });
 
@@ -31,19 +33,28 @@ describe('device', () => {
   it('returns one shared id for concurrent first-launch calls', async () => {
     const setItem = jest.spyOn(storage, 'setItem');
 
-    const [first, second] = await Promise.all([device.getDeviceId(), device.getDeviceId()]);
+    const [first, second] = await Promise.all([
+      device.getDeviceId(),
+      device.getDeviceId(),
+    ]);
 
     expect(first).toBe(second);
     expect(setItem).toHaveBeenCalledTimes(1);
   });
 
   it('still resolves a valid id when storage fails', async () => {
-    jest.spyOn(storage, 'getItem').mockRejectedValueOnce(new Error('storage unavailable'));
-    jest.spyOn(storage, 'setItem').mockRejectedValueOnce(new Error('storage unavailable'));
+    jest
+      .spyOn(storage, 'getItem')
+      .mockRejectedValueOnce(new Error('storage unavailable'));
+    jest
+      .spyOn(storage, 'setItem')
+      .mockRejectedValueOnce(new Error('storage unavailable'));
 
     const deviceId = await device.getDeviceId();
 
-    expect(deviceId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(deviceId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+    );
   });
 
   it('exposes platform and device metadata', () => {
