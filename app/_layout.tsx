@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Stack, Redirect, useSegments } from 'expo-router';
+import { Stack, Redirect, useSegments, useRouter } from 'expo-router';
 import { PaperProvider } from 'react-native-paper';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '../src/api/queryClient';
@@ -37,6 +37,7 @@ function RootLayoutNav() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const user = useAuthStore((s) => s.user);
   const segments = useSegments();
+  const router = useRouter();
 
   usePushNotifications();
   useDeepLinks();
@@ -47,19 +48,21 @@ function RootLayoutNav() {
   const inAuthGroup = segments[0] === '(auth)';
   const isOnVerifyScreen = (segments as string[])[1] === 'verify-email';
 
-  // All routing decisions are made declaratively during render so there is no
-  // post-render navigation flash. Order matters: the grace-period check takes
-  // precedence over sending an authenticated user out of the auth group.
+  // Send an authenticated user out of the auth group via an effect (after
+  // render) rather than a render-time <Redirect>. Under expo-router 56 a
+  // render-time redirect here fires navigation during commit and loops.
+  useEffect(() => {
+    if (isAuthenticated && inAuthGroup && !isOnVerifyScreen) {
+      router.replace('/(main)');
+    }
+  }, [isAuthenticated, inAuthGroup, isOnVerifyScreen, router]);
+
   if (!isAuthenticated && !inAuthGroup) {
     return <Redirect href="/(auth)/login" />;
   }
 
   if (isAuthenticated && isGracePeriodExpired(user) && !isOnVerifyScreen) {
     return <Redirect href="/(auth)/verify-email" />;
-  }
-
-  if (isAuthenticated && inAuthGroup && !isOnVerifyScreen) {
-    return <Redirect href="/(main)" />;
   }
 
   return (
