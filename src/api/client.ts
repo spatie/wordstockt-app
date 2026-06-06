@@ -3,6 +3,8 @@ import Constants from 'expo-constants';
 import { ZodError } from 'zod';
 import { API_BASE_URL } from '../config/api';
 import { useAuthStore } from '../stores/authStore';
+import { getDeviceId, getDeviceMetadata } from '../utils/device';
+import { isWeb } from '../utils/platform';
 import { queryClient } from './queryClient';
 
 export const apiClient = axios.create({
@@ -16,11 +18,21 @@ export const apiClient = axios.create({
   },
 });
 
-apiClient.interceptors.request.use((config) => {
+apiClient.interceptors.request.use(async (config) => {
   const token = useAuthStore.getState().token;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // Mobile only: lets the backend track which devices a user is logged in on.
+  if (!isWeb) {
+    config.headers['X-Device-Id'] = await getDeviceId();
+    const { platform, osVersion, model } = getDeviceMetadata();
+    config.headers['X-Platform'] = platform;
+    config.headers['X-OS-Version'] = osVersion;
+    config.headers['X-Device-Model'] = model;
+  }
+
   return config;
 });
 
