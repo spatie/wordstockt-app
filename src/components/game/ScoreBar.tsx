@@ -210,11 +210,15 @@ function AnimatedPlayerSection({
         opacity: 1,
       };
     }
-    // Active player gets colored box with pulse, inactive gets nothing
-    const bgAlpha =
-      interpolate(pulse.value, [0.6, 1], [0.1, 0.2]) * boxOpacity.value;
-    const borderAlpha =
-      interpolate(pulse.value, [0.6, 1], [0.3, 0.6]) * boxOpacity.value;
+    // Active player gets colored box with pulse, inactive gets nothing.
+    // Format the alpha with toFixed so a near-zero value (while fading out) is
+    // never serialized in scientific notation, which Reanimated cannot parse.
+    const bgAlpha = (
+      interpolate(pulse.value, [0.6, 1], [0.1, 0.2]) * boxOpacity.value
+    ).toFixed(3);
+    const borderAlpha = (
+      interpolate(pulse.value, [0.6, 1], [0.3, 0.6]) * boxOpacity.value
+    ).toFixed(3);
     return {
       backgroundColor: `rgba(${rgbR}, ${rgbG}, ${rgbB}, ${bgAlpha})`,
       borderColor: `rgba(${rgbR}, ${rgbG}, ${rgbB}, ${borderAlpha})`,
