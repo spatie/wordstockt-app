@@ -68,13 +68,16 @@ function MoveCard({
   const hasBreakdown = move.scoreBreakdown !== null;
 
   // Get the letters played from actual tiles, or fall back to inference for older moves
+  const longestWord =
+    hasBreakdown && move.scoreBreakdown!.words.length > 0
+      ? [...move.scoreBreakdown!.words].sort(
+          (a, b) => b.word.length - a.word.length
+        )[0]
+      : undefined;
   const playedLetters = move.tiles
     ? move.tiles.map((t) => t.letter)
-    : hasBreakdown && move.scoreBreakdown!.words.length > 0
-      ? [...move.scoreBreakdown!.words]
-          .sort((a, b) => b.word.length - a.word.length)[0]
-          .word.split('')
-          .slice(0, move.tilesCount)
+    : longestWord
+      ? longestWord.word.split('').slice(0, move.tilesCount)
       : [];
 
   return (
@@ -238,8 +241,8 @@ function EmptyState() {
 }
 
 export default function MoveHistoryScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const gameUlid = id ?? '';
+  const { id } = useLocalSearchParams<{ id: string | string[] }>();
+  const gameUlid = (Array.isArray(id) ? id[0] : id) ?? '';
 
   const { data: game, isLoading: isGameLoading } = useGame(gameUlid);
   const { data: moves, isLoading: isMovesLoading } = useMoveHistory(gameUlid);

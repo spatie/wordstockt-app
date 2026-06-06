@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 import { colors } from '../../config/theme';
@@ -17,6 +17,24 @@ export function EloHistoryCard({
 }: EloHistoryCardProps) {
   const [showAll, setShowAll] = useState(false);
 
+  const { chartData, minElo, maxElo } = useMemo(() => {
+    const dataToShow = showAll ? eloHistory : eloHistory.slice(0, 30);
+    const computedChartData = dataToShow
+      .slice()
+      .reverse()
+      .map((entry, index) => ({
+        value: entry.eloAfter,
+        label: index % 5 === 0 ? `${index + 1}` : '',
+        dataPointText: '',
+      }));
+
+    return {
+      chartData: computedChartData,
+      minElo: Math.min(...computedChartData.map((d) => d.value)) - 20,
+      maxElo: Math.max(...computedChartData.map((d) => d.value)) + 20,
+    };
+  }, [eloHistory, showAll]);
+
   if (eloHistory.length < 2) {
     return (
       <View style={styles.container}>
@@ -29,19 +47,6 @@ export function EloHistoryCard({
       </View>
     );
   }
-
-  const dataToShow = showAll ? eloHistory : eloHistory.slice(0, 30);
-  const chartData = dataToShow
-    .slice()
-    .reverse()
-    .map((entry, index) => ({
-      value: entry.eloAfter,
-      label: index % 5 === 0 ? `${index + 1}` : '',
-      dataPointText: '',
-    }));
-
-  const minElo = Math.min(...chartData.map((d) => d.value)) - 20;
-  const maxElo = Math.max(...chartData.map((d) => d.value)) + 20;
 
   return (
     <View style={styles.container}>

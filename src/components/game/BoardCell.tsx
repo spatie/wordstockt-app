@@ -28,7 +28,7 @@ interface BoardCellProps {
   y: number;
   placedTile: PlacedTile | null;
   squareType: SquareType;
-  onPress: () => void;
+  onCellPress: (x: number, y: number) => void;
   onPendingTileDrag: (fromX: number, fromY: number, target: DropTarget) => void;
   onBlankTileTap?: (x: number, y: number) => void;
   onPlacedTileTap?: (x: number, y: number) => void;
@@ -37,12 +37,12 @@ interface BoardCellProps {
   cellSize: number;
 }
 
-export function BoardCell({
+function BoardCellComponent({
   x,
   y,
   placedTile,
   squareType,
-  onPress,
+  onCellPress,
   onPendingTileDrag,
   onBlankTileTap,
   onPlacedTileTap,
@@ -50,6 +50,10 @@ export function BoardCell({
   isLastMove = false,
   cellSize,
 }: BoardCellProps) {
+  // Stable per-cell press handler so we don't receive a fresh closure each render
+  const onPress = useCallback(() => {
+    onCellPress(x, y);
+  }, [onCellPress, x, y]);
   const pendingTile = usePendingTileAt(x, y);
   const {
     startDragFromBoard,
@@ -351,6 +355,11 @@ export function BoardCell({
     </View>
   );
 }
+
+// Memoized so the ~225-cell board doesn't fully re-render on unrelated changes.
+// All props are primitives or stable refs (handlers wrapped in useCallback by the
+// parent), so the default shallow comparison is correct here.
+export const BoardCell = React.memo(BoardCellComponent);
 
 // Bonus text component - always visible, never hidden during drag
 interface BonusTextProps {

@@ -2,6 +2,7 @@ import axios, { isAxiosError, AxiosError } from 'axios';
 import { ZodError } from 'zod';
 import { API_BASE_URL } from '../config/api';
 import { useAuthStore } from '../stores/authStore';
+import { queryClient } from './queryClient';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -25,6 +26,9 @@ apiClient.interceptors.response.use(
   (error: AxiosError<{ message: string }>) => {
     if (error.response?.status === 401) {
       useAuthStore.getState().logout();
+      // Drop cached authed data so a forced logout can't leave stale
+      // game/user data behind (mirrors what useLogout does explicitly).
+      queryClient.clear();
     }
     return Promise.reject(error);
   }

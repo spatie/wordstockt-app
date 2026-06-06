@@ -14,6 +14,7 @@ export function useMeasureOnDrag<T>({
   onLayout,
 }: UseMeasureOnDragOptions<T>) {
   const ref = useRef<View>(null);
+  const measureTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isDragging } = useDragDrop();
 
   const measure = useCallback(() => {
@@ -28,7 +29,10 @@ export function useMeasureOnDrag<T>({
   const handleLayout = useCallback(
     (_event: LayoutChangeEvent) => {
       // Small delay to ensure the layout is stable
-      setTimeout(measure, MEASURE_DELAY);
+      if (measureTimeoutRef.current) {
+        clearTimeout(measureTimeoutRef.current);
+      }
+      measureTimeoutRef.current = setTimeout(measure, MEASURE_DELAY);
     },
     [measure]
   );
@@ -39,6 +43,16 @@ export function useMeasureOnDrag<T>({
       measure();
     }
   }, [isDragging, measure]);
+
+  // Clear any pending measure timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (measureTimeoutRef.current) {
+        clearTimeout(measureTimeoutRef.current);
+        measureTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   return { ref, handleLayout };
 }

@@ -175,7 +175,7 @@ export function GameBoard({
         y={y}
         placedTile={game.board[y]?.[x] ?? null}
         squareType={game.boardTemplate[y]?.[x] ?? null}
-        onPress={() => onCellPress(x, y)}
+        onCellPress={onCellPress}
         onPendingTileDrag={onPendingTileDrag}
         onBlankTileTap={onBlankTileTap}
         onPlacedTileTap={onPlacedTileTap}

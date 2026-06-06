@@ -30,13 +30,17 @@ export function useScoreBubble({
 
   // Treat 0 or null as "no score"
   const displayScore = score && score > 0 ? score : null;
-  const prevDisplayScore =
-    prevScoreRef.current && prevScoreRef.current > 0
-      ? prevScoreRef.current
-      : null;
 
   useEffect(() => {
     const useNativeDriver = Platform.OS !== 'web';
+
+    // Derive the previous display score from the ref inside the effect, so the
+    // "previous score" lives purely in the ref and never participates in render
+    // or in the effect's dependency list.
+    const prevDisplayScore =
+      prevScoreRef.current && prevScoreRef.current > 0
+        ? prevScoreRef.current
+        : null;
 
     if (displayScore !== null && prevDisplayScore === null) {
       // Score appeared - show and fade in
@@ -83,7 +87,7 @@ export function useScoreBubble({
     }
 
     prevScoreRef.current = score ?? null;
-  }, [displayScore, prevDisplayScore, opacity, score]);
+  }, [displayScore, opacity, score]);
 
   // Return the display score, or the previous score during fade-out
   const scoreToShow = displayScore ?? prevScoreRef.current;

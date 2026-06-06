@@ -1,8 +1,4 @@
-import { Dimensions } from 'react-native';
-
 import { colors } from '@/config/theme';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export const TILE_LETTERS = [
   'W',
@@ -23,7 +19,29 @@ export const TILE_LETTERS = [
 ];
 export const TILE_COLORS = [colors.primary, '#E85D4C', '#F5A623']; // blue, red, orange like the logo
 
-export const tiles = [
+export interface TileConfig {
+  delay: number;
+  startX: number;
+  startY: number;
+  size: number;
+  duration: number;
+  rotationRange: number;
+  scaleRange: [number, number];
+  fadeDuration: number;
+}
+
+/**
+ * Builds the floating tile layout for a given window size.
+ *
+ * Positions are derived from the passed-in width/height so the layout adapts to
+ * rotation, resize and web. Call this with current window dimensions (e.g. from
+ * `useWindowDimensions()`) rather than relying on dimensions captured at module load.
+ */
+export function createTiles(width: number, height: number): TileConfig[] {
+  const SCREEN_WIDTH = width;
+  const SCREEN_HEIGHT = height;
+
+  return [
   {
     delay: 0,
     startX: SCREEN_WIDTH * 0.02,
@@ -224,4 +242,5 @@ export const tiles = [
     scaleRange: [0.9, 1.15] as [number, number],
     fadeDuration: 8200,
   },
-];
+  ];
+}

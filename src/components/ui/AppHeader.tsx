@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSharedValue } from 'react-native-reanimated';
@@ -28,12 +28,27 @@ export function AppHeader({
   const clearLastGameUlid = useNavigationStore((s) => s.clearLastGameUlid);
   const [menuVisible, setMenuVisible] = useState(false);
   const logoAnimationTrigger = useSharedValue(0);
+  const logoResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+
+  useEffect(
+    () => () => {
+      if (logoResetTimeoutRef.current) {
+        clearTimeout(logoResetTimeoutRef.current);
+      }
+    },
+    []
+  );
 
   const handleLogoPress = useCallback(() => {
     // Toggle the trigger to restart animation
     logoAnimationTrigger.set(logoAnimationTrigger.get() === 0 ? 1 : 0);
     // Reset after animation completes
-    setTimeout(() => {
+    if (logoResetTimeoutRef.current) {
+      clearTimeout(logoResetTimeoutRef.current);
+    }
+    logoResetTimeoutRef.current = setTimeout(() => {
       logoAnimationTrigger.set(0);
     }, 600);
   }, [logoAnimationTrigger]);

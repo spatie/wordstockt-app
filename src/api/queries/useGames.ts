@@ -90,9 +90,12 @@ export function useCreateGame() {
   return useMutation({
     mutationFn: async (params: CreateGameParams = {}) => {
       const { data } = await apiClient.post('/games', params);
-      // Refetch games list and wait for it to complete
-      await queryClient.refetchQueries({ queryKey: gameKeys.lists() });
       return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gameKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: gameKeys.pending() });
+      queryClient.invalidateQueries({ queryKey: gameKeys.public() });
     },
   });
 }

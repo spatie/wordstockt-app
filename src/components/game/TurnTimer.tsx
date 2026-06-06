@@ -31,13 +31,26 @@ export function TurnTimer({
     // Update immediately
     setTimeRemaining(getTimeRemaining(expiresAt));
 
+    // A result is hidden from the user when we're more than 10 hours out
+    // (unless alwaysShow). While hidden, skip state updates to avoid
+    // re-rendering hidden content every minute; resume once it becomes
+    // relevant (<= 10 hours) so it can fade in on time.
+    const isHidden = (result: TimeRemainingResult | null) =>
+      !result || (!alwaysShow && result.hours > 10);
+
     // Update every minute
     const interval = setInterval(() => {
-      setTimeRemaining(getTimeRemaining(expiresAt));
+      const next = getTimeRemaining(expiresAt);
+      setTimeRemaining((prev) => {
+        if (isHidden(next) && isHidden(prev)) {
+          return prev;
+        }
+        return next;
+      });
     }, 60000);
 
     return () => clearInterval(interval);
-  }, [expiresAt]);
+  }, [expiresAt, alwaysShow]);
 
   // Only show when less than 10 hours remain (unless alwaysShow is true)
   if (!timeRemaining || (!alwaysShow && timeRemaining.hours > 10)) {

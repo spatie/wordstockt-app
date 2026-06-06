@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { Text, Pressable, StyleSheet } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import { AnimatedLogoTile } from './AnimatedLogoTile';
@@ -7,10 +7,25 @@ import { SPACING } from '../../config/constants';
 
 export function HeaderLogo() {
   const logoAnimationTrigger = useSharedValue(0);
+  const logoResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+
+  useEffect(
+    () => () => {
+      if (logoResetTimeoutRef.current) {
+        clearTimeout(logoResetTimeoutRef.current);
+      }
+    },
+    []
+  );
 
   const handleLogoPress = useCallback(() => {
     logoAnimationTrigger.set(logoAnimationTrigger.get() === 0 ? 1 : 0);
-    setTimeout(() => {
+    if (logoResetTimeoutRef.current) {
+      clearTimeout(logoResetTimeoutRef.current);
+    }
+    logoResetTimeoutRef.current = setTimeout(() => {
       logoAnimationTrigger.set(0);
     }, 600);
   }, [logoAnimationTrigger]);

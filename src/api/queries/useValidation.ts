@@ -13,9 +13,11 @@ interface ValidateParams {
 }
 
 export function useValidation({ gameUlid, tiles }: ValidateParams) {
-  // Create a stable key from tile positions
+  // Create a stable key from tile positions and letters. The letter (and blank
+  // flag) must be part of the key so that two placements at the same
+  // coordinates with different letters don't share a cache entry.
   const tilePositions = tiles
-    .map((t) => `${t.x},${t.y}`)
+    .map((t) => `${t.x},${t.y},${t.letter},${t.isBlank ? 'blank' : ''}`)
     .sort()
     .join('|');
 

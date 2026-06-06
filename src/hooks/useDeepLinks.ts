@@ -13,6 +13,15 @@ export function useDeepLinks() {
   const { mutate: verifyEmail } = useVerifyEmail();
   const wasAuthenticatedRef = useRef(isAuthenticated);
 
+  // Keep the latest values in refs so the deep link subscription can read them
+  // without re-subscribing (which would re-process the initial URL).
+  const isAuthenticatedRef = useRef(isAuthenticated);
+  const verifyEmailRef = useRef(verifyEmail);
+  const routerRef = useRef(router);
+  isAuthenticatedRef.current = isAuthenticated;
+  verifyEmailRef.current = verifyEmail;
+  routerRef.current = router;
+
   // Handle redirect to invite screen after authentication
   useEffect(() => {
     if (isAuthenticated && !wasAuthenticatedRef.current && pendingInviteCode) {
@@ -33,10 +42,10 @@ export function useDeepLinks() {
       // Handle email verification links
       if (parsed.path === 'verify' && parsed.queryParams?.url) {
         const verificationUrl = parsed.queryParams.url as string;
-        verifyEmail(verificationUrl);
+        verifyEmailRef.current(verificationUrl);
 
-        if (isAuthenticated) {
-          router.replace('/(main)');
+        if (isAuthenticatedRef.current) {
+          routerRef.current.replace('/(main)');
         }
         return;
       }
@@ -45,8 +54,8 @@ export function useDeepLinks() {
       const inviteMatch = parsed.path?.match(/^invite\/([^/]+)$/);
       if (inviteMatch && inviteMatch[1]) {
         const code = inviteMatch[1];
-        if (isAuthenticated) {
-          router.push({
+        if (isAuthenticatedRef.current) {
+          routerRef.current.push({
             pathname: '/(main)/invite/[code]',
             params: { code },
           });
@@ -62,6 +71,7 @@ export function useDeepLinks() {
       handleDeepLink(url);
     });
 
+    // Only process the initial URL once on mount.
     Linking.getInitialURL().then((url) => {
       if (url) {
         handleDeepLink(url);
@@ -69,5 +79,5 @@ export function useDeepLinks() {
     });
 
     return () => subscription.remove();
-  }, [isAuthenticated, verifyEmail, router]);
+  }, []);
 }

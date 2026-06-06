@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -9,7 +9,7 @@ import Animated, {
   Easing,
   interpolate,
 } from 'react-native-reanimated';
-import { TILE_COLORS, TILE_LETTERS, tiles } from '@/config/tileConfig';
+import { TILE_COLORS, TILE_LETTERS, createTiles } from '@/config/tileConfig';
 
 function FloatingTile({
   delay,
@@ -109,6 +109,9 @@ function FloatingTile({
 }
 
 export function FloatingTiles() {
+  const { width, height } = useWindowDimensions();
+  const tiles = useMemo(() => createTiles(width, height), [width, height]);
+
   return (
     <View style={styles.container} pointerEvents="none">
       {tiles.map((t, i) => (

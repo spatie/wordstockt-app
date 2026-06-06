@@ -836,6 +836,34 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   } | null>(null);
   const pendingRecallCompleteRef = useRef<(() => void) | null>(null);
 
+  // Track fire-and-forget timers so they can be cancelled on unmount.
+  // Prevents callbacks from writing to shared values/state after unmount.
+  const pendingTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(
+    new Set()
+  );
+  // Schedules a timeout, tracks its id, and auto-removes the id when it fires.
+  // Behavior-preserving: same delay/callback, only adds cancellability.
+  const trackTimer = useCallback(
+    (callback: () => void, delay: number) => {
+      const id = setTimeout(() => {
+        pendingTimersRef.current.delete(id);
+        callback();
+      }, delay);
+      pendingTimersRef.current.add(id);
+      return id;
+    },
+    []
+  );
+
+  // Clear any outstanding tracked timers on unmount.
+  useEffect(() => {
+    const timers = pendingTimersRef.current;
+    return () => {
+      timers.forEach((id) => clearTimeout(id));
+      timers.clear();
+    };
+  }, []);
+
   // -------------------------------------------------------------------------
   // Derived State
   // -------------------------------------------------------------------------
@@ -943,9 +971,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const handleContainerLayout = useCallback(
     (_event: LayoutChangeEvent) => {
       // Measure after a short delay to ensure layout is complete
-      setTimeout(measureContainerOffset, 50);
+      trackTimer(measureContainerOffset, 50);
     },
-    [measureContainerOffset]
+    [measureContainerOffset, trackTimer]
   );
 
   // -------------------------------------------------------------------------
@@ -1369,7 +1397,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           dragCallback?.(target, true);
 
           // Delay hiding floating tile to allow React to process state updates
-          setTimeout(() => {
+          trackTimer(() => {
             boardFloatingOpacity.value = 0;
             scale.value = 1;
             dragSourceShared.value = null;
@@ -1379,7 +1407,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           }, 50);
 
           // Delay resetting board position to allow React to update pendingTiles first
-          setTimeout(() => {
+          trackTimer(() => {
             draggingBoardPositionShared.value = null;
           }, 150);
           return;
@@ -1439,7 +1467,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
               setDragTile(null);
               setDragSource(null);
               activeDragRef.current = null;
-              setTimeout(() => {
+              trackTimer(() => {
                 draggingRackIndexShared.value = -1;
                 boardFloatingOpacity.value = 0;
                 scale.value = 1;
@@ -1640,6 +1668,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       finishDrag(null, false);
       return null;
     },
+    // Omitted deps (refs, useState setters, useSharedValue handles) are all
+    // stable across renders, so they don't affect this callback's identity.
+    // Adding them would be churn without behavior change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       positionX,
@@ -1708,6 +1739,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         }
       );
     },
+    // Omitted deps (refs, useState setters, useSharedValue handles) are all
+    // stable across renders, so they don't affect this callback's identity.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [positionX, positionY, scale, draggingRackIndexShared]
   );
@@ -1755,7 +1788,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       activeDragRef.current = null;
 
       // Delay clearing tile data to allow React to process state updates
-      setTimeout(() => {
+      trackTimer(() => {
         dragSourceShared.value = null;
         setDragTile(null);
         setBoardFloatingTile(null);
@@ -1765,7 +1798,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
       // Delay resetting board position to allow React to update pendingTiles first
       // This prevents a flash where the tile briefly shows on the board before being removed
-      setTimeout(() => {
+      trackTimer(() => {
         draggingBoardPositionShared.value = null;
       }, 50);
     };
@@ -1821,6 +1854,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
     // Placement succeeded - reset state
     resetState();
+    // Omitted deps (refs, useState setters, useSharedValue handles, and the
+    // stable animateBackToRack callback) don't affect this callback's identity.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     boardFloatingOpacity,
@@ -1954,7 +1989,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
     // Delay clearing recalling state to allow React to update isUsed first
     // Otherwise tiles briefly disappear because isBeingRecalled is false but isUsed is still true
-    setTimeout(() => {
+    trackTimer(() => {
       setRecallingTiles([]);
       setRecallingRackIndices([]);
       setRecallingBoardPositions([]);
@@ -2236,8 +2271,11 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     syncValues();
     const timer = setInterval(syncValues, 50);
     // Sync for 1 second to ensure we catch all layout changes
-    setTimeout(() => clearInterval(timer), 1000);
-    return () => clearInterval(timer);
+    const stopTimer = setTimeout(() => clearInterval(timer), 1000);
+    return () => {
+      clearInterval(timer);
+      clearTimeout(stopTimer);
+    };
   }, [
     containerOffsetX,
     containerOffsetY,
