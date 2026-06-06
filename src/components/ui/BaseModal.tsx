@@ -134,12 +134,13 @@ export function BaseModal({
   );
 
   // Web: create static blur style (no animation to avoid flicker)
+  // Web-only CSS that react-native-web accepts but RN's ViewStyle doesn't type.
   const webBlurStyle =
     Platform.OS === 'web' && backdropBlur
-      ? {
+      ? ({
           backdropFilter: 'blur(8px)',
           WebkitBackdropFilter: 'blur(8px)',
-        }
+        } as ViewStyle)
       : undefined;
 
   const backdropStyle = [

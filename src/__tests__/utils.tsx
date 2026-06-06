@@ -60,6 +60,7 @@ export const mockUser = (overrides?: Partial<User>): User => ({
   eloRating: 1200,
   gamesPlayed: 10,
   gamesWon: 5,
+  isGuest: false,
   emailVerifiedAt: new Date().toISOString(),
   createdAt: new Date().toISOString(),
   ...overrides,

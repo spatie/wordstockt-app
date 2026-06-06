@@ -2,12 +2,11 @@
   "expo": {
     "name": "WordStockt",
     "slug": "wordstockt",
-    "version": "1.5.0",
+    "version": "1.6.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0D1B2A",
-    "newArchEnabled": true,
     "scheme": "wordstockt",
     "runtimeVersion": {
       "policy": "appVersion"
@@ -15,22 +14,19 @@
     "updates": {
       "url": "https://u.expo.dev/c2ca99cd-02fd-4c0c-a737-0e6ee43c8783"
     },
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#1B2838"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.wordstockt.app",
       "backgroundColor": "#0D1B2A",
-      "buildNumber": "75",
+      "buildNumber": "77",
       "associatedDomains": [
         "webcredentials:wordstockt.com",
         "applinks:wordstockt.com"
       ],
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"],
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
           "NSExceptionDomains": {
@@ -51,7 +47,6 @@
         "backgroundColor": "#1B2838"
       },
       "backgroundColor": "#0D1B2A",
-      "edgeToEdgeEnabled": true,
       "package": "com.wordstockt.app",
       "intentFilters": [
         {
@@ -64,7 +59,10 @@
               "pathPrefix": "/invite"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -88,7 +86,18 @@
           "project": "wordstockt-app",
           "uploadSourceMaps": false
         }
-      ]
+      ],
+      "expo-image",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#1B2838"
+        }
+      ],
+      "expo-status-bar",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

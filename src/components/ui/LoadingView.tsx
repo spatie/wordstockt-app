@@ -173,7 +173,7 @@ const GAP_SIZE = 4;
 
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',

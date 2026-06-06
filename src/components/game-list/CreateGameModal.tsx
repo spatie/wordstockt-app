@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   boardOptionSelectedOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: colors.primary,
     borderRadius: RADIUS.md,
   },

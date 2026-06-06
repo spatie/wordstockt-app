@@ -11,11 +11,7 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import { colors } from '../../config/theme';
 
-import type { PressableProps } from 'react-native';
-
-const AnimatedPressable = Animated.createAnimatedComponent(
-  Pressable
-) as React.ComponentType<PressableProps & { children?: React.ReactNode }>;
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const SPINNER_DELAY = 200;
 

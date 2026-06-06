@@ -2969,7 +2969,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   floatingContainer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 1000,
     pointerEvents: 'none',
   },
