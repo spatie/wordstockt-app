@@ -843,17 +843,14 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   );
   // Schedules a timeout, tracks its id, and auto-removes the id when it fires.
   // Behavior-preserving: same delay/callback, only adds cancellability.
-  const trackTimer = useCallback(
-    (callback: () => void, delay: number) => {
-      const id = setTimeout(() => {
-        pendingTimersRef.current.delete(id);
-        callback();
-      }, delay);
-      pendingTimersRef.current.add(id);
-      return id;
-    },
-    []
-  );
+  const trackTimer = useCallback((callback: () => void, delay: number) => {
+    const id = setTimeout(() => {
+      pendingTimersRef.current.delete(id);
+      callback();
+    }, delay);
+    pendingTimersRef.current.add(id);
+    return id;
+  }, []);
 
   // Clear any outstanding tracked timers on unmount.
   useEffect(() => {

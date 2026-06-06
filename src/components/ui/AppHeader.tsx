@@ -1,4 +1,10 @@
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSharedValue } from 'react-native-reanimated';
