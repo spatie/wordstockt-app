@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
@@ -13,7 +18,7 @@ import {
 import { safeParse } from '../../schemas/safeParse';
 import { useAuthStore } from '../../stores/authStore';
 import type { User } from '../../types';
-import { authKeys } from './queryKeys';
+import { authKeys, gameKeys, userKeys, friendKeys } from './queryKeys';
 import { API_BASE_URL } from '../../config/api';
 import type { PickedAvatar } from '../../utils/avatarImage';
 import { uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy';
@@ -292,8 +297,18 @@ function getUploadErrorMessage(payload: unknown): string {
   return 'Could not upload your photo.';
 }
 
+// The current user's avatar is embedded in cached game and user data, not just
+// the auth store, so refresh those surfaces whenever the avatar changes.
+function invalidateAvatarSurfaces(queryClient: QueryClient): void {
+  queryClient.invalidateQueries({ queryKey: gameKeys.all });
+  queryClient.invalidateQueries({ queryKey: userKeys.all });
+  queryClient.invalidateQueries({ queryKey: friendKeys.all });
+  queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
+}
+
 export function useUpdateAvatar() {
   const setUser = useAuthStore((s) => s.setUser);
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (image: PickedAvatar) => {
@@ -337,12 +352,14 @@ export function useUpdateAvatar() {
     },
     onSuccess: (user) => {
       setUser(user);
+      invalidateAvatarSurfaces(queryClient);
     },
   });
 }
 
 export function useDeleteAvatar() {
   const setUser = useAuthStore((s) => s.setUser);
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
@@ -352,6 +369,7 @@ export function useDeleteAvatar() {
     },
     onSuccess: (user) => {
       setUser(user);
+      invalidateAvatarSurfaces(queryClient);
     },
   });
 }

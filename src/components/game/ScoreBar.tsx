@@ -290,7 +290,16 @@ function PlayerAvatar({
   dimmed?: boolean;
 }) {
   const router = useRouter();
-  const currentUserUlid = useAuthStore((s) => s.user?.ulid);
+  const currentUser = useAuthStore((s) => s.user);
+  const currentUserUlid = currentUser?.ulid;
+
+  // For the current user, prefer the avatar from the auth store so a just
+  // uploaded avatar shows immediately, without waiting for the game data to
+  // refetch with the new url.
+  const isCurrentUser = !!player?.ulid && player.ulid === currentUserUlid;
+  const resolvedUri = isCurrentUser
+    ? (currentUser?.avatar ?? player?.avatar)
+    : player?.avatar;
 
   const handlePress = useCallback(() => {
     if (!player?.ulid) return;
@@ -313,7 +322,7 @@ function PlayerAvatar({
     >
       <View style={dimmed ? styles.dimmedAvatar : undefined}>
         <Avatar
-          uri={player?.avatar}
+          uri={resolvedUri}
           name={player?.username || '?'}
           size={AVATAR_SIZE}
           backgroundColor={
