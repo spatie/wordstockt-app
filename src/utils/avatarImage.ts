@@ -33,15 +33,21 @@ function imagePicker(): typeof ImagePicker {
 async function normalizeToJpeg(uri: string): Promise<PickedAvatar> {
   const { manipulateAsync, SaveFormat } = require('expo-image-manipulator');
 
-  const result = await manipulateAsync(uri, [{ resize: { width: MAX_AVATAR_WIDTH } }], {
-    compress: 0.8,
-    format: SaveFormat.JPEG,
-  });
+  const result = await manipulateAsync(
+    uri,
+    [{ resize: { width: MAX_AVATAR_WIDTH } }],
+    {
+      compress: 0.8,
+      format: SaveFormat.JPEG,
+    }
+  );
 
   return { uri: result.uri, name: 'avatar.jpg', mimeType: 'image/jpeg' };
 }
 
-export async function pickAvatar(source: AvatarSource): Promise<PickedAvatar | null> {
+export async function pickAvatar(
+  source: AvatarSource
+): Promise<PickedAvatar | null> {
   const picker = imagePicker();
 
   if (source === 'camera') {

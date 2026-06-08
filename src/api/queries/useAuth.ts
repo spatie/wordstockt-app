@@ -325,7 +325,11 @@ export function useUpdateAvatar() {
         const blob = await (await fetch(image.uri)).blob();
         const formData = new FormData();
         formData.append('avatar', blob, image.name);
-        const response = await fetch(url, { method: 'POST', headers, body: formData });
+        const response = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: formData,
+        });
         payload = await response.json();
         if (!response.ok) {
           throw new Error(getUploadErrorMessage(payload));
@@ -347,7 +351,11 @@ export function useUpdateAvatar() {
         }
       }
 
-      const validated = safeParse(AuthUserResponseSchema, payload, 'useUpdateAvatar');
+      const validated = safeParse(
+        AuthUserResponseSchema,
+        payload,
+        'useUpdateAvatar'
+      );
       return transformUser(validated.data);
     },
     onSuccess: (user) => {
@@ -364,7 +372,11 @@ export function useDeleteAvatar() {
   return useMutation({
     mutationFn: async () => {
       const { data } = await apiClient.delete('/auth/user/avatar');
-      const validated = safeParse(AuthUserResponseSchema, data, 'useDeleteAvatar');
+      const validated = safeParse(
+        AuthUserResponseSchema,
+        data,
+        'useDeleteAvatar'
+      );
       return transformUser(validated.data);
     },
     onSuccess: (user) => {

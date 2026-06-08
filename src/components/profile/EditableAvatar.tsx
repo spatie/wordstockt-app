@@ -85,7 +85,10 @@ export function EditableAvatar({ user, size = 80 }: EditableAvatarProps) {
         animationType="fade"
         onRequestClose={() => setMenuVisible(false)}
       >
-        <Pressable style={styles.backdrop} onPress={() => setMenuVisible(false)}>
+        <Pressable
+          style={styles.backdrop}
+          onPress={() => setMenuVisible(false)}
+        >
           <Pressable style={styles.sheet} onPress={() => {}}>
             <Text style={styles.sheetTitle}>Profile photo</Text>
             <SheetButton
@@ -141,14 +144,22 @@ function SheetButton({
     <Pressable
       onPress={onPress}
       testID={testID}
-      style={({ pressed }) => [styles.sheetButton, pressed && styles.sheetButtonPressed]}
+      style={({ pressed }) => [
+        styles.sheetButton,
+        pressed && styles.sheetButtonPressed,
+      ]}
     >
       <Ionicons
         name={icon}
         size={22}
         color={destructive ? '#E74C3C' : colors.textPrimary}
       />
-      <Text style={[styles.sheetButtonText, destructive && styles.sheetButtonTextDestructive]}>
+      <Text
+        style={[
+          styles.sheetButtonText,
+          destructive && styles.sheetButtonTextDestructive,
+        ]}
+      >
         {label}
       </Text>
     </Pressable>

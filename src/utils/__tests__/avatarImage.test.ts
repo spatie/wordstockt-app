@@ -9,7 +9,11 @@ jest.mock('expo-image-picker', () => ({
 }));
 
 jest.mock('expo-image-manipulator', () => ({
-  manipulateAsync: jest.fn(async () => ({ uri: 'file://resized.jpg', width: 512, height: 512 })),
+  manipulateAsync: jest.fn(async () => ({
+    uri: 'file://resized.jpg',
+    width: 512,
+    height: 512,
+  })),
   SaveFormat: { JPEG: 'jpeg' },
 }));
 
@@ -23,7 +27,9 @@ describe('pickAvatar', () => {
   });
 
   it('returns a normalized jpeg when a library image is chosen', async () => {
-    picker.requestMediaLibraryPermissionsAsync.mockResolvedValue({ granted: true } as never);
+    picker.requestMediaLibraryPermissionsAsync.mockResolvedValue({
+      granted: true,
+    } as never);
     picker.launchImageLibraryAsync.mockResolvedValue({
       canceled: false,
       assets: [{ uri: 'file://original.heic' }],
@@ -31,7 +37,11 @@ describe('pickAvatar', () => {
 
     const result = await pickAvatar('library');
 
-    expect(result).toEqual({ uri: 'file://resized.jpg', name: 'avatar.jpg', mimeType: 'image/jpeg' });
+    expect(result).toEqual({
+      uri: 'file://resized.jpg',
+      name: 'avatar.jpg',
+      mimeType: 'image/jpeg',
+    });
     expect(manipulateAsync).toHaveBeenCalledWith(
       'file://original.heic',
       [{ resize: { width: 512 } }],
@@ -40,22 +50,33 @@ describe('pickAvatar', () => {
   });
 
   it('returns null when the user cancels', async () => {
-    picker.requestMediaLibraryPermissionsAsync.mockResolvedValue({ granted: true } as never);
-    picker.launchImageLibraryAsync.mockResolvedValue({ canceled: true, assets: [] } as never);
+    picker.requestMediaLibraryPermissionsAsync.mockResolvedValue({
+      granted: true,
+    } as never);
+    picker.launchImageLibraryAsync.mockResolvedValue({
+      canceled: true,
+      assets: [],
+    } as never);
 
     expect(await pickAvatar('library')).toBeNull();
     expect(manipulateAsync).not.toHaveBeenCalled();
   });
 
   it('throws a permission error when library access is denied', async () => {
-    picker.requestMediaLibraryPermissionsAsync.mockResolvedValue({ granted: false } as never);
+    picker.requestMediaLibraryPermissionsAsync.mockResolvedValue({
+      granted: false,
+    } as never);
 
-    await expect(pickAvatar('library')).rejects.toBeInstanceOf(AvatarPermissionError);
+    await expect(pickAvatar('library')).rejects.toBeInstanceOf(
+      AvatarPermissionError
+    );
     expect(picker.launchImageLibraryAsync).not.toHaveBeenCalled();
   });
 
   it('uses the camera when requested', async () => {
-    picker.requestCameraPermissionsAsync.mockResolvedValue({ granted: true } as never);
+    picker.requestCameraPermissionsAsync.mockResolvedValue({
+      granted: true,
+    } as never);
     picker.launchCameraAsync.mockResolvedValue({
       canceled: false,
       assets: [{ uri: 'file://photo.jpg' }],
