@@ -18,7 +18,7 @@ interface GameCardProps {
   onDelete?: (gameUlid: string) => void;
 }
 
-const AVATAR_SIZE = 32;
+const AVATAR_SIZE = 38;
 const AVATAR_OVERLAP = 20;
 const MAX_HEADER_AVATARS = 3;
 

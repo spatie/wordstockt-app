@@ -52,8 +52,9 @@ export const DIMENSIONS = {
   avatarLg: 64,
   iconButton: 44,
   fab: 56,
-  // ScoreBar specific
-  avatarScoreBar: 28,
+  // ScoreBar specific. The avatar grows within the fixed container, so it can
+  // be enlarged toward the container size without shifting the chip layout.
+  avatarScoreBar: 34,
   avatarScoreBarContainer: 36,
   // Modal inputs
   modalInputHeight: 48,
