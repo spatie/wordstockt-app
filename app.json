@@ -2,7 +2,7 @@
   "expo": {
     "name": "WordStockt",
     "slug": "wordstockt",
-    "version": "1.7.0",
+    "version": "1.8.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -18,7 +18,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.wordstockt.app",
       "backgroundColor": "#0D1B2A",
-      "buildNumber": "78",
+      "buildNumber": "79",
       "associatedDomains": [
         "webcredentials:wordstockt.com",
         "applinks:wordstockt.com"
@@ -38,7 +38,7 @@
       }
     },
     "android": {
-      "versionCode": 63,
+      "versionCode": 64,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -83,6 +83,13 @@
         }
       ],
       "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "WordStockt needs access to your photos so you can set a profile picture.",
+          "cameraPermission": "WordStockt needs access to your camera so you can take a profile picture."
+        }
+      ],
       [
         "expo-splash-screen",
         {

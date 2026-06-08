@@ -54,6 +54,7 @@ export function SmartAvatar({
   const resolvedBackgroundColor = isCurrentUser
     ? (currentUser?.avatarColor ?? backgroundColor)
     : backgroundColor;
+  const resolvedUri = isCurrentUser ? (currentUser?.avatar ?? uri) : uri;
 
   const isTouchable = !disabled && (!!userUlid || !!onPress);
 
@@ -74,7 +75,7 @@ export function SmartAvatar({
 
   const avatarElement = (
     <Avatar
-      uri={uri}
+      uri={resolvedUri}
       name={name}
       size={size}
       showOnlineIndicator={showOnlineIndicator}

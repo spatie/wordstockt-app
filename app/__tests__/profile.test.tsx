@@ -46,6 +46,14 @@ jest.mock('../../src/api/queries/useAuth', () => ({
   useCurrentUser: () => ({
     refetch: mockRefetchUser,
   }),
+  useUpdateAvatar: () => ({
+    mutateAsync: jest.fn(),
+    isPending: false,
+  }),
+  useDeleteAvatar: () => ({
+    mutateAsync: jest.fn(),
+    isPending: false,
+  }),
 }));
 
 // Mock useUserStats

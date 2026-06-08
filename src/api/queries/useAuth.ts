@@ -15,6 +15,7 @@ import { useAuthStore } from '../../stores/authStore';
 import type { User } from '../../types';
 import { authKeys } from './queryKeys';
 import { API_BASE_URL } from '../../config/api';
+import type { PickedAvatar } from '../../utils/avatarImage';
 
 async function getCurrentPushToken(): Promise<string | null> {
   if (Platform.OS === 'web') {
@@ -262,6 +263,66 @@ export function useUpdateProfile() {
         data,
         'useUpdateProfile'
       );
+      return transformUser(validated.data);
+    },
+    onSuccess: (user) => {
+      setUser(user);
+    },
+  });
+}
+
+export function useUpdateAvatar() {
+  const setUser = useAuthStore((s) => s.setUser);
+
+  return useMutation({
+    mutationFn: async (image: PickedAvatar) => {
+      const token = useAuthStore.getState().token;
+
+      const formData = new FormData();
+      if (Platform.OS === 'web') {
+        const blob = await (await fetch(image.uri)).blob();
+        formData.append('avatar', blob, image.name);
+      } else {
+        formData.append('avatar', {
+          uri: image.uri,
+          name: image.name,
+          type: image.mimeType,
+        } as unknown as Blob);
+      }
+
+      // Use fetch (not the axios instance) so the platform sets the multipart
+      // boundary itself; axios' default JSON Content-Type would break it.
+      const response = await fetch(`${API_BASE_URL}/auth/user/avatar`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.message ?? 'Could not upload your photo.');
+      }
+
+      const validated = safeParse(AuthUserResponseSchema, data, 'useUpdateAvatar');
+      return transformUser(validated.data);
+    },
+    onSuccess: (user) => {
+      setUser(user);
+    },
+  });
+}
+
+export function useDeleteAvatar() {
+  const setUser = useAuthStore((s) => s.setUser);
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await apiClient.delete('/auth/user/avatar');
+      const validated = safeParse(AuthUserResponseSchema, data, 'useDeleteAvatar');
       return transformUser(validated.data);
     },
     onSuccess: (user) => {

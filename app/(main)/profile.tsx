@@ -28,6 +28,7 @@ import {
 } from '../../src/components/stats';
 import { LAYOUT } from '../../src/config/constants';
 import { Avatar } from '../../src/components/ui/Avatar';
+import { EditableAvatar } from '../../src/components/profile/EditableAvatar';
 import { AvatarColorPicker } from '../../src/components/ui/AvatarColorPicker';
 import { AnimatedSaveButton } from '../../src/components/ui/AnimatedSaveButton';
 import { isEmailVerified } from '../../src/utils/emailVerification';
@@ -241,11 +242,7 @@ export default function ProfileScreen() {
       >
         {/* Avatar */}
         <View style={styles.header}>
-          <Avatar
-            name={user.username}
-            size={80}
-            backgroundColor={avatarColor ?? undefined}
-          />
+          <EditableAvatar user={user} size={80} />
         </View>
 
         {/* Verification Warning */}

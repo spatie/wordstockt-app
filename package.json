@@ -38,6 +38,8 @@
     "expo-device": "~56.0.4",
     "expo-font": "~56.0.5",
     "expo-image": "~56.0.10",
+    "expo-image-manipulator": "~56.0.17",
+    "expo-image-picker": "~56.0.16",
     "expo-linear-gradient": "~56.0.4",
     "expo-linking": "~56.0.13",
     "expo-notifications": "~56.0.16",
