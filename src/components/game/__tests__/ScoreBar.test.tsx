@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
+import { Alert } from 'react-native';
 import { ScoreBar } from '../ScoreBar';
 import type { Game, Player } from '../../../types';
 
@@ -306,7 +307,9 @@ describe('ScoreBar', () => {
     expect(screen.queryByText('Invite')).toBeNull();
   });
 
-  it('shows Start now for the creator once two players have joined', () => {
+  it('shows a confirmable start button labelled with the accepted player count', () => {
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
     const game = createMockGame({
       status: 'pending',
       maxPlayers: 3,
@@ -329,13 +332,26 @@ describe('ScoreBar', () => {
 
     render(<ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />);
 
-    const startButton = screen.getByText('Start now');
+    const startButton = screen.getByText('Start with 2 players');
     expect(startButton).toBeTruthy();
-    fireEvent(startButton, 'pressOut');
+
+    fireEvent.press(startButton);
+
+    // The press opens a confirmation; nothing happens until the user confirms.
+    expect(mockStartGame).not.toHaveBeenCalled();
+    expect(alertSpy).toHaveBeenCalledTimes(1);
+
+    const confirmButton = alertSpy.mock.calls[0]?.[2]?.find(
+      (button) => button.text === 'Start'
+    );
+    confirmButton?.onPress?.();
+
     expect(mockStartGame).toHaveBeenCalledWith(game.ulid);
+
+    alertSpy.mockRestore();
   });
 
-  it('does not show Start now for a non-creator', () => {
+  it('does not show the start button for a non-creator', () => {
     const game = createMockGame({
       status: 'pending',
       maxPlayers: 3,
@@ -358,7 +374,7 @@ describe('ScoreBar', () => {
 
     render(<ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />);
 
-    expect(screen.queryByText('Start now')).toBeNull();
+    expect(screen.queryByText(/^Start with/)).toBeNull();
   });
 
   it('shows Won chip when game is finished and current user won', () => {

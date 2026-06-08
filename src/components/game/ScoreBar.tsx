@@ -5,7 +5,15 @@ import React, {
   useRef,
   useMemo,
 } from 'react';
-import { View, StyleSheet, Pressable, Platform } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  Platform,
+  Alert,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { BlurView } from 'expo-blur';
 import ReAnimated, {
   useSharedValue,
@@ -77,7 +85,13 @@ interface ScoreBarProps {
   tilesPlayed?: number;
 }
 
-function TilesBadge({ count }: { count: number }) {
+function TilesBadge({
+  count,
+  floating = false,
+}: {
+  count: number;
+  floating?: boolean;
+}) {
   const rotation = useSharedValue(0);
   const scale = useSharedValue(1);
 
@@ -106,7 +120,13 @@ function TilesBadge({ count }: { count: number }) {
 
   return (
     <Pressable onPress={handlePress}>
-      <ReAnimated.View style={[styles.tilesBadge, animatedStyle]}>
+      <ReAnimated.View
+        style={[
+          styles.tilesBadge,
+          floating && styles.tilesBadgeFloating,
+          animatedStyle,
+        ]}
+      >
         <AnimatedTilesCount count={count} />
         <Text style={styles.tilesLabel}>in bag</Text>
       </ReAnimated.View>
@@ -161,12 +181,14 @@ function AnimatedPlayerSection({
   isGameFinished,
   avatarColor,
   children,
+  style,
 }: {
   isActive: boolean;
   isWinner: boolean;
   isGameFinished: boolean;
   avatarColor: string | null | undefined;
   children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
 }) {
   const pulse = useSharedValue(1);
   const boxOpacity = useSharedValue(isActive ? 1 : 0);
@@ -223,7 +245,7 @@ function AnimatedPlayerSection({
   });
 
   return (
-    <ReAnimated.View style={[styles.playerSection, animatedStyle]}>
+    <ReAnimated.View style={[styles.playerSection, style, animatedStyle]}>
       {children}
     </ReAnimated.View>
   );
@@ -315,6 +337,7 @@ function PlayerChip({
   isWinner,
   onStatusPress,
   showRackCount,
+  gridItem = false,
 }: {
   player: Player;
   isSelf: boolean;
@@ -322,6 +345,7 @@ function PlayerChip({
   isWinner: boolean;
   onStatusPress: () => void;
   showRackCount: boolean;
+  gridItem?: boolean;
 }) {
   const hasLeft = player.hasLeft === true;
   const isActive = !hasLeft && player.isCurrentTurn;
@@ -333,6 +357,7 @@ function PlayerChip({
       isWinner={!hasLeft && isWinner}
       isGameFinished={isGameFinished}
       avatarColor={player.avatarColor}
+      style={gridItem ? styles.gridSection : undefined}
     >
       <View style={[styles.chip, hasLeft && styles.chipLeft]}>
         <PlayerAvatar player={player} dimmed={hasLeft} />
@@ -375,12 +400,20 @@ function PlayerChip({
 function PendingSeatChip({
   invitation,
   onRevoke,
+  gridItem = false,
 }: {
   invitation: NonNullable<Game['pendingInvitation']>;
   onRevoke?: (invitationUlid: string) => void;
+  gridItem?: boolean;
 }) {
   return (
-    <View style={[styles.playerSection, styles.placeholderSection]}>
+    <View
+      style={[
+        styles.playerSection,
+        styles.placeholderSection,
+        gridItem && styles.gridSection,
+      ]}
+    >
       <View style={styles.chip}>
         <Pressable
           style={({ pressed }) => [
@@ -407,7 +440,9 @@ function PendingSeatChip({
           <Text style={styles.playerName} numberOfLines={1}>
             {invitation.invitee.username}
           </Text>
-          <Text style={styles.pendingTag}>PENDING</Text>
+          <Text style={styles.pendingTag} numberOfLines={1}>
+            PENDING
+          </Text>
         </View>
       </View>
     </View>
@@ -415,12 +450,19 @@ function PendingSeatChip({
 }
 
 /** Dashed "Invite +" placeholder for an open seat. */
-function InviteSeatChip({ onInvite }: { onInvite?: () => void }) {
+function InviteSeatChip({
+  onInvite,
+  gridItem = false,
+}: {
+  onInvite?: () => void;
+  gridItem?: boolean;
+}) {
   return (
     <Pressable
       style={({ pressed }) => [
         styles.playerSection,
         styles.inviteSeat,
+        gridItem && styles.gridSection,
         pressed && { opacity: 0.6 },
       ]}
       onPressOut={onInvite}
@@ -547,6 +589,10 @@ export function ScoreBar({
   const isPending = game.status === 'pending';
   const showRackCount = game.tilesRemaining === 0;
 
+  // 3-4 player games stack each chip vertically (avatar on top, name below) so
+  // the name can use the full chip width instead of sharing it with the avatar.
+  const isMultiplayer = game.maxPlayers >= 3;
+
   // Original roster, ordered by turn order so the layout stays stable even when
   // a player leaves (a left player keeps their cell, never collapsing the row).
   const orderedPlayers = useMemo(
@@ -580,6 +626,29 @@ export function ScoreBar({
   );
   const openSeats = isPending ? openSeatCount : 0;
 
+  const acceptedCount = game.players.length;
+  const startLabel = `Start with ${acceptedCount} player${acceptedCount === 1 ? '' : 's'}`;
+
+  const handleStartGame = () => {
+    if (startGame.isPending) {
+      return;
+    }
+
+    const pendingNote =
+      pendingInvitationCount > 0
+        ? ` ${pendingInvitationCount} pending invitation${pendingInvitationCount === 1 ? '' : 's'} will be cancelled.`
+        : '';
+
+    Alert.alert(
+      'Start game?',
+      `The game will start now with the ${acceptedCount} player${acceptedCount === 1 ? '' : 's'} who joined.${pendingNote}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Start', onPress: () => startGame.mutate(game.ulid) },
+      ]
+    );
+  };
+
   const statusModalPlayer = game.players.find(
     (p) => p.ulid === statusModalPlayerUlid
   );
@@ -603,17 +672,28 @@ export function ScoreBar({
     <View style={styles.containerWrapper}>
       <BlurView intensity={40} tint="dark" style={styles.container}>
         {/* Equal-chip row keyed to the original roster size */}
-        <View style={styles.mainContent} key={`roster-${game.maxPlayers}`}>
-          {displayPlayers.map((player) => (
-            <PlayerChip
-              key={player.ulid}
-              player={player}
-              isSelf={player.ulid === currentUserUlid}
-              isGameFinished={isGameFinished}
-              isWinner={game.winnerUlid === player.ulid}
-              showRackCount={showRackCount}
-              onStatusPress={() => setStatusModalPlayerUlid(player.ulid)}
-            />
+        <View
+          style={[styles.mainContent, isMultiplayer && styles.mainContentGrid]}
+          key={`roster-${game.maxPlayers}`}
+        >
+          {displayPlayers.map((player, index) => (
+            <React.Fragment key={player.ulid}>
+              <PlayerChip
+                player={player}
+                isSelf={player.ulid === currentUserUlid}
+                isGameFinished={isGameFinished}
+                isWinner={game.winnerUlid === player.ulid}
+                showRackCount={showRackCount}
+                gridItem={isMultiplayer}
+                onStatusPress={() => setStatusModalPlayerUlid(player.ulid)}
+              />
+              {/* 2-player: tiles in bag sit between the two players. */}
+              {!isMultiplayer && !isPending && index === 0 && (
+                <View style={styles.inlineBag}>
+                  <TilesBadge count={game.tilesRemaining} />
+                </View>
+              )}
+            </React.Fragment>
           ))}
 
           {isPending &&
@@ -622,50 +702,60 @@ export function ScoreBar({
                 key={invitation.ulid}
                 invitation={invitation}
                 onRevoke={onRevokeInvitation}
+                gridItem={isMultiplayer}
               />
             ))}
 
           {Array.from({ length: openSeats }).map((_, index) => (
-            <InviteSeatChip key={`invite-seat-${index}`} onInvite={onInvite} />
+            <InviteSeatChip
+              key={`invite-seat-${index}`}
+              onInvite={onInvite}
+              gridItem={isMultiplayer}
+            />
           ))}
-        </View>
 
-        {/* Info row: turn timer (left) / tiles in bag (centered) / start now (right) */}
-        <View style={styles.infoRow}>
-          <View style={styles.infoSide}>
-            {game.status === 'active' && isMyTurn && game.turnExpiresAt && (
-              <TurnTimer expiresAt={game.turnExpiresAt} isMyTurn={isMyTurn} />
-            )}
-          </View>
-          {!isPending && (
-            <View style={styles.infoCenter}>
-              <TilesBadge count={game.tilesRemaining} />
+          {isMultiplayer && game.status === 'active' && (
+            <View style={styles.bagOverlay} pointerEvents="box-none">
+              <TilesBadge count={game.tilesRemaining} floating />
             </View>
           )}
-          <View style={[styles.infoSide, styles.infoSideRight]}>
-            {canStartNow && (
-              <Pressable
-                style={({ pressed }) => [
-                  styles.startButton,
-                  startGame.isPending && styles.startButtonDisabled,
-                  pressed && { opacity: 0.7 },
-                ]}
-                onPressOut={() => {
-                  if (startGame.isPending) return;
-                  startGame.mutate(game.ulid);
-                }}
-                disabled={startGame.isPending}
-              >
-                <MaterialCommunityIcons
-                  name="play"
-                  size={13}
-                  color={colors.textPrimary}
-                />
-                <Text style={styles.startButtonText}>Start now</Text>
-              </Pressable>
-            )}
-          </View>
         </View>
+
+        {/* The tiles-in-bag badge sits between the players (inline for two
+            players, floating in the grid centre for 3-4), so the only row we
+            ever add below is a compact turn timer, and only on your turn. */}
+        {!isPending &&
+          game.status === 'active' &&
+          isMyTurn &&
+          game.turnExpiresAt && (
+            <View style={[styles.infoRow, styles.infoRowCompact]}>
+              <View style={styles.infoSide}>
+                <TurnTimer expiresAt={game.turnExpiresAt} isMyTurn={isMyTurn} />
+              </View>
+            </View>
+          )}
+
+        {/* Pending game: centered, confirmable start button */}
+        {canStartNow && (
+          <View style={styles.startRow}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.startButton,
+                startGame.isPending && styles.startButtonDisabled,
+                pressed && { opacity: 0.7 },
+              ]}
+              onPress={handleStartGame}
+              disabled={startGame.isPending}
+            >
+              <MaterialCommunityIcons
+                name="play"
+                size={14}
+                color={colors.textPrimary}
+              />
+              <Text style={styles.startButtonText}>{startLabel}</Text>
+            </Pressable>
+          </View>
+        )}
 
         {/* Footer - tappable to navigate to move history */}
         <FooterHistory
@@ -705,6 +795,32 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     padding: 10,
     gap: 6,
+  },
+  // 3-4 players: wrap chips into two rows so each keeps the roomy 2-player
+  // (avatar beside name) layout instead of being squeezed into four columns.
+  // space-between spreads a full row of two to the edges and leaves a lone
+  // bottom chip (3 players) aligned left with the right side empty.
+  mainContentGrid: {
+    flexWrap: 'wrap',
+    alignItems: 'stretch',
+    justifyContent: 'space-between',
+    rowGap: 8,
+  },
+  gridSection: {
+    flexGrow: 0,
+    flexBasis: '41%',
+    maxWidth: '41%',
+  },
+  // Floats the tiles-in-bag badge in the centre of the 2x2 grid (the gutter
+  // between the chips), so it never needs a separate row of its own.
+  bagOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   playerSection: {
     flex: 1,
@@ -749,6 +865,7 @@ const styles = StyleSheet.create({
   playerName: {
     color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 10,
+    flexShrink: 1,
   },
   leftScore: {
     opacity: 0.6,
@@ -799,7 +916,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 8,
     fontWeight: '700',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
     textTransform: 'uppercase',
     marginTop: 3,
     fontStyle: 'italic',
@@ -828,6 +945,11 @@ const styles = StyleSheet.create({
     minHeight: 4,
     gap: 8,
   },
+  infoRowCompact: {
+    paddingTop: 0,
+    paddingBottom: 6,
+    marginTop: -2,
+  },
   infoSide: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -838,9 +960,10 @@ const styles = StyleSheet.create({
   infoSideRight: {
     justifyContent: 'flex-end',
   },
-  infoCenter: {
+  inlineBag: {
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 2,
   },
   tilesBadge: {
     backgroundColor: colors.primary,
@@ -849,17 +972,37 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
   },
+  // Floating variant for the grid centre: a ring in the bar's base colour plus
+  // a shadow so it reads as a token sitting above the chips, not a glitch.
+  tilesBadgeFloating: {
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 3,
+    borderColor: colors.background,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 5,
+    elevation: 6,
+  },
   tilesLabel: {
     color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 7,
   },
+  startRow: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+    paddingBottom: 8,
+  },
   startButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
     backgroundColor: colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 10,
   },
   startButtonDisabled: {
