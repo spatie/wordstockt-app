@@ -16,6 +16,7 @@ import type { User } from '../../types';
 import { authKeys } from './queryKeys';
 import { API_BASE_URL } from '../../config/api';
 import type { PickedAvatar } from '../../utils/avatarImage';
+import { uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy';
 
 async function getCurrentPushToken(): Promise<string | null> {
   if (Platform.OS === 'web') {
@@ -271,43 +272,67 @@ export function useUpdateProfile() {
   });
 }
 
+function parseJsonSafely(body: string): unknown {
+  try {
+    return JSON.parse(body);
+  } catch {
+    return null;
+  }
+}
+
+function getUploadErrorMessage(payload: unknown): string {
+  if (
+    payload &&
+    typeof payload === 'object' &&
+    'message' in payload &&
+    typeof (payload as { message: unknown }).message === 'string'
+  ) {
+    return (payload as { message: string }).message;
+  }
+  return 'Could not upload your photo.';
+}
+
 export function useUpdateAvatar() {
   const setUser = useAuthStore((s) => s.setUser);
 
   return useMutation({
     mutationFn: async (image: PickedAvatar) => {
       const token = useAuthStore.getState().token;
+      const url = `${API_BASE_URL}/auth/user/avatar`;
+      const headers = {
+        Accept: 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
 
-      const formData = new FormData();
+      let payload: unknown;
+
       if (Platform.OS === 'web') {
         const blob = await (await fetch(image.uri)).blob();
+        const formData = new FormData();
         formData.append('avatar', blob, image.name);
+        const response = await fetch(url, { method: 'POST', headers, body: formData });
+        payload = await response.json();
+        if (!response.ok) {
+          throw new Error(getUploadErrorMessage(payload));
+        }
       } else {
-        formData.append('avatar', {
-          uri: image.uri,
-          name: image.name,
-          type: image.mimeType,
-        } as unknown as Blob);
+        // Native: stream the file as a multipart field. The runtime's fetch +
+        // FormData only accept Blob/string parts (not RN's {uri} file shape),
+        // so uploadAsync is the reliable way to send a local file.
+        const result = await uploadAsync(url, image.uri, {
+          httpMethod: 'POST',
+          uploadType: FileSystemUploadType.MULTIPART,
+          fieldName: 'avatar',
+          mimeType: image.mimeType,
+          headers,
+        });
+        payload = parseJsonSafely(result.body);
+        if (result.status < 200 || result.status >= 300) {
+          throw new Error(getUploadErrorMessage(payload));
+        }
       }
 
-      // Use fetch (not the axios instance) so the platform sets the multipart
-      // boundary itself; axios' default JSON Content-Type would break it.
-      const response = await fetch(`${API_BASE_URL}/auth/user/avatar`, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.message ?? 'Could not upload your photo.');
-      }
-
-      const validated = safeParse(AuthUserResponseSchema, data, 'useUpdateAvatar');
+      const validated = safeParse(AuthUserResponseSchema, payload, 'useUpdateAvatar');
       return transformUser(validated.data);
     },
     onSuccess: (user) => {
