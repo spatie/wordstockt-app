@@ -362,6 +362,45 @@ describe('gameStore', () => {
     });
   });
 
+  describe('insertByActualIndex', () => {
+    it('shifts tiles left when dragging a tile rightward', () => {
+      // perm starts [0,1,2,3,4,5,6]; move tile at slot 1 onto slot 4
+      useGameStore.getState().insertByActualIndex(1, 4);
+
+      expect(getRackPermutation()).toEqual([0, 2, 3, 4, 1, 5, 6]);
+    });
+
+    it('shifts tiles right when dragging a tile leftward', () => {
+      // perm starts [0,1,2,3,4,5,6]; move tile at slot 3 onto slot 1
+      useGameStore.getState().insertByActualIndex(3, 1);
+
+      expect(getRackPermutation()).toEqual([0, 3, 1, 2, 4, 5, 6]);
+    });
+
+    it('is a no-op when the tile is already at the target slot', () => {
+      useGameStore.getState().insertByActualIndex(3, 3);
+
+      expect(getRackPermutation()).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    });
+
+    it('locates the tile by actual index, not by slot', () => {
+      useGameStore.setState((state) => ({
+        gameStates: {
+          ...state.gameStates,
+          [TEST_GAME_ULID]: {
+            ...state.gameStates[TEST_GAME_ULID]!,
+            rackPermutation: [6, 5, 4, 3, 2, 1, 0],
+          },
+        },
+      }));
+
+      // Tile with actual index 6 currently sits at slot 0; insert it at slot 2
+      useGameStore.getState().insertByActualIndex(6, 2);
+
+      expect(getRackPermutation()).toEqual([5, 4, 6, 3, 2, 1, 0]);
+    });
+  });
+
   describe('shuffleRack', () => {
     it('should shuffle rack permutation', () => {
       const originalPerm = [...getRackPermutation()];

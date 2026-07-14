@@ -20,7 +20,7 @@ export function useTilePlacement({
   const placeTile = useGameStore((s) => s.placeTile);
   const moveTile = useGameStore((s) => s.moveTile);
   const removeTile = useGameStore((s) => s.removeTile);
-  const swapByActualIndex = useGameStore((s) => s.swapByActualIndex);
+  const insertByActualIndex = useGameStore((s) => s.insertByActualIndex);
   const startBlankTileSelection = useGameStore(
     (s) => s.startBlankTileSelection
   );
@@ -67,7 +67,7 @@ export function useTilePlacement({
         }
         return false;
       } else if (target.type === 'rack') {
-        swapByActualIndex(actualRackIndex, target.slotIndex);
+        insertByActualIndex(actualRackIndex, target.slotIndex);
         return true;
       }
       return false;
@@ -76,7 +76,7 @@ export function useTilePlacement({
       game,
       isBoardPositionAvailable,
       placeTile,
-      swapByActualIndex,
+      insertByActualIndex,
       startBlankTileSelection,
     ]
   );
