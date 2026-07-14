@@ -180,7 +180,7 @@ interface DragDropContextType {
 
   // Rack permutation (UI-thread source of truth during gameplay)
   rackPermutationShared: SharedValue<number[]>;
-  swapRackTilesWorklet: (
+  insertRackTileWorklet: (
     sourceActualIndex: number,
     targetVisualSlot: number
   ) => void;
@@ -1882,8 +1882,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     useGameStore.getState().setRackPermutation(perm);
   }, []);
 
-  // Worklet function to swap rack tiles - runs entirely on UI thread for instant animation
-  const swapRackTilesWorklet = useCallback(
+  // Worklet function to insert a rack tile at a new slot - runs entirely on UI thread for instant animation
+  const insertRackTileWorklet = useCallback(
     (sourceActualIndex: number, targetVisualSlot: number) => {
       'worklet';
       const perm = [...rackPermutationShared.value];
@@ -1891,10 +1891,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       if (sourceVisualSlot === -1 || sourceVisualSlot === targetVisualSlot)
         return;
 
-      // Swap in permutation
-      const temp = perm[sourceVisualSlot]!;
-      perm[sourceVisualSlot] = perm[targetVisualSlot]!;
-      perm[targetVisualSlot] = temp;
+      // Remove the tile from its current slot and insert it at the target,
+      // shifting the tiles in between to make room (drag-to-reorder).
+      const moved = perm.splice(sourceVisualSlot, 1)[0]!;
+      perm.splice(targetVisualSlot, 0, moved);
 
       rackPermutationShared.value = perm;
 
@@ -2684,10 +2684,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           // Mark that animation started in worklet (JS side should skip animation)
           animationStartedInWorklet.value = true;
 
-          // Trigger swap immediately on UI thread so tile A starts animating at the same time as tile B
+          // Trigger the insert immediately on UI thread so the dragged tile and the shifting tiles animate together
           const sourceRackIndex = dragSourceShared.value?.rackIndex;
           if (sourceRackIndex !== undefined) {
-            swapRackTilesWorklet(sourceRackIndex, targetSlot);
+            insertRackTileWorklet(sourceRackIndex, targetSlot);
           }
 
           // Start animation immediately (no bridge delay!)
@@ -2759,7 +2759,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       draggingBoardPositionShared,
       settlingTargetShared,
       rackPermutationShared,
-      swapRackTilesWorklet,
+      insertRackTileWorklet,
       shuffleRackWorklet,
       setRackPermutation,
     }),
@@ -2794,7 +2794,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       draggingBoardPositionShared,
       settlingTargetShared,
       rackPermutationShared,
-      swapRackTilesWorklet,
+      insertRackTileWorklet,
       shuffleRackWorklet,
       setRackPermutation,
     ]

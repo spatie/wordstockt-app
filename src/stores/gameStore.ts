@@ -44,7 +44,7 @@ interface GameUIActions {
   clearGameState: (gameUlid: string) => void;
   setSelectedRackIndex: (index: number | null) => void;
   swapRackSlots: (slotA: number, slotB: number) => void;
-  swapByActualIndex: (
+  insertByActualIndex: (
     actualRackIndex: number,
     targetVisualSlot: number
   ) => void;
@@ -198,7 +198,7 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
           return updateCurrentGameState(state, { rackPermutation: newPerm });
         }),
 
-      swapByActualIndex: (actualRackIndex, targetVisualSlot) =>
+      insertByActualIndex: (actualRackIndex, targetVisualSlot) =>
         set((state) => {
           const gameState = getCurrentGameState(state);
           const newPerm = [...gameState.rackPermutation];
@@ -209,9 +209,10 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
           ) {
             return state;
           }
-          const temp = newPerm[currentVisualSlot]!;
-          newPerm[currentVisualSlot] = newPerm[targetVisualSlot]!;
-          newPerm[targetVisualSlot] = temp;
+          // Remove the tile from its current slot and insert it at the target,
+          // shifting the tiles in between to make room (drag-to-reorder).
+          const [moved] = newPerm.splice(currentVisualSlot, 1);
+          newPerm.splice(targetVisualSlot, 0, moved!);
           return updateCurrentGameState(state, { rackPermutation: newPerm });
         }),
 

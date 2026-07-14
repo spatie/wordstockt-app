@@ -37,7 +37,9 @@ const LeaderboardEntryCard = memo(function LeaderboardEntryCard({
   return (
     <Card padding="md" marginBottom="sm">
       <View style={styles.cardContent}>
-        <Text style={styles.rank}>{rank}</Text>
+        <Text style={styles.rank} numberOfLines={1}>
+          {rank}
+        </Text>
 
         <SmartAvatar
           userUlid={entry.ulid}
@@ -220,7 +222,9 @@ export default function LeaderboardScreen() {
         <Text style={styles.footerLabel}>YOUR RANK</Text>
         <Card marginBottom="xs">
           <View style={styles.cardContent}>
-            <Text style={styles.rank}>{currentUser.rank}</Text>
+            <Text style={styles.rank} numberOfLines={1}>
+              {currentUser.rank}
+            </Text>
             <SmartAvatar
               userUlid={currentUser.ulid}
               uri={currentUser.avatar ?? null}
@@ -374,7 +378,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: colors.textPrimary,
-    width: 24,
+    minWidth: 24,
     textAlign: 'center',
   },
   info: {

@@ -62,11 +62,12 @@ const TOTAL_SLOTS_WIDTH = SLOT_COUNT * SLOT_WIDTH + (SLOT_COUNT - 1) * GAP;
  * RENDERING:
  * - Static background slots are rendered at fixed positions
  * - AnimatedTileSlot renders each tile, animated to its visualSlot position
- * - When visualSlot changes (shuffle/swap), tile animates to new position
+ * - When visualSlot changes (shuffle/reorder), tile animates to new position
  *
- * SWAP BEHAVIOR:
- * - Dragging tile A onto slot B triggers swapByActualIndex(actualRackIndex, targetVisualSlot)
- * - This finds A's current visual slot and swaps with B's visual slot in the permutation
+ * REORDER BEHAVIOR:
+ * - Dragging tile A onto slot B triggers insertByActualIndex(actualRackIndex, targetVisualSlot)
+ * - A is removed from its current visual slot and inserted at B's slot; the tiles
+ *   in between shift by one to make room (drag-to-reorder, not a swap)
  * - Only the permutation changes; actual tile data stays in place
  */
 
