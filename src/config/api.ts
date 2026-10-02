@@ -5,7 +5,11 @@ export const API_BASE_URL = isDev
   ? 'https://wordstockt.com.test/api'
   : 'https://wordstockt.com/api';
 
-export const WS_URL = isDev ? 'ws://localhost:8080' : 'wss://ws.wordstockt.com';
+export const WS_URL = isDev
+  ? 'ws://localhost:8080'
+  : 'wss://ws-a2e28c05-9860-48dc-acab-696497096468-reverb.laravel.cloud';
+
+export const WS_APP_KEY = isDev ? 'wordstockt-key' : 'ZdALnHoTvbIlMlXNqNYU';
 
 // React Query configuration
 export const QUERY_CONFIG = {
