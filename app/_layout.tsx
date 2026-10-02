@@ -1,5 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Stack, Redirect, useSegments, useRouter } from 'expo-router';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  Stack,
+  Redirect,
+  useSegments,
+  useRouter,
+  ThemeProvider,
+  DarkTheme,
+  DefaultTheme,
+} from 'expo-router';
+import { Appearance, Platform } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '../src/api/queryClient';
@@ -90,12 +99,33 @@ export default function RootLayout() {
   const appearance = useAppearanceStore((s) => s.appearance);
   const isAppearanceHydrated = useAppearanceStore((s) => s.isHydrated);
   const colors = palettes[appearance];
+  const navigationTheme = useMemo(() => {
+    const base = appearance === 'paper' ? DefaultTheme : DarkTheme;
+
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        primary: colors.primary,
+        background: colors.background,
+        card: colors.background,
+        text: colors.textPrimary,
+        border: colors.border,
+      },
+    };
+  }, [appearance, colors]);
   const [splashAnimationComplete, setSplashAnimationComplete] =
     useState(hasSplashCompleted);
   const isLoading = useAuthStore((s) => s.isLoading);
   const isNavigationHydrated = useNavigationStore((s) => s.isHydrated);
 
   const isAppReady = !isLoading && isNavigationHydrated && isAppearanceHydrated;
+
+  useEffect(() => {
+    if (Platform.OS !== 'web') {
+      Appearance.setColorScheme(appearance === 'paper' ? 'light' : 'dark');
+    }
+  }, [appearance]);
 
   // Track when auth has loaded at least once (distinguishes cold start from logout)
   useEffect(() => {
@@ -124,16 +154,18 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <PaperProvider theme={getPaperTheme(appearance)}>
-            <SnackbarProvider>
-              {shouldShowSplash ? (
-                <AnimatedSplash
-                  isReady={isAppReady}
-                  onAnimationComplete={handleAnimationComplete}
-                />
-              ) : (
-                <RootLayoutNav />
-              )}
-            </SnackbarProvider>
+            <ThemeProvider value={navigationTheme}>
+              <SnackbarProvider>
+                {shouldShowSplash ? (
+                  <AnimatedSplash
+                    isReady={isAppReady}
+                    onAnimationComplete={handleAnimationComplete}
+                  />
+                ) : (
+                  <RootLayoutNav />
+                )}
+              </SnackbarProvider>
+            </ThemeProvider>
           </PaperProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

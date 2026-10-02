@@ -271,7 +271,7 @@ const createStyles = (colors: ThemeColors) =>
     },
     boardWrapper: {
       borderRadius: 16,
-      shadowColor: '#ffffff',
+      shadowColor: colors.boardShadow,
       shadowOffset: { width: 0, height: 0 },
       shadowOpacity: 0.08,
       shadowRadius: 16,
@@ -282,11 +282,11 @@ const createStyles = (colors: ThemeColors) =>
       borderRadius: 16,
       overflow: 'hidden',
       borderWidth: 1,
-      borderColor: 'rgba(74, 144, 217, 0.5)',
+      borderColor: colors.boardOutline,
     },
     boardBlur: {
       flex: 1,
-      backgroundColor: 'rgba(27, 40, 56, 0.1)',
+      backgroundColor: colors.boardBackground,
     },
     board: {
       flex: 1,
