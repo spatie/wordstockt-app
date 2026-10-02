@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
-import { WS_URL, API_BASE_URL } from '../config/api';
+import { WS_URL, WS_APP_KEY, API_BASE_URL } from '../config/api';
 import { useAuthStore } from '../stores/authStore';
 
 interface WebSocketMessage {
@@ -153,7 +153,7 @@ export function useWebSocketBase({
 
       isConnectingRef.current = true;
       const ws = new WebSocket(
-        `${WS_URL}/app/wordstockt-key?protocol=7&client=js&version=8.3.0`
+        `${WS_URL}/app/${WS_APP_KEY}?protocol=7&client=js&version=8.3.0`
       );
 
       ws.onopen = () => {
