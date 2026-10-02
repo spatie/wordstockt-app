@@ -8,6 +8,7 @@ import { useRegisterPushToken } from '../api/queries/useAuth';
 import { useAuthStore } from '../stores/authStore';
 import { useNavigationStore } from '../stores/navigationStore';
 import { useNotificationStore } from '../stores/notificationStore';
+import { syncFromPush } from '../api/syncFromPush';
 
 if (Platform.OS !== 'web') {
   Notifications.setNotificationHandler({
@@ -143,6 +144,9 @@ export function usePushNotifications() {
     notificationListener.current =
       Notifications.addNotificationReceivedListener((notification) => {
         console.log('Notification received:', notification);
+        // Pushes are the only live updates, so refresh what they're about
+        syncFromPush(notification.request.content.data);
+
         const gameUlid = notification.request.content.data?.game_ulid;
         if (gameUlid && typeof gameUlid === 'string') {
           useNotificationStore

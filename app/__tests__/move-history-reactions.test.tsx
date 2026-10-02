@@ -41,10 +41,6 @@ jest.mock('../../src/api/queries/useMoveReaction', () => ({
   useMoveReaction: () => ({ mutateAsync: jest.fn(), isPending: false }),
 }));
 
-jest.mock('../../src/hooks/useWebSocket', () => ({
-  useWebSocket: jest.fn(),
-}));
-
 jest.mock('../../src/stores/authStore', () => ({
   useAuthStore: (selector: (state: unknown) => unknown) =>
     selector({ user: { ulid: mockCurrentUserUlid } }),

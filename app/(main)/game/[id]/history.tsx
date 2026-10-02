@@ -9,7 +9,6 @@ import { useLocalSearchParams } from 'expo-router';
 import { useMoveHistory } from '../../../../src/api/queries/useMoveHistory';
 import { useMoveReaction } from '../../../../src/api/queries/useMoveReaction';
 import { useGame } from '../../../../src/api/queries/useGame';
-import { useWebSocket } from '../../../../src/hooks/useWebSocket';
 import { useAuthStore } from '../../../../src/stores/authStore';
 import { useSnackbar } from '../../../../src/components/ui/SnackbarProvider';
 import { getApiError } from '../../../../src/api/client';
@@ -341,7 +340,6 @@ export default function MoveHistoryScreen() {
   const { data: game, isLoading: isGameLoading } = useGame(gameUlid);
   const { data: moves, isLoading: isMovesLoading } = useMoveHistory(gameUlid);
   const changeReaction = useMoveReaction();
-  useWebSocket(gameUlid || null);
 
   const handleReact = async (
     moveUlid: string,

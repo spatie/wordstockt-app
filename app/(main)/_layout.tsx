@@ -2,7 +2,6 @@ import React from 'react';
 import { Stack } from 'expo-router';
 import { Platform, View, StyleSheet } from 'react-native';
 import { useThemeColors } from '../../src/hooks/useThemeColors';
-import { useUserWebSocket } from '../../src/hooks/useUserWebSocket';
 import { useInvitationStore } from '../../src/stores/invitationStore';
 import { HeaderLogo } from '../../src/components/ui/HeaderLogo';
 import { HeaderMenu } from '../../src/components/ui/HeaderMenu';
@@ -11,8 +10,6 @@ import { GlowingBackground } from '../../src/components/ui/GlowingBackground';
 
 export default function MainLayout() {
   const colors = useThemeColors();
-  // Subscribe to user channel for real-time updates (invitations, etc.)
-  useUserWebSocket();
 
   const pendingInvitation = useInvitationStore((s) => s.pendingInvitation);
   const clearPendingInvitation = useInvitationStore(

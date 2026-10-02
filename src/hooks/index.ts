@@ -12,10 +12,6 @@ export { useFilteredGames } from './useFilteredGames';
 export { usePointerDrag } from './usePointerDrag';
 export { useMeasureOnDrag } from './useMeasureOnDrag';
 
-// WebSocket hooks
-export { useWebSocket } from './useWebSocket';
-export { useUserWebSocket } from './useUserWebSocket';
-
 // Utility hooks
 export { useApiError } from './useApiError';
 

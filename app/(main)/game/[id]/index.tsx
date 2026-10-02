@@ -34,7 +34,6 @@ import {
   useAchievementStore,
   useCurrentAchievement,
 } from '../../../../src/stores/achievementStore';
-import { useWebSocket } from '../../../../src/hooks/useWebSocket';
 import { useGameInteractions } from '../../../../src/hooks/useGameInteractions';
 import { useConflictingTilesRecall } from '../../../../src/hooks/useConflictingTilesRecall';
 import { useRematch } from '../../../../src/hooks/useRematch';
@@ -179,9 +178,6 @@ function GameScreenContent() {
     () => (USE_MOCK_DATA ? { ...mockGame, ulid: gameUlid } : apiGame),
     [apiGame, gameUlid]
   );
-
-  // Connect to WebSocket for real-time updates (skip in mock mode)
-  useWebSocket(USE_MOCK_DATA ? null : gameUlid);
 
   // Detect and recall tiles that conflict with opponent's played tiles
   useConflictingTilesRecall(game);

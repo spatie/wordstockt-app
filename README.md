@@ -15,7 +15,6 @@ Read about [how this was built in ~10 days](https://freek.dev/2983-i-built-a-nat
 - Asynchronous multiplayer matches with friends
 - Player statistics and leaderboards
 - Push notifications for turn alerts
-- Real-time updates via WebSockets
 - Free with no advertisements
 - Available on iOS and Android
 

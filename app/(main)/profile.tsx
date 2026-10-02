@@ -54,7 +54,7 @@ export default function ProfileScreen() {
   const [error, setError] = useState<string | null>(null);
 
   // Resync the form when the user identity changes (e.g. account switch or the
-  // current user's record is replaced from the server/websocket). Keyed on
+  // current user's record is replaced from the server). Keyed on
   // user.ulid so in-progress edits to the same account aren't wiped.
   const syncedUserUlid = useRef(user?.ulid);
   useEffect(() => {

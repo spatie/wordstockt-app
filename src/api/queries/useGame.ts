@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../client';
 import {
@@ -9,10 +10,33 @@ import { safeParse } from '../../schemas/safeParse';
 import { placedTilesToApi } from '../transforms/tileTransforms';
 import { gameKeys } from './queryKeys';
 import { useAchievementStore } from '../../stores/achievementStore';
+import { useAuthStore } from '../../stores/authStore';
 import type { Game, PlacedTile, Achievement } from '../../types';
 
+// There are no realtime updates, so an open game polls while it waits on
+// other players. Polling pauses while the app is in the background.
+const WAITING_POLL_INTERVAL = 20_000;
+
+export function isWaitingOnOthers(
+  game: Game | undefined,
+  userUlid: string | undefined
+): boolean {
+  if (!game || !userUlid) {
+    return false;
+  }
+
+  if (game.status === 'pending') {
+    return true;
+  }
+
+  return game.status === 'active' && game.currentTurnUserUlid !== userUlid;
+}
+
 export function useGame(gameUlid: string) {
-  return useQuery({
+  const queryClient = useQueryClient();
+  const userUlid = useAuthStore((s) => s.user?.ulid);
+
+  const query = useQuery({
     queryKey: gameKeys.detail(gameUlid),
     queryFn: async (): Promise<Game> => {
       const { data } = await apiClient.get(`/games/${gameUlid}`);
@@ -21,7 +45,32 @@ export function useGame(gameUlid: string) {
     },
     staleTime: 30_000,
     enabled: gameUlid.length > 0,
+    refetchInterval: (query) =>
+      isWaitingOnOthers(query.state.data, userUlid)
+        ? WAITING_POLL_INTERVAL
+        : false,
   });
+
+  // A new move (picked up by polling or a refetch) also changes the move
+  // history and the games list
+  const lastMoveUlid = query.data
+    ? (query.data.lastMove?.ulid ?? null)
+    : undefined;
+  const previousLastMoveUlid = useRef(lastMoveUlid);
+
+  useEffect(() => {
+    const previous = previousLastMoveUlid.current;
+    previousLastMoveUlid.current = lastMoveUlid;
+
+    if (previous === undefined || previous === lastMoveUlid) {
+      return;
+    }
+
+    queryClient.invalidateQueries({ queryKey: gameKeys.moveHistory(gameUlid) });
+    queryClient.invalidateQueries({ queryKey: gameKeys.lists() });
+  }, [lastMoveUlid, gameUlid, queryClient]);
+
+  return query;
 }
 
 interface SubmitMoveParams {
