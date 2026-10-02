@@ -1,15 +1,13 @@
 import { useAuthStore } from '../authStore';
 import { mockUser } from '../../__tests__/utils';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+jest.unmock('zustand/middleware');
 
 describe('authStore', () => {
-  beforeEach(() => {
-    // Reset store to initial state before each test
-    useAuthStore.setState({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      isLoading: false,
-    });
+  beforeEach(async () => {
+    useAuthStore.getState().logout();
+    await AsyncStorage.clear();
   });
 
   describe('setAuth', () => {
@@ -21,6 +19,7 @@ describe('authStore', () => {
       const state = useAuthStore.getState();
       expect(state.user).toEqual(user);
       expect(state.token).toBe('token123');
+      expect(state.session).toEqual({ user, token: 'token123' });
       expect(state.isAuthenticated).toBe(true);
       expect(state.isLoading).toBe(false);
     });
@@ -41,12 +40,7 @@ describe('authStore', () => {
   describe('setUser', () => {
     it('should update user without affecting other state', () => {
       const initialUser = mockUser({ username: 'initial' });
-      useAuthStore.setState({
-        user: initialUser,
-        token: 'mytoken',
-        isAuthenticated: true,
-        isLoading: false,
-      });
+      useAuthStore.getState().setAuth(initialUser, 'mytoken');
 
       const updatedUser = mockUser({ username: 'updated', eloRating: 1500 });
       useAuthStore.getState().setUser(updatedUser);
@@ -56,18 +50,37 @@ describe('authStore', () => {
       expect(state.user?.eloRating).toBe(1500);
       expect(state.token).toBe('mytoken');
       expect(state.isAuthenticated).toBe(true);
+      expect(state.session?.user).toEqual(updatedUser);
+      expect(state.userRevision).toBe(1);
+    });
+
+    it('rejects a result from an older session or user revision', () => {
+      const user = mockUser();
+      useAuthStore.getState().setAuth(user, 'first');
+      const firstSession = useAuthStore.getState().sessionRevision;
+
+      useAuthStore.getState().setAuth(user, 'second');
+      expect(
+        useAuthStore
+          .getState()
+          .setUser(mockUser({ username: 'stale' }), firstSession)
+      ).toBe(false);
+
+      const currentSession = useAuthStore.getState().sessionRevision;
+      useAuthStore.getState().setUser(mockUser({ username: 'new' }));
+      expect(
+        useAuthStore
+          .getState()
+          .setUser(mockUser({ username: 'stale' }), currentSession, 0)
+      ).toBe(false);
+      expect(useAuthStore.getState().user?.username).toBe('new');
     });
   });
 
   describe('logout', () => {
     it('should clear all auth state', () => {
       const user = mockUser();
-      useAuthStore.setState({
-        user,
-        token: 'token123',
-        isAuthenticated: true,
-        isLoading: false,
-      });
+      useAuthStore.getState().setAuth(user, 'token123');
 
       useAuthStore.getState().logout();
 
@@ -76,6 +89,7 @@ describe('authStore', () => {
       expect(state.token).toBeNull();
       expect(state.isAuthenticated).toBe(false);
       expect(state.isLoading).toBe(false);
+      expect(state.session).toBeNull();
     });
 
     it('should be idempotent', () => {
@@ -97,7 +111,7 @@ describe('authStore', () => {
     });
 
     it('should set isLoading to false', () => {
-      useAuthStore.setState({ isLoading: true });
+      useAuthStore.getState().setLoading(true);
 
       useAuthStore.getState().setLoading(false);
 
@@ -106,12 +120,7 @@ describe('authStore', () => {
 
     it('should not affect other state', () => {
       const user = mockUser();
-      useAuthStore.setState({
-        user,
-        token: 'token',
-        isAuthenticated: true,
-        isLoading: false,
-      });
+      useAuthStore.getState().setAuth(user, 'token');
 
       useAuthStore.getState().setLoading(true);
 
@@ -124,18 +133,47 @@ describe('authStore', () => {
 
   describe('initial state', () => {
     it('should have correct initial values', () => {
-      // Create fresh store instance behavior by checking defaults
-      useAuthStore.setState({
-        user: null,
-        token: null,
-        isAuthenticated: false,
-        isLoading: true, // Initial loading state
-      });
+      useAuthStore.getState().setLoading(true);
 
       const state = useAuthStore.getState();
       expect(state.user).toBeNull();
       expect(state.token).toBeNull();
       expect(state.isAuthenticated).toBe(false);
+    });
+  });
+
+  describe('rehydration', () => {
+    it('migrates a complete legacy user and token', async () => {
+      const user = mockUser();
+      await AsyncStorage.setItem(
+        'auth-storage',
+        JSON.stringify({ state: { user, token: 'legacy-token' }, version: 0 })
+      );
+
+      await useAuthStore.persist.rehydrate();
+
+      expect(useAuthStore.getState().session).toEqual({
+        user,
+        token: 'legacy-token',
+      });
+      expect(useAuthStore.getState().isAuthenticated).toBe(true);
+      expect(useAuthStore.getState().isLoading).toBe(false);
+    });
+
+    it('drops a partial legacy session instead of routing as authenticated', async () => {
+      await AsyncStorage.setItem(
+        'auth-storage',
+        JSON.stringify({
+          state: { user: null, token: 'orphan-token' },
+          version: 0,
+        })
+      );
+
+      await useAuthStore.persist.rehydrate();
+
+      expect(useAuthStore.getState().session).toBeNull();
+      expect(useAuthStore.getState().isAuthenticated).toBe(false);
+      expect(useAuthStore.getState().token).toBeNull();
     });
   });
 });

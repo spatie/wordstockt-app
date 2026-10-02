@@ -4,6 +4,7 @@ import {
   mockPendingTile,
   mockValidationResponse,
 } from '../../__tests__/utils';
+import { getValidationDraftKey } from '../../utils/validationKey';
 
 const TEST_GAME_ULID = 'test-game-123';
 
@@ -35,11 +36,9 @@ describe('gameStore', () => {
         },
       },
       selectedRackIndex: null,
-      validationResult: null,
-      isSwapMode: false,
-      selectedSwapIndices: [],
-      swapCompleted: false,
-      swappedTileIndices: [],
+      boardKey: 'board-v1',
+      validation: null,
+      swapPhase: { kind: 'idle' },
       isRackDragging: false,
       blankTileSelection: null,
     });
@@ -48,16 +47,14 @@ describe('gameStore', () => {
   describe('setCurrentGame', () => {
     it('should set current game and reset transient state', () => {
       useGameStore.setState({
-        isSwapMode: true,
-        selectedSwapIndices: [1, 2],
+        swapPhase: { kind: 'selecting', indices: [1, 2] },
       });
 
       useGameStore.getState().setCurrentGame('new-game-456');
 
       const state = useGameStore.getState();
       expect(state.currentGameUlid).toBe('new-game-456');
-      expect(state.isSwapMode).toBe(false);
-      expect(state.selectedSwapIndices).toEqual([]);
+      expect(state.swapPhase).toEqual({ kind: 'idle' });
     });
 
     it('should preserve existing game states when switching', () => {
@@ -261,43 +258,108 @@ describe('gameStore', () => {
     });
 
     it('should clear validation result', () => {
+      const pendingTiles = [mockPendingTile()];
       const state = useGameStore.getState();
       useGameStore.setState({
         gameStates: {
           ...state.gameStates,
           [TEST_GAME_ULID]: {
             ...state.gameStates[TEST_GAME_ULID]!,
-            pendingTiles: [mockPendingTile()],
+            pendingTiles,
           },
         },
-        validationResult: mockValidationResponse(),
+        validation: {
+          gameUlid: TEST_GAME_ULID,
+          draftKey: getValidationDraftKey(pendingTiles),
+          boardKey: 'board-v1',
+          result: mockValidationResponse(),
+        },
       });
 
       useGameStore.getState().recallAllTiles();
 
-      expect(useGameStore.getState().validationResult).toBeNull();
+      expect(useGameStore.getState().validation).toBeNull();
     });
   });
 
   describe('clearPendingTiles', () => {
     it('should clear pending tiles and reset rack permutation', () => {
+      const pendingTiles = [mockPendingTile()];
       const state = useGameStore.getState();
       useGameStore.setState({
         gameStates: {
           ...state.gameStates,
           [TEST_GAME_ULID]: {
-            pendingTiles: [mockPendingTile()],
+            pendingTiles,
             rackPermutation: [6, 5, 4, 3, 2, 1, 0],
           },
         },
-        validationResult: mockValidationResponse(),
+        validation: {
+          gameUlid: TEST_GAME_ULID,
+          draftKey: getValidationDraftKey(pendingTiles),
+          boardKey: 'board-v1',
+          result: mockValidationResponse(),
+        },
       });
 
-      useGameStore.getState().clearPendingTiles();
+      useGameStore
+        .getState()
+        .clearPendingTiles(TEST_GAME_ULID, getValidationDraftKey(pendingTiles));
 
       expect(getPendingTiles()).toHaveLength(0);
       expect(getRackPermutation()).toEqual([0, 1, 2, 3, 4, 5, 6]);
-      expect(useGameStore.getState().validationResult).toBeNull();
+      expect(useGameStore.getState().validation).toBeNull();
+    });
+
+    it('clears only the submitted game after navigation', () => {
+      const submittedTile = mockPendingTile({ x: 7, y: 7 });
+      useGameStore.getState().placeTile(submittedTile, 7, 7, 0);
+      const submittedDraftKey = getValidationDraftKey(getPendingTiles());
+
+      useGameStore.getState().setCurrentGame('other-game');
+      useGameStore.getState().placeTile(mockTile({ letter: 'B' }), 8, 8, 1);
+      useGameStore
+        .getState()
+        .clearPendingTiles(TEST_GAME_ULID, submittedDraftKey);
+
+      expect(
+        useGameStore.getState().gameStates[TEST_GAME_ULID]?.pendingTiles
+      ).toEqual([]);
+      expect(
+        useGameStore.getState().gameStates['other-game']?.pendingTiles
+      ).toHaveLength(1);
+    });
+
+    it('preserves edits made while the request was in flight', () => {
+      useGameStore.getState().placeTile(mockTile(), 7, 7, 0);
+      const submittedDraftKey = getValidationDraftKey(getPendingTiles());
+      useGameStore.getState().updatePendingTileLetter(7, 7, 'Z');
+
+      useGameStore
+        .getState()
+        .clearPendingTiles(TEST_GAME_ULID, submittedDraftKey);
+
+      expect(getPendingTiles()[0]?.letter).toBe('Z');
+    });
+  });
+
+  describe('removePendingTiles', () => {
+    it('removes conflicts from their source game after navigation', () => {
+      const conflictingTile = mockPendingTile({ x: 7, y: 7, rackIndex: 0 });
+      useGameStore.getState().placeTile(conflictingTile, 7, 7, 0);
+      useGameStore.getState().setCurrentGame('other-game');
+      useGameStore.getState().placeTile(mockTile({ letter: 'B' }), 8, 8, 1);
+
+      useGameStore
+        .getState()
+        .removePendingTiles(TEST_GAME_ULID, [conflictingTile]);
+
+      expect(
+        useGameStore.getState().gameStates[TEST_GAME_ULID]?.pendingTiles
+      ).toEqual([]);
+      expect(
+        useGameStore.getState().gameStates['other-game']?.pendingTiles
+      ).toHaveLength(1);
     });
   });
 
@@ -470,139 +532,105 @@ describe('gameStore', () => {
   });
 
   describe('setValidationResult', () => {
-    it('should set validation result', () => {
+    it('accepts validation for the current game, draft, and board', () => {
+      const tile = mockTile();
+      useGameStore.getState().placeTile(tile, 7, 7, 0);
+      const draftKey = getValidationDraftKey(getPendingTiles());
       const validation = mockValidationResponse();
 
-      useGameStore.getState().setValidationResult(validation);
+      useGameStore.getState().setValidationResult(validation, {
+        gameUlid: TEST_GAME_ULID,
+        draftKey,
+        boardKey: 'board-v1',
+      });
 
-      expect(useGameStore.getState().validationResult).toEqual(validation);
+      expect(useGameStore.getState().validation?.result).toEqual(validation);
     });
 
-    it('should allow clearing validation with null', () => {
-      useGameStore.setState({ validationResult: mockValidationResponse() });
+    it('rejects a late result after the draft or board changes', () => {
+      useGameStore.getState().placeTile(mockTile(), 7, 7, 0);
+      const draftKey = getValidationDraftKey(getPendingTiles());
+      useGameStore.getState().updatePendingTileLetter(7, 7, 'B');
+      useGameStore.getState().setValidationResult(mockValidationResponse(), {
+        gameUlid: TEST_GAME_ULID,
+        draftKey,
+        boardKey: 'board-v1',
+      });
+      expect(useGameStore.getState().validation).toBeNull();
 
-      useGameStore.getState().setValidationResult(null);
+      useGameStore.getState().setBoardKey(TEST_GAME_ULID, 'board-v2');
+      useGameStore.getState().setValidationResult(mockValidationResponse(), {
+        gameUlid: TEST_GAME_ULID,
+        draftKey: getValidationDraftKey(getPendingTiles()),
+        boardKey: 'board-v1',
+      });
+      expect(useGameStore.getState().validation).toBeNull();
+    });
 
-      expect(useGameStore.getState().validationResult).toBeNull();
+    it('rejects a result after switching games', () => {
+      useGameStore.getState().setCurrentGame('other-game');
+      useGameStore.getState().setValidationResult(mockValidationResponse(), {
+        gameUlid: TEST_GAME_ULID,
+        draftKey: getValidationDraftKey([]),
+        boardKey: 'board-v1',
+      });
+
+      expect(useGameStore.getState().validation).toBeNull();
     });
   });
 
   describe('swap mode', () => {
-    describe('enterSwapMode', () => {
-      it('should enter swap mode and clear previous state', () => {
-        useGameStore.setState({
-          swappedTileIndices: [1, 2],
-          swapCompleted: true,
-        });
-
-        useGameStore.getState().enterSwapMode();
-
-        const state = useGameStore.getState();
-        expect(state.isSwapMode).toBe(true);
-        expect(state.selectedSwapIndices).toEqual([]);
-        expect(state.swapCompleted).toBe(false);
-        expect(state.swappedTileIndices).toEqual([]);
+    it('selects, clears, completes, and dismisses a swap', () => {
+      const actions = useGameStore.getState();
+      actions.enterSwapMode();
+      actions.toggleSwapTile(0);
+      actions.toggleSwapTile(2);
+      expect(useGameStore.getState().swapPhase).toEqual({
+        kind: 'selecting',
+        indices: [0, 2],
       });
+
+      actions.clearSwapSelection();
+      expect(useGameStore.getState().swapPhase).toEqual({
+        kind: 'selecting',
+        indices: [],
+      });
+
+      actions.toggleSwapTile(2);
+      actions.completeSwap(TEST_GAME_ULID, [2]);
+      expect(useGameStore.getState().swapPhase).toEqual({
+        kind: 'completed',
+        indices: [2],
+      });
+
+      actions.toggleSwapTile(4);
+      actions.clearSwapSelection();
+      expect(useGameStore.getState().swapPhase).toEqual({
+        kind: 'completed',
+        indices: [2],
+      });
+
+      actions.dismissSwapResult();
+      expect(useGameStore.getState().swapPhase).toEqual({ kind: 'idle' });
     });
 
-    describe('exitSwapMode', () => {
-      it('should exit swap mode and clear all swap state', () => {
-        useGameStore.setState({
-          isSwapMode: true,
-          selectedSwapIndices: [1, 2],
-          swapCompleted: true,
-          swappedTileIndices: [1, 2],
-        });
+    it('rejects completion after switching games or exiting selection', () => {
+      const actions = useGameStore.getState();
+      actions.enterSwapMode();
+      actions.toggleSwapTile(1);
+      actions.completeSwap('another-game', [1]);
+      expect(useGameStore.getState().swapPhase.kind).toBe('selecting');
 
-        useGameStore.getState().exitSwapMode();
-
-        const state = useGameStore.getState();
-        expect(state.isSwapMode).toBe(false);
-        expect(state.selectedSwapIndices).toEqual([]);
-        expect(state.swapCompleted).toBe(false);
-        expect(state.swappedTileIndices).toEqual([]);
-      });
-    });
-
-    describe('toggleSwapTile', () => {
-      it('should add tile to selection', () => {
-        useGameStore.setState({ isSwapMode: true });
-
-        useGameStore.getState().toggleSwapTile(2);
-
-        expect(useGameStore.getState().selectedSwapIndices).toEqual([2]);
+      actions.toggleSwapTile(2);
+      actions.completeSwap(TEST_GAME_ULID, [1]);
+      expect(useGameStore.getState().swapPhase).toEqual({
+        kind: 'completed',
+        indices: [1],
       });
 
-      it('should remove tile from selection if already selected', () => {
-        useGameStore.setState({
-          isSwapMode: true,
-          selectedSwapIndices: [2],
-        });
-
-        useGameStore.getState().toggleSwapTile(2);
-
-        expect(useGameStore.getState().selectedSwapIndices).toEqual([]);
-      });
-
-      it('should allow multiple selections', () => {
-        useGameStore.setState({ isSwapMode: true });
-
-        useGameStore.getState().toggleSwapTile(0);
-        useGameStore.getState().toggleSwapTile(2);
-        useGameStore.getState().toggleSwapTile(4);
-
-        expect(useGameStore.getState().selectedSwapIndices).toEqual([0, 2, 4]);
-      });
-    });
-
-    describe('clearSwapSelection', () => {
-      it('should clear selections without exiting swap mode', () => {
-        useGameStore.setState({
-          isSwapMode: true,
-          selectedSwapIndices: [0, 2, 4],
-        });
-
-        useGameStore.getState().clearSwapSelection();
-
-        const state = useGameStore.getState();
-        expect(state.isSwapMode).toBe(true);
-        expect(state.selectedSwapIndices).toEqual([]);
-      });
-    });
-
-    describe('completeSwap', () => {
-      it('should copy selectedSwapIndices to swappedTileIndices', () => {
-        useGameStore.setState({
-          isSwapMode: true,
-          selectedSwapIndices: [0, 2, 4],
-        });
-
-        useGameStore.getState().completeSwap();
-
-        const state = useGameStore.getState();
-        expect(state.swapCompleted).toBe(true);
-        expect(state.swappedTileIndices).toEqual([0, 2, 4]);
-        expect(state.selectedSwapIndices).toEqual([]);
-      });
-    });
-
-    describe('dismissSwapResult', () => {
-      it('should reset all swap state', () => {
-        useGameStore.setState({
-          isSwapMode: true,
-          selectedSwapIndices: [1],
-          swapCompleted: true,
-          swappedTileIndices: [0, 2, 4],
-        });
-
-        useGameStore.getState().dismissSwapResult();
-
-        const state = useGameStore.getState();
-        expect(state.isSwapMode).toBe(false);
-        expect(state.selectedSwapIndices).toEqual([]);
-        expect(state.swapCompleted).toBe(false);
-        expect(state.swappedTileIndices).toEqual([]);
-      });
+      actions.exitSwapMode();
+      actions.completeSwap(TEST_GAME_ULID, [1, 2]);
+      expect(useGameStore.getState().swapPhase).toEqual({ kind: 'idle' });
     });
   });
 });

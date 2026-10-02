@@ -10,6 +10,7 @@ import { useApiError } from './useApiError';
 import { isTimeoutError } from '../api/client';
 import type { PendingTile, Tile } from '../types';
 import { haptics } from '../utils/haptics';
+import { getValidationDraftKey } from '../utils/validationKey';
 
 interface UseGameActionsOptions {
   gameUlid: string;
@@ -24,6 +25,8 @@ interface PlayResult {
   words?: string;
 }
 
+const EMPTY_INDICES: number[] = [];
+
 /**
  * Hook for game actions like submitting moves and passing turns.
  * Includes centralized error handling.
@@ -35,7 +38,9 @@ export function useGameActions({
   myRack,
 }: UseGameActionsOptions) {
   const clearPendingTiles = useGameStore((s) => s.clearPendingTiles);
-  const selectedSwapIndices = useGameStore((s) => s.selectedSwapIndices);
+  const swapPhase = useGameStore((s) => s.swapPhase);
+  const selectedSwapIndices =
+    swapPhase.kind === 'selecting' ? swapPhase.indices : EMPTY_INDICES;
   const completeSwap = useGameStore((s) => s.completeSwap);
   const submitMove = useSubmitMove();
   const passTurn = usePassTurn();
@@ -52,7 +57,7 @@ export function useGameActions({
         gameUlid,
         tiles: pendingTiles,
       });
-      clearPendingTiles();
+      clearPendingTiles(gameUlid, getValidationDraftKey(pendingTiles));
       haptics.success();
       const words = result.move.words?.join(', ') ?? '';
       return {
@@ -85,11 +90,11 @@ export function useGameActions({
   const handlePass = useCallback(async () => {
     try {
       await passTurn.mutateAsync(gameUlid);
-      clearPendingTiles();
+      clearPendingTiles(gameUlid, getValidationDraftKey(pendingTiles));
     } catch (err) {
       setError(err);
     }
-  }, [gameUlid, passTurn, clearPendingTiles, setError]);
+  }, [gameUlid, pendingTiles, passTurn, clearPendingTiles, setError]);
 
   // Swap selected tiles
   const handleSwap = useCallback(async () => {
@@ -108,15 +113,16 @@ export function useGameActions({
       });
 
       // Mark swap as completed (will show "Ok" button and trigger animations)
-      completeSwap();
+      completeSwap(gameUlid, selectedSwapIndices);
       haptics.success();
-      clearPendingTiles();
+      clearPendingTiles(gameUlid, getValidationDraftKey(pendingTiles));
     } catch (err) {
       setError(err);
     }
   }, [
     gameUlid,
     selectedSwapIndices,
+    pendingTiles,
     myRack,
     swapTiles,
     completeSwap,
@@ -128,11 +134,11 @@ export function useGameActions({
   const handleResign = useCallback(async () => {
     try {
       await resignGame.mutateAsync(gameUlid);
-      clearPendingTiles();
+      clearPendingTiles(gameUlid, getValidationDraftKey(pendingTiles));
     } catch (err) {
       setError(err);
     }
-  }, [gameUlid, resignGame, clearPendingTiles, setError]);
+  }, [gameUlid, pendingTiles, resignGame, clearPendingTiles, setError]);
 
   return {
     handlePlay,

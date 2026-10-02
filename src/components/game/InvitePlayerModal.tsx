@@ -17,19 +17,14 @@ import { RADIUS, SPACING } from '../../config/constants';
 import { useFriends } from '../../api/queries/useFriends';
 import { useInvitePlayer } from '../../api/queries/useInvites';
 import { useCreateInviteLink } from '../../api/queries/useInviteLink';
-import { apiClient, getApiError } from '../../api/client';
+import { useSearchUsers } from '../../api/queries/useUsers';
+import { getApiError } from '../../api/client';
 import { BaseModal } from '../ui/BaseModal';
 import { Button } from '../ui/Button';
 import { SmartAvatar } from '../ui/SmartAvatar';
 import { TabBar } from '../ui/TabBar';
 
 type TabValue = 'users' | 'share';
-
-interface SearchResult {
-  ulid: string;
-  username: string;
-  avatar: string | null;
-}
 
 interface InvitePlayerModalProps {
   visible: boolean;
@@ -53,10 +48,19 @@ export function InvitePlayerModal({
   const styles = useThemedStyles(createStyles);
   const [activeTab, setActiveTab] = useState<TabValue>('users');
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchError, setSearchError] = useState<string | null>(null);
+  const [submittedQuery, setSubmittedQuery] = useState('');
+  const [inputError, setInputError] = useState<string | null>(null);
   const [invitingUserUlid, setInvitingUserUlid] = useState<string | null>(null);
+  const search = useSearchUsers(submittedQuery);
+  const isSearching = submittedQuery !== '' && search.isPending;
+  const searchResults = submittedQuery && search.isSuccess ? search.data : [];
+  const searchError =
+    inputError ??
+    (submittedQuery && search.isError
+      ? 'Failed to search for user'
+      : submittedQuery && search.isSuccess && searchResults.length === 0
+        ? 'No users found'
+        : null);
   const { data: friends, isLoading: isLoadingFriends } = useFriends();
   const sortedFriends = useMemo(() => {
     if (!friends) return [];
@@ -67,38 +71,15 @@ export function InvitePlayerModal({
   const invitePlayer = useInvitePlayer();
   const createInviteLink = useCreateInviteLink();
 
-  const handleSearch = async () => {
-    if (searchQuery.trim().length < 2) {
-      setSearchError('Username must be at least 2 characters');
+  const handleSearch = () => {
+    const query = searchQuery.trim();
+    if (query.length < 2) {
+      setInputError('Username must be at least 2 characters');
       return;
     }
 
-    setIsSearching(true);
-    setSearchError(null);
-    setSearchResults([]);
-
-    try {
-      const { data } = await apiClient.get('/users/search', {
-        params: { query: searchQuery.trim() },
-      });
-
-      const results = data.data || [];
-      if (results.length > 0) {
-        setSearchResults(
-          results.map((user: SearchResult) => ({
-            ulid: user.ulid,
-            username: user.username,
-            avatar: user.avatar,
-          }))
-        );
-      } else {
-        setSearchError('No users found');
-      }
-    } catch {
-      setSearchError('Failed to search for user');
-    } finally {
-      setIsSearching(false);
-    }
+    setInputError(null);
+    setSubmittedQuery(query);
   };
 
   const handleInviteUser = async (userUlid: string) => {
@@ -109,8 +90,8 @@ export function InvitePlayerModal({
         userUlid,
       });
       setSearchQuery('');
-      setSearchResults([]);
-      setSearchError(null);
+      setSubmittedQuery('');
+      setInputError(null);
       onSuccess();
       onClose();
     } catch {
@@ -122,8 +103,8 @@ export function InvitePlayerModal({
 
   const handleClose = () => {
     setSearchQuery('');
-    setSearchResults([]);
-    setSearchError(null);
+    setSubmittedQuery('');
+    setInputError(null);
     setActiveTab('users');
     setInvitingUserUlid(null);
     invitePlayer.reset();
@@ -205,10 +186,8 @@ export function InvitePlayerModal({
             value={searchQuery}
             onChangeText={(text) => {
               setSearchQuery(text);
-              setSearchError(null);
-              if (text.trim() === '') {
-                setSearchResults([]);
-              }
+              setSubmittedQuery('');
+              setInputError(null);
             }}
             autoCapitalize="none"
             autoCorrect={false}

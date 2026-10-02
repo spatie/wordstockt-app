@@ -8,6 +8,9 @@ import { useTilePlacement } from './useTilePlacement';
 import { useRackActions } from './useRackActions';
 import { useGameActions } from './useGameActions';
 import type { Game } from '../types';
+import { getValidationBoardKey } from '../utils/validationKey';
+
+const EMPTY_INDICES: number[] = [];
 
 interface UseGameInteractionsOptions {
   game: Game | undefined;
@@ -26,9 +29,12 @@ export function useGameInteractions({
 }: UseGameInteractionsOptions) {
   const pendingTiles = usePendingTiles();
   const validationResult = useValidationResult();
-  const isSwapMode = useGameStore((s) => s.isSwapMode);
-  const selectedSwapIndices = useGameStore((s) => s.selectedSwapIndices);
-  const swapCompleted = useGameStore((s) => s.swapCompleted);
+  const storedBoardKey = useGameStore((s) => s.boardKey);
+  const swapPhase = useGameStore((s) => s.swapPhase);
+  const isSwapMode = swapPhase.kind !== 'idle';
+  const selectedSwapIndices =
+    swapPhase.kind === 'selecting' ? swapPhase.indices : EMPTY_INDICES;
+  const swapCompleted = swapPhase.kind === 'completed';
   const enterSwapMode = useGameStore((s) => s.enterSwapMode);
   const exitSwapMode = useGameStore((s) => s.exitSwapMode);
   const clearSwapSelection = useGameStore((s) => s.clearSwapSelection);
@@ -51,6 +57,7 @@ export function useGameInteractions({
     isMyTurn &&
     pendingTiles.length > 0 &&
     game?.status === 'active' &&
+    storedBoardKey === getValidationBoardKey(game?.board) &&
     validationResult?.placement_valid === true &&
     allWordsValid;
   const isGameActive = game?.status === 'active';
@@ -97,6 +104,7 @@ export function useGameInteractions({
   return {
     // State
     pendingTiles,
+    validationResult,
     isMyTurn,
     canPlay,
     isGameActive,

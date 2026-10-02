@@ -4,10 +4,8 @@ import {
   useQueryClient,
   type QueryClient,
 } from '@tanstack/react-query';
-import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { apiClient } from '../client';
 import {
@@ -38,39 +36,6 @@ async function getCurrentPushToken(): Promise<string | null> {
   return token.data;
 }
 
-async function registerPushTokenWithAuthToken(
-  authToken: string
-): Promise<void> {
-  if (Platform.OS === 'web') {
-    return;
-  }
-
-  if (!Device.isDevice) {
-    return;
-  }
-
-  const { status } = await Notifications.getPermissionsAsync();
-  if (status !== 'granted') {
-    return;
-  }
-
-  const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-  const pushToken = await Notifications.getExpoPushTokenAsync({ projectId });
-
-  await fetch(`${API_BASE_URL}/auth/push-token`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      Authorization: `Bearer ${authToken}`,
-    },
-    body: JSON.stringify({
-      token: pushToken.data,
-      device_name: Device.deviceName ?? undefined,
-    }),
-  });
-}
-
 interface LoginParams {
   email: string;
   password: string;
@@ -85,6 +50,7 @@ interface RegisterParams {
 
 export function useLogin() {
   const setAuth = useAuthStore((s) => s.setAuth);
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (params: LoginParams) => {
@@ -95,15 +61,16 @@ export function useLogin() {
         token: validated.token,
       };
     },
-    onSuccess: async ({ user, token }) => {
+    onSuccess: ({ user, token }) => {
+      queryClient.clear();
       setAuth(user, token);
-      await registerPushTokenWithAuthToken(token).catch(() => {});
     },
   });
 }
 
 export function useRegister() {
   const setAuth = useAuthStore((s) => s.setAuth);
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (params: RegisterParams) => {
@@ -114,15 +81,16 @@ export function useRegister() {
         token: validated.token,
       };
     },
-    onSuccess: async ({ user, token }) => {
+    onSuccess: ({ user, token }) => {
+      queryClient.clear();
       setAuth(user, token);
-      await registerPushTokenWithAuthToken(token).catch(() => {});
     },
   });
 }
 
 export function useGuestLogin() {
   const setAuth = useAuthStore((s) => s.setAuth);
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
@@ -134,8 +102,8 @@ export function useGuestLogin() {
       };
     },
     onSuccess: ({ user, token }) => {
+      queryClient.clear();
       setAuth(user, token);
-      // Skip push token registration for guests
     },
   });
 }
@@ -148,8 +116,7 @@ interface ConvertGuestParams {
 }
 
 export function useConvertGuest() {
-  const setUser = useAuthStore((s) => s.setUser);
-  const token = useAuthStore((s) => s.token);
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (params: ConvertGuestParams) => {
@@ -161,12 +128,9 @@ export function useConvertGuest() {
       );
       return transformUser(validated.data);
     },
-    onSuccess: async (user) => {
-      setUser(user);
-      // Register push token after conversion
-      if (token) {
-        await registerPushTokenWithAuthToken(token).catch(() => {});
-      }
+    onMutate: () => useAuthStore.getState().sessionRevision,
+    onSuccess: (user, _params, sessionRevision) => {
+      commitCurrentUser(queryClient, user, sessionRevision);
     },
   });
 }
@@ -179,76 +143,82 @@ export function useLogout() {
   return useMutation({
     onMutate: () => {
       setLoggingOut(true);
+      return useAuthStore.getState().sessionRevision;
     },
     mutationFn: async () => {
+      const authToken = useAuthStore.getState().token;
       // Get push token with timeout to prevent hanging
       let pushToken: string | null = null;
+      let timeout: ReturnType<typeof setTimeout> | undefined;
       try {
         const tokenPromise = getCurrentPushToken();
-        const timeoutPromise = new Promise<null>((resolve) =>
-          setTimeout(() => resolve(null), 3000)
-        );
+        const timeoutPromise = new Promise<null>((resolve) => {
+          timeout = setTimeout(() => resolve(null), 3000);
+        });
         pushToken = await Promise.race([tokenPromise, timeoutPromise]);
       } catch {
         // Ignore push token errors during logout
+      } finally {
+        if (timeout) clearTimeout(timeout);
       }
 
-      await apiClient.post('/auth/logout', {
-        push_token: pushToken,
-      });
+      await apiClient.post(
+        '/auth/logout',
+        { push_token: pushToken },
+        authToken
+          ? { headers: { Authorization: `Bearer ${authToken}` } }
+          : undefined
+      );
     },
-    onSettled: () => {
-      logout();
-      queryClient.clear();
+    onSettled: (_data, _error, _variables, sessionRevision) => {
+      if (useAuthStore.getState().sessionRevision === sessionRevision) {
+        logout();
+        queryClient.clear();
+      }
     },
   });
 }
 
 export function useCurrentUser() {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const setUser = useAuthStore((s) => s.setUser);
+  const sessionRevision = useAuthStore((s) => s.sessionRevision);
+  const isAuthenticated = useAuthStore((s) => s.session !== null);
 
   const query = useQuery({
-    queryKey: authKeys.currentUser(),
+    queryKey: authKeys.currentUser(sessionRevision),
     queryFn: async (): Promise<User> => {
+      const startingUserRevision = useAuthStore.getState().userRevision;
       const { data } = await apiClient.get('/auth/user');
       const validated = safeParse(
         AuthUserResponseSchema,
         data,
         'useCurrentUser'
       );
-      return transformUser(validated.data);
+      const user = transformUser(validated.data);
+      const store = useAuthStore.getState();
+      if (store.setUser(user, sessionRevision, startingUserRevision)) {
+        return user;
+      }
+      // A mutation committed newer user data while this request was pending.
+      if (store.sessionRevision === sessionRevision && store.user) {
+        return store.user;
+      }
+      return user;
     },
     enabled: isAuthenticated,
     staleTime: 5 * 60 * 1000,
   });
 
-  const user = query.data;
-
-  // Sync the fetched user into the auth store as a side effect, but only when
-  // the user data actually changed to prevent unnecessary re-renders.
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
-
-    const currentUser = useAuthStore.getState().user;
-    const hasChanged =
-      !currentUser ||
-      currentUser.ulid !== user.ulid ||
-      currentUser.username !== user.username ||
-      currentUser.email !== user.email ||
-      currentUser.isGuest !== user.isGuest ||
-      currentUser.emailVerifiedAt !== user.emailVerifiedAt ||
-      currentUser.avatar !== user.avatar ||
-      currentUser.avatarColor !== user.avatarColor;
-
-    if (hasChanged) {
-      setUser(user);
-    }
-  }, [user, setUser]);
-
   return query;
+}
+
+function commitCurrentUser(
+  queryClient: QueryClient,
+  user: User,
+  sessionRevision: number
+): boolean {
+  if (!useAuthStore.getState().setUser(user, sessionRevision)) return false;
+  queryClient.setQueryData(authKeys.currentUser(sessionRevision), user);
+  return true;
 }
 
 interface UpdateProfileParams {
@@ -259,7 +229,7 @@ interface UpdateProfileParams {
 }
 
 export function useUpdateProfile() {
-  const setUser = useAuthStore((s) => s.setUser);
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (params: UpdateProfileParams) => {
@@ -271,8 +241,9 @@ export function useUpdateProfile() {
       );
       return transformUser(validated.data);
     },
-    onSuccess: (user) => {
-      setUser(user);
+    onMutate: () => useAuthStore.getState().sessionRevision,
+    onSuccess: (user, _params, sessionRevision) => {
+      commitCurrentUser(queryClient, user, sessionRevision);
     },
   });
 }
@@ -307,10 +278,10 @@ function invalidateAvatarSurfaces(queryClient: QueryClient): void {
 }
 
 export function useUpdateAvatar() {
-  const setUser = useAuthStore((s) => s.setUser);
   const queryClient = useQueryClient();
 
   return useMutation({
+    onMutate: () => useAuthStore.getState().sessionRevision,
     mutationFn: async (image: PickedAvatar) => {
       const token = useAuthStore.getState().token;
       const url = `${API_BASE_URL}/auth/user/avatar`;
@@ -358,18 +329,19 @@ export function useUpdateAvatar() {
       );
       return transformUser(validated.data);
     },
-    onSuccess: (user) => {
-      setUser(user);
-      invalidateAvatarSurfaces(queryClient);
+    onSuccess: (user, _image, sessionRevision) => {
+      if (commitCurrentUser(queryClient, user, sessionRevision)) {
+        invalidateAvatarSurfaces(queryClient);
+      }
     },
   });
 }
 
 export function useDeleteAvatar() {
-  const setUser = useAuthStore((s) => s.setUser);
   const queryClient = useQueryClient();
 
   return useMutation({
+    onMutate: () => useAuthStore.getState().sessionRevision,
     mutationFn: async () => {
       const { data } = await apiClient.delete('/auth/user/avatar');
       const validated = safeParse(
@@ -379,9 +351,10 @@ export function useDeleteAvatar() {
       );
       return transformUser(validated.data);
     },
-    onSuccess: (user) => {
-      setUser(user);
-      invalidateAvatarSurfaces(queryClient);
+    onSuccess: (user, _variables, sessionRevision) => {
+      if (commitCurrentUser(queryClient, user, sessionRevision)) {
+        invalidateAvatarSurfaces(queryClient);
+      }
     },
   });
 }
@@ -389,15 +362,21 @@ export function useDeleteAvatar() {
 interface RegisterPushTokenParams {
   token: string;
   deviceName?: string;
+  authToken: string;
 }
 
 export function useRegisterPushToken() {
   return useMutation({
-    mutationFn: async ({ token, deviceName }: RegisterPushTokenParams) => {
-      await apiClient.post('/auth/push-token', {
-        token,
-        device_name: deviceName,
-      });
+    mutationFn: async ({
+      token,
+      deviceName,
+      authToken,
+    }: RegisterPushTokenParams) => {
+      await apiClient.post(
+        '/auth/push-token',
+        { token, device_name: deviceName },
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
     },
   });
 }
@@ -435,8 +414,6 @@ interface VerifyEmailResponse {
 }
 
 export function useVerifyEmail() {
-  const setUser = useAuthStore((s) => s.setUser);
-  const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -444,13 +421,25 @@ export function useVerifyEmail() {
       const { data } = await apiClient.get(url);
       return data;
     },
-    onSuccess: (data) => {
-      if (data.verified && user) {
-        setUser({
-          ...user,
-          emailVerifiedAt: new Date().toISOString(),
+    onMutate: () => useAuthStore.getState().sessionRevision,
+    onSuccess: (data, _url, sessionRevision) => {
+      const state = useAuthStore.getState();
+      if (
+        data.verified &&
+        state.sessionRevision === sessionRevision &&
+        state.user
+      ) {
+        commitCurrentUser(
+          queryClient,
+          {
+            ...state.user,
+            emailVerifiedAt: new Date().toISOString(),
+          },
+          sessionRevision
+        );
+        queryClient.invalidateQueries({
+          queryKey: authKeys.currentUser(sessionRevision),
         });
-        queryClient.invalidateQueries({ queryKey: authKeys.currentUser() });
       }
     },
   });
@@ -477,13 +466,22 @@ export function useDeleteAccount() {
   return useMutation({
     onMutate: () => {
       setLoggingOut(true);
+      return useAuthStore.getState().sessionRevision;
     },
     mutationFn: async () => {
-      await apiClient.delete('/auth/user');
+      const authToken = useAuthStore.getState().token;
+      await apiClient.delete(
+        '/auth/user',
+        authToken
+          ? { headers: { Authorization: `Bearer ${authToken}` } }
+          : undefined
+      );
     },
-    onSettled: () => {
-      logout();
-      queryClient.clear();
+    onSettled: (_data, _error, _variables, sessionRevision) => {
+      if (useAuthStore.getState().sessionRevision === sessionRevision) {
+        logout();
+        queryClient.clear();
+      }
     },
   });
 }

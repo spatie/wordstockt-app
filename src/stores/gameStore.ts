@@ -7,6 +7,22 @@ import type {
   ValidationResponse,
   TileValidationState,
 } from '../types';
+import { getValidationDraftKey } from '../utils/validationKey';
+
+type SwapPhase =
+  | { kind: 'idle' }
+  | { kind: 'selecting'; indices: number[] }
+  | { kind: 'completed'; indices: number[] };
+
+interface ValidationScope {
+  gameUlid: string;
+  draftKey: string;
+  boardKey: string;
+}
+
+interface ScopedValidation extends ValidationScope {
+  result: ValidationResponse;
+}
 
 // Per-game persisted state
 interface PerGameState {
@@ -22,11 +38,9 @@ interface GameUIState {
   // Transient UI state (not persisted)
   selectedRackIndex: number | null;
   isRackDragging: boolean;
-  validationResult: ValidationResponse | null;
-  isSwapMode: boolean;
-  selectedSwapIndices: number[];
-  swapCompleted: boolean;
-  swappedTileIndices: number[];
+  boardKey: string | null;
+  validation: ScopedValidation | null;
+  swapPhase: SwapPhase;
   blankTileSelection: {
     rackIndex: number;
     x: number;
@@ -40,7 +54,8 @@ interface GameUIActions {
   moveTile: (fromX: number, fromY: number, toX: number, toY: number) => void;
   removeTile: (x: number, y: number) => void;
   recallAllTiles: () => void;
-  clearPendingTiles: () => void;
+  clearPendingTiles: (gameUlid: string, expectedDraftKey: string) => void;
+  removePendingTiles: (gameUlid: string, tiles: PendingTile[]) => void;
   clearGameState: (gameUlid: string) => void;
   setSelectedRackIndex: (index: number | null) => void;
   swapRackSlots: (slotA: number, slotB: number) => void;
@@ -52,12 +67,16 @@ interface GameUIActions {
   shuffleRack: (filledIndices?: number[]) => void;
   resetRackPermutation: () => void;
   setRackDragging: (isDragging: boolean) => void;
-  setValidationResult: (result: ValidationResponse | null) => void;
+  setBoardKey: (gameUlid: string, boardKey: string) => void;
+  setValidationResult: (
+    result: ValidationResponse | null,
+    scope: ValidationScope
+  ) => void;
   enterSwapMode: () => void;
   exitSwapMode: () => void;
   toggleSwapTile: (rackIndex: number) => void;
   clearSwapSelection: () => void;
-  completeSwap: () => void;
+  completeSwap: (gameUlid: string, indices: number[]) => void;
   dismissSwapResult: () => void;
   startBlankTileSelection: (rackIndex: number, x: number, y: number) => void;
   cancelBlankTileSelection: () => void;
@@ -66,6 +85,7 @@ interface GameUIActions {
 }
 
 const DEFAULT_RACK_PERMUTATION = [0, 1, 2, 3, 4, 5, 6];
+const EMPTY_SWAP_INDICES: number[] = [];
 
 const DEFAULT_PER_GAME_STATE: PerGameState = {
   pendingTiles: [],
@@ -96,6 +116,22 @@ const updateCurrentGameState = (
   };
 };
 
+const getCurrentValidation = (
+  state: GameUIState
+): ValidationResponse | null => {
+  const validation = state.validation;
+  if (
+    !validation ||
+    validation.gameUlid !== state.currentGameUlid ||
+    validation.boardKey !== state.boardKey ||
+    validation.draftKey !==
+      getValidationDraftKey(getCurrentGameState(state).pendingTiles)
+  ) {
+    return null;
+  }
+  return validation.result;
+};
+
 export const useGameStore = create<GameUIState & GameUIActions>()(
   persist(
     (set, get) => ({
@@ -103,11 +139,9 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
       gameStates: {},
       selectedRackIndex: null,
       isRackDragging: false,
-      validationResult: null,
-      isSwapMode: false,
-      selectedSwapIndices: [],
-      swapCompleted: false,
-      swappedTileIndices: [],
+      boardKey: null,
+      validation: null,
+      swapPhase: { kind: 'idle' },
       blankTileSelection: null,
 
       setCurrentGame: (gameUlid) => {
@@ -116,11 +150,9 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
           // Reset transient state when switching games
           selectedRackIndex: null,
           isRackDragging: false,
-          validationResult: null,
-          isSwapMode: false,
-          selectedSwapIndices: [],
-          swapCompleted: false,
-          swappedTileIndices: [],
+          boardKey: null,
+          validation: null,
+          swapPhase: { kind: 'idle' },
           blankTileSelection: null,
         });
       },
@@ -137,6 +169,7 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
               pendingTiles: newPendingTiles,
             }),
             selectedRackIndex: null,
+            validation: null,
           };
         });
       },
@@ -144,40 +177,82 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
       moveTile: (fromX, fromY, toX, toY) =>
         set((state) => {
           const gameState = getCurrentGameState(state);
-          return updateCurrentGameState(state, {
-            pendingTiles: gameState.pendingTiles.map((t) =>
-              t.x === fromX && t.y === fromY ? { ...t, x: toX, y: toY } : t
-            ),
-          });
+          return {
+            ...updateCurrentGameState(state, {
+              pendingTiles: gameState.pendingTiles.map((t) =>
+                t.x === fromX && t.y === fromY ? { ...t, x: toX, y: toY } : t
+              ),
+            }),
+            validation: null,
+          };
         }),
 
       removeTile: (x, y) => {
         set((state) => {
           const gameState = getCurrentGameState(state);
-          return updateCurrentGameState(state, {
-            pendingTiles: gameState.pendingTiles.filter(
-              (t) => t.x !== x || t.y !== y
-            ),
-          });
+          return {
+            ...updateCurrentGameState(state, {
+              pendingTiles: gameState.pendingTiles.filter(
+                (t) => t.x !== x || t.y !== y
+              ),
+            }),
+            validation: null,
+          };
         });
       },
 
       recallAllTiles: () => {
         set((state) => ({
           ...updateCurrentGameState(state, { pendingTiles: [] }),
-          validationResult: null,
+          validation: null,
         }));
       },
 
-      clearPendingTiles: () => {
-        set((state) => ({
-          ...updateCurrentGameState(state, {
-            pendingTiles: [],
-            rackPermutation: [...DEFAULT_RACK_PERMUTATION],
-          }),
-          validationResult: null,
-        }));
-      },
+      clearPendingTiles: (gameUlid, expectedDraftKey) =>
+        set((state) => {
+          const gameState = state.gameStates[gameUlid];
+          if (
+            !gameState ||
+            getValidationDraftKey(gameState.pendingTiles) !== expectedDraftKey
+          ) {
+            return state;
+          }
+          return {
+            gameStates: {
+              ...state.gameStates,
+              [gameUlid]: {
+                ...gameState,
+                pendingTiles: [],
+                rackPermutation: [...DEFAULT_RACK_PERMUTATION],
+              },
+            },
+            validation:
+              state.currentGameUlid === gameUlid ? null : state.validation,
+          };
+        }),
+
+      removePendingTiles: (gameUlid, tiles) =>
+        set((state) => {
+          const gameState = state.gameStates[gameUlid];
+          if (!gameState) return state;
+          const toRemove = new Set(
+            tiles.map((tile) => `${tile.x},${tile.y},${tile.rackIndex}`)
+          );
+          return {
+            gameStates: {
+              ...state.gameStates,
+              [gameUlid]: {
+                ...gameState,
+                pendingTiles: gameState.pendingTiles.filter(
+                  (tile) =>
+                    !toRemove.has(`${tile.x},${tile.y},${tile.rackIndex}`)
+                ),
+              },
+            },
+            validation:
+              state.currentGameUlid === gameUlid ? null : state.validation,
+          };
+        }),
 
       clearGameState: (gameUlid) => {
         set((state) => {
@@ -258,47 +333,69 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
           })
         ),
 
-      setValidationResult: (result) => set({ validationResult: result }),
+      setBoardKey: (gameUlid, boardKey) =>
+        set((state) => {
+          if (
+            state.currentGameUlid !== gameUlid ||
+            state.boardKey === boardKey
+          ) {
+            return state;
+          }
+          return { boardKey, validation: null };
+        }),
+
+      setValidationResult: (result, scope) =>
+        set((state) => {
+          if (state.currentGameUlid !== scope.gameUlid) return state;
+          if (
+            state.boardKey !== scope.boardKey ||
+            getValidationDraftKey(getCurrentGameState(state).pendingTiles) !==
+              scope.draftKey
+          ) {
+            return state;
+          }
+          if (!result) return { validation: null };
+          return { validation: { ...scope, result } };
+        }),
 
       enterSwapMode: () =>
-        set({
-          isSwapMode: true,
-          selectedSwapIndices: [],
-          swapCompleted: false,
-          swappedTileIndices: [],
-        }),
+        set({ swapPhase: { kind: 'selecting', indices: [] } }),
 
-      exitSwapMode: () =>
-        set({
-          isSwapMode: false,
-          selectedSwapIndices: [],
-          swapCompleted: false,
-          swappedTileIndices: [],
-        }),
+      exitSwapMode: () => set({ swapPhase: { kind: 'idle' } }),
 
       toggleSwapTile: (rackIndex) =>
-        set((state) => ({
-          selectedSwapIndices: state.selectedSwapIndices.includes(rackIndex)
-            ? state.selectedSwapIndices.filter((i) => i !== rackIndex)
-            : [...state.selectedSwapIndices, rackIndex],
-        })),
-
-      clearSwapSelection: () => set({ selectedSwapIndices: [] }),
-
-      completeSwap: () =>
-        set((state) => ({
-          swapCompleted: true,
-          swappedTileIndices: [...state.selectedSwapIndices],
-          selectedSwapIndices: [],
-        })),
-
-      dismissSwapResult: () =>
-        set({
-          isSwapMode: false,
-          selectedSwapIndices: [],
-          swapCompleted: false,
-          swappedTileIndices: [],
+        set((state) => {
+          if (state.swapPhase.kind !== 'selecting') return state;
+          const indices = state.swapPhase.indices;
+          return {
+            swapPhase: {
+              kind: 'selecting',
+              indices: indices.includes(rackIndex)
+                ? indices.filter((index) => index !== rackIndex)
+                : [...indices, rackIndex],
+            },
+          };
         }),
+
+      clearSwapSelection: () =>
+        set((state) =>
+          state.swapPhase.kind === 'selecting'
+            ? { swapPhase: { kind: 'selecting', indices: [] } }
+            : state
+        ),
+
+      completeSwap: (gameUlid, indices) =>
+        set((state) => {
+          if (
+            state.currentGameUlid !== gameUlid ||
+            state.swapPhase.kind !== 'selecting'
+          ) {
+            return state;
+          }
+          return { swapPhase: { kind: 'completed', indices: [...indices] } };
+        }),
+
+      dismissSwapResult: () => set({ swapPhase: { kind: 'idle' } }),
 
       startBlankTileSelection: (rackIndex, x, y) =>
         set({ blankTileSelection: { rackIndex, x, y } }),
@@ -324,6 +421,7 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
                 ),
               }),
               blankTileSelection: null,
+              validation: null,
             };
           }
 
@@ -333,11 +431,14 @@ export const useGameStore = create<GameUIState & GameUIActions>()(
       updatePendingTileLetter: (x, y, letter) =>
         set((state) => {
           const gameState = getCurrentGameState(state);
-          return updateCurrentGameState(state, {
-            pendingTiles: gameState.pendingTiles.map((t) =>
-              t.x === x && t.y === y ? { ...t, letter } : t
-            ),
-          });
+          return {
+            ...updateCurrentGameState(state, {
+              pendingTiles: gameState.pendingTiles.map((t) =>
+                t.x === x && t.y === y ? { ...t, letter } : t
+              ),
+            }),
+            validation: null,
+          };
         }),
     }),
     {
@@ -396,7 +497,7 @@ export const useTileValidationState = (
     );
     if (!isPending) return null;
 
-    const validation = state.validationResult;
+    const validation = getCurrentValidation(state);
     if (!validation) return null;
 
     if (!validation.placement_valid) return 'placement_error';
@@ -420,21 +521,8 @@ export const useBoardTileHighlight = (
     const isPending = pendingTiles.some((t) => t.x === x && t.y === y);
     if (isPending) return null;
 
-    const validation = state.validationResult;
+    const validation = getCurrentValidation(state);
     if (!validation || !validation.placement_valid) return null;
-
-    // Check if validation is stale: pending tile positions must EXACTLY match
-    // what was validated (tile_status contains one entry per pending tile that was validated)
-    const validatedPositions = new Set(
-      validation.tile_status.map((t) => `${t.x},${t.y}`)
-    );
-    const pendingPositions = new Set(pendingTiles.map((t) => `${t.x},${t.y}`));
-
-    // If sets don't match exactly, validation is stale
-    if (validatedPositions.size !== pendingPositions.size) return null;
-    for (const pos of validatedPositions) {
-      if (!pendingPositions.has(pos)) return null;
-    }
 
     let isPartOfWord = false;
     let isPartOfInvalidWord = false;
@@ -454,22 +542,39 @@ export const useBoardTileHighlight = (
   });
 
 // Swap mode selectors
-export const useIsSwapMode = () => useGameStore((state) => state.isSwapMode);
+export const useIsSwapMode = () =>
+  useGameStore((state) => state.swapPhase.kind !== 'idle');
 
 export const useSelectedSwapIndices = () =>
-  useGameStore((state) => state.selectedSwapIndices);
+  useGameStore((state) =>
+    state.swapPhase.kind === 'selecting'
+      ? state.swapPhase.indices
+      : EMPTY_SWAP_INDICES
+  );
 
 export const useIsSwapSelected = (rackIndex: number) =>
-  useGameStore((state) => state.selectedSwapIndices.includes(rackIndex));
+  useGameStore(
+    (state) =>
+      state.swapPhase.kind === 'selecting' &&
+      state.swapPhase.indices.includes(rackIndex)
+  );
 
 export const useSwapCompleted = () =>
-  useGameStore((state) => state.swapCompleted);
+  useGameStore((state) => state.swapPhase.kind === 'completed');
 
 export const useSwappedTileIndices = () =>
-  useGameStore((state) => state.swappedTileIndices);
+  useGameStore((state) =>
+    state.swapPhase.kind === 'completed'
+      ? state.swapPhase.indices
+      : EMPTY_SWAP_INDICES
+  );
 
 export const useIsSwappedTile = (rackIndex: number) =>
-  useGameStore((state) => state.swappedTileIndices.includes(rackIndex));
+  useGameStore(
+    (state) =>
+      state.swapPhase.kind === 'completed' &&
+      state.swapPhase.indices.includes(rackIndex)
+  );
 
 // Blank tile selectors
 export const useBlankTileSelection = () =>
@@ -480,5 +585,4 @@ export const useIsRackDragging = () =>
   useGameStore((state) => state.isRackDragging);
 
 // Validation result selector
-export const useValidationResult = () =>
-  useGameStore((state) => state.validationResult);
+export const useValidationResult = () => useGameStore(getCurrentValidation);

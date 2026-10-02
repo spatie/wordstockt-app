@@ -1,129 +1,52 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   useGameStore,
   usePendingTiles,
   useRackPermutation,
 } from '../stores/gameStore';
 import { useDragDrop } from '../context/DragDropContext';
-import type { Game, PlacedTile } from '../types';
+import type { Game } from '../types';
 
-type BoardState = (PlacedTile | null)[][];
-
-/**
- * Hook that detects when opponent plays tiles on positions where
- * the user has pending tiles, and animates those tiles back to the rack.
- */
+/** Recall pending tiles whenever the current board already occupies their cells. */
 export function useConflictingTilesRecall(game: Game | undefined) {
+  const currentGameUlid = useGameStore((state) => state.currentGameUlid);
+  const removePendingTiles = useGameStore((state) => state.removePendingTiles);
   const pendingTiles = usePendingTiles();
   const rackPermutation = useRackPermutation();
   const { startRecallAnimation } = useDragDrop();
-
-  // Store previous board state to detect changes
-  const prevBoardRef = useRef<BoardState | null>(null);
-
-  // Keep latest pending tiles / rack permutation in refs so the detection
-  // effect can read them without re-running when only local pending state
-  // changes. The effect should react to opponent board changes only.
-  const pendingTilesRef = useRef(pendingTiles);
-  pendingTilesRef.current = pendingTiles;
-  const rackPermutationRef = useRef(rackPermutation);
-  rackPermutationRef.current = rackPermutation;
-
-  // Remove specific tiles from pending (by their positions)
-  const removeConflictingTiles = useCallback(
-    (positions: { x: number; y: number }[]) => {
-      const state = useGameStore.getState();
-      const currentGameUlid = state.currentGameUlid;
-      if (!currentGameUlid) return;
-
-      const currentGameState = state.gameStates[currentGameUlid];
-      if (!currentGameState) return;
-
-      useGameStore.setState({
-        gameStates: {
-          ...state.gameStates,
-          [currentGameUlid]: {
-            ...currentGameState,
-            pendingTiles: currentGameState.pendingTiles.filter(
-              (t) => !positions.some((pos) => pos.x === t.x && pos.y === t.y)
-            ),
-          },
-        },
-      });
-    },
-    []
-  );
-
-  // Detection reacts to opponent board changes only (not to local pending-tile
-  // / rack-permutation updates, which are read via refs below).
+  const inFlight = useRef(new Set<string>());
   const board = game?.board;
+  const gameUlid = game?.ulid;
 
   useEffect(() => {
-    if (!board) return;
+    if (!board || !gameUlid || currentGameUlid !== gameUlid) return;
 
-    const currentBoard = board;
-    const prevBoard = prevBoardRef.current;
+    const conflictingTiles = pendingTiles.filter((tile) => {
+      const key = `${gameUlid}:${tile.x},${tile.y},${tile.rackIndex}`;
+      return Boolean(board[tile.y]?.[tile.x]) && !inFlight.current.has(key);
+    });
+    if (conflictingTiles.length === 0) return;
 
-    // Skip on first render
-    if (prevBoard === null) {
-      prevBoardRef.current = currentBoard;
-      return;
-    }
-
-    // Find positions that were empty before but now have tiles (opponent played)
-    const newlyOccupiedPositions: { x: number; y: number }[] = [];
-
-    for (let y = 0; y < currentBoard.length; y++) {
-      const currentRow = currentBoard[y];
-      const prevRow = prevBoard[y];
-      if (!currentRow) continue;
-
-      for (let x = 0; x < 15; x++) {
-        const currentCell = currentRow[x];
-        const prevCell = prevRow?.[x];
-
-        // Position is now occupied but wasn't before
-        if (currentCell && !prevCell) {
-          newlyOccupiedPositions.push({ x, y });
-        }
-      }
-    }
-
-    // Find pending tiles that conflict with newly occupied positions
-    const conflictingTiles = pendingTilesRef.current.filter((pending) =>
-      newlyOccupiedPositions.some(
-        (pos) => pos.x === pending.x && pos.y === pending.y
-      )
+    const keys = conflictingTiles.map(
+      (tile) => `${gameUlid}:${tile.x},${tile.y},${tile.rackIndex}`
     );
+    keys.forEach((key) => inFlight.current.add(key));
 
-    if (conflictingTiles.length > 0) {
-      // Prepare tiles for animation (need visualSlot for rack position)
-      const tilesToRecall = conflictingTiles.map((t) => ({
-        ...t,
-        visualSlot: rackPermutationRef.current.indexOf(t.rackIndex),
-      }));
-
-      // Capture positions to remove for the callback closure
-      const positionsToRemove = conflictingTiles.map((t) => ({
-        x: t.x,
-        y: t.y,
-      }));
-
-      // Animate tiles back to rack
-      // onStart: Remove from state immediately after tiles hidden, so score/validation updates
-      // onComplete: Animation done, nothing else to do
-      startRecallAnimation(
-        tilesToRecall,
-        () => {
-          removeConflictingTiles(positionsToRemove);
-        },
-        () => {
-          // Animation complete
-        }
-      );
-    }
-
-    // Update ref with current board
-    prevBoardRef.current = currentBoard;
-  }, [board, startRecallAnimation, removeConflictingTiles]);
+    startRecallAnimation(
+      conflictingTiles.map((tile) => ({
+        ...tile,
+        visualSlot: rackPermutation.indexOf(tile.rackIndex),
+      })),
+      () => removePendingTiles(gameUlid, conflictingTiles),
+      () => keys.forEach((key) => inFlight.current.delete(key))
+    );
+  }, [
+    board,
+    gameUlid,
+    currentGameUlid,
+    pendingTiles,
+    rackPermutation,
+    startRecallAnimation,
+    removePendingTiles,
+  ]);
 }

@@ -621,6 +621,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const [recallingBoardPositions, setRecallingBoardPositions] = useState<
     { x: number; y: number }[]
   >([]);
+  const [boardLayout, setBoardLayoutState] = useState<BoardLayout | null>(null);
 
   // Track rack tiles for per-tile floating tiles (no sync issues!)
   const [rackTiles, setRackTiles] = useState<(TileType | null)[]>(
@@ -990,6 +991,18 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   // -------------------------------------------------------------------------
   const setBoardLayout = useCallback(
     (layout: BoardLayout) => {
+      const previous = boardLayoutRef.current;
+      if (
+        previous &&
+        previous.x === layout.x &&
+        previous.y === layout.y &&
+        previous.width === layout.width &&
+        previous.height === layout.height &&
+        previous.cellSize === layout.cellSize
+      ) {
+        return;
+      }
+
       boardLayoutRef.current = layout;
       // Board cells subscribe to the layout; only notify them when it moved
       const current = useBoardDragStore.getState().boardLayout;
@@ -1006,6 +1019,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       boardLeftShared.value = layout.x;
       boardTopShared.value = layout.y;
       boardCellSizeShared.value = layout.cellSize;
+      // BoardCell needs a React update to register pending tiles after measurement.
+      setBoardLayoutState(layout);
     },
     [boardLeftShared, boardTopShared, boardCellSizeShared]
   );
@@ -2747,8 +2762,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         relativeY: event.y,
       });
 
-      // Start animation immediately on UI thread to eliminate bridge delay
-      // Calculate board cell target using shared values
+      // Start animation immediately on UI thread to eliminate bridge delay.
+      // Decode the board drop with the same edge policy as JS placement.
       const boardLeft = boardLeftShared.value;
       const boardTop = boardTopShared.value;
       const cellSize = boardCellSizeShared.value;
@@ -2757,17 +2772,16 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       if (cellSize > 0) {
         const boardWidth = boardSize * cellSize;
         const boardHeight = boardSize * cellSize;
+        const cell = getBoardCellFromPosition(screenX, screenY, {
+          x: boardLeft,
+          y: boardTop,
+          width: boardWidth,
+          height: boardHeight,
+          cellSize,
+        });
 
-        // Check if drop is within board bounds
-        if (
-          screenX >= boardLeft &&
-          screenX <= boardLeft + boardWidth &&
-          screenY >= boardTop &&
-          screenY <= boardTop + boardHeight
-        ) {
-          // Calculate cell coordinates
-          const cellX = Math.floor((screenX - boardLeft) / cellSize);
-          const cellY = Math.floor((screenY - boardTop) / cellSize);
+        if (cell) {
+          const { x: cellX, y: cellY } = cell;
 
           // Calculate cell center (target position)
           const targetX =
@@ -2946,7 +2960,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       recallingRackIndicesShared,
       recallingBoardPositions,
       recallingBoardPositionsShared,
-      boardLayout: boardLayoutRef.current,
+      boardLayout,
       getLastRackDrop,
       clearLastRackDrop,
       setBoardLayout,
@@ -2982,6 +2996,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       recallingRackIndices,
       recallingRackIndicesShared,
       recallingBoardPositionsShared,
+      boardLayout,
       getLastRackDrop,
       clearLastRackDrop,
       setBoardLayout,

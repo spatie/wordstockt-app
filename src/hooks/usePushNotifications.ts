@@ -76,12 +76,10 @@ async function registerForPushNotificationsAsync(): Promise<string | null> {
 
 export function usePushNotifications() {
   const router = useRouter();
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const { mutate: registerToken } = useRegisterPushToken();
-  const notificationListener = useRef<Notifications.EventSubscription | null>(
-    null
-  );
-  const responseListener = useRef<Notifications.EventSubscription | null>(null);
+  const authToken = useAuthStore((s) => s.token);
+  const isGuest = useAuthStore((s) => s.isGuest);
+  const sessionRevision = useAuthStore((s) => s.sessionRevision);
+  const { mutateAsync: registerToken } = useRegisterPushToken();
 
   // Read the latest registerToken/router via refs so the effect does not
   // re-run (churning listeners) when their identities change.
@@ -91,42 +89,33 @@ export function usePushNotifications() {
   routerRef.current = router;
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    // Guest accounts do not register a device token. Conversion to a full
+    // account changes isGuest and starts this lifecycle without a new login.
+    if (!authToken || isGuest) return;
 
     let isActive = true;
+    let registeredToken: string | null = null;
+    let registrationInFlight: Promise<void> | null = null;
 
     const checkAndRegister = () => {
-      registerForPushNotificationsAsync()
-        .then((token) => {
-          if (!isActive) return;
-          if (token) {
-            console.log(
-              '[Push] Registering token:',
-              token.substring(0, 20) + '...'
-            );
-            registerTokenRef.current(
-              {
-                token,
-                deviceName: Device.deviceName ?? undefined,
-              },
-              {
-                onSuccess: () => {
-                  console.log('[Push] Token registered successfully');
-                },
-                onError: (error) => {
-                  console.log('[Push] Token registration failed:', error);
-                },
-              }
-            );
-          } else {
-            console.log(
-              '[Push] No token received (permission denied or not a device)'
-            );
-          }
-        })
-        .catch((error) => {
-          console.log('[Push] Failed to get push token:', error);
-        });
+      if (registrationInFlight) return;
+      registrationInFlight = (async () => {
+        try {
+          const token = await registerForPushNotificationsAsync();
+          if (!isActive || !token || token === registeredToken) return;
+
+          await registerTokenRef.current({
+            token,
+            deviceName: Device.deviceName ?? undefined,
+            authToken,
+          });
+          if (isActive) registeredToken = token;
+        } catch (error) {
+          console.log('[Push] Token registration failed:', error);
+        } finally {
+          registrationInFlight = null;
+        }
+      })();
     };
 
     checkAndRegister();
@@ -141,8 +130,8 @@ export function usePushNotifications() {
       }
     );
 
-    notificationListener.current =
-      Notifications.addNotificationReceivedListener((notification) => {
+    const notificationListener = Notifications.addNotificationReceivedListener(
+      (notification) => {
         console.log('Notification received:', notification);
         // Pushes are the only live updates, so refresh what they're about
         syncFromPush(notification.request.content.data);
@@ -153,9 +142,10 @@ export function usePushNotifications() {
             .getState()
             .addNotification(notification.request.identifier, gameUlid);
         }
-      });
+      }
+    );
 
-    responseListener.current =
+    const responseListener =
       Notifications.addNotificationResponseReceivedListener((response) => {
         const data = response.notification.request.content.data;
         // The notification decides where to go, not the app resume state
@@ -173,8 +163,8 @@ export function usePushNotifications() {
     return () => {
       isActive = false;
       appStateSubscription.remove();
-      notificationListener.current?.remove();
-      responseListener.current?.remove();
+      notificationListener.remove();
+      responseListener.remove();
     };
-  }, [isAuthenticated]);
+  }, [authToken, isGuest, sessionRevision]);
 }

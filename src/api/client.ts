@@ -20,7 +20,7 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use(async (config) => {
   const token = useAuthStore.getState().token;
-  if (token) {
+  if (token && !config.headers.Authorization) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
@@ -44,7 +44,13 @@ apiClient.interceptors.request.use(async (config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<{ message: string }>) => {
-    if (error.response?.status === 401) {
+    const activeToken = useAuthStore.getState().token;
+    const requestAuthorization = error.config?.headers?.Authorization;
+    if (
+      error.response?.status === 401 &&
+      activeToken &&
+      requestAuthorization === `Bearer ${activeToken}`
+    ) {
       useAuthStore.getState().logout();
       // Drop cached authed data so a forced logout can't leave stale
       // game/user data behind (mirrors what useLogout does explicitly).

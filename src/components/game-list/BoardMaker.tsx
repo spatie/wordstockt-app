@@ -1,6 +1,6 @@
 import type { ThemeColors } from '../../config/theme';
 import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
-import React, { useEffect, useRef, useCallback, useState } from 'react';
+import React, { useMemo, useRef, useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -11,52 +11,57 @@ import {
 import { Switch } from 'react-native-paper';
 import { BoardMakerCell } from './BoardMakerCell';
 import { Button } from '../ui/Button';
-import { useBoardMakerStore } from '../../stores/boardMakerStore';
+import {
+  BOARD_MAKER_LIMITS,
+  copyBoardTemplate,
+  createEmptyBoardTemplate,
+  cycleBoardCell,
+  getBoardTemplateCounts,
+  randomizeBoardTemplate,
+} from '../../utils/boardMaker';
 import { MULTIPLIER_COLORS } from '../../config/theme';
 import { BOARD_SIZE, SPACING } from '../../config/constants';
 import type { SquareType } from '../../types/game';
 
 interface BoardMakerProps {
+  initialTemplate?: SquareType[][] | null;
   onAccept: (template: SquareType[][]) => void;
   onCancel: () => void;
 }
 
 const SQUARE_TYPE_ORDER = ['2L', '3L', '2W', '3W'] as const;
 
-export function BoardMaker({ onAccept, onCancel }: BoardMakerProps) {
+export function BoardMaker({
+  initialTemplate,
+  onAccept,
+  onCancel,
+}: BoardMakerProps) {
   const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
   const { width: windowWidth } = useWindowDimensions();
-  const {
-    template,
-    symmetryEnabled,
-    initialize,
-    cycleCell,
-    setSymmetry,
-    randomize,
-    clear,
-    getTemplate,
-    getCounts,
-    getLimits,
-  } = useBoardMakerStore();
+  const [template, setTemplate] = useState(() =>
+    initialTemplate
+      ? copyBoardTemplate(initialTemplate)
+      : createEmptyBoardTemplate()
+  );
+  const [symmetryEnabled, setSymmetry] = useState(true);
 
   const [isAnimating, setIsAnimating] = useState(false);
   const boardOpacity = useRef(new Animated.Value(1)).current;
   const boardScale = useRef(new Animated.Value(1)).current;
 
-  useEffect(() => {
-    initialize();
-  }, [initialize]);
-
-  const counts = getCounts();
-  const limits = getLimits();
+  const counts = useMemo(() => getBoardTemplateCounts(template), [template]);
+  const limits = BOARD_MAKER_LIMITS;
+  const cycleCell = (x: number, y: number) => {
+    setTemplate((current) => cycleBoardCell(current, x, y, symmetryEnabled));
+  };
 
   const boardSize = Math.min(windowWidth - SPACING.lg * 2, 400);
   const cellGap = 2;
   const cellSize = (boardSize - cellGap * (BOARD_SIZE - 1)) / BOARD_SIZE;
 
   const animateAction = useCallback(
-    (action: () => void) => {
+    (nextTemplate: SquareType[][]) => {
       setIsAnimating(true);
 
       // Shrink and fade out
@@ -73,7 +78,7 @@ export function BoardMaker({ onAccept, onCancel }: BoardMakerProps) {
         }),
       ]).start(() => {
         // Run action while hidden
-        action();
+        setTemplate(nextTemplate);
 
         // Wait for React to re-render with new state before animating back
         requestAnimationFrame(() => {
@@ -97,15 +102,15 @@ export function BoardMaker({ onAccept, onCancel }: BoardMakerProps) {
   );
 
   const handleClear = useCallback(() => {
-    animateAction(clear);
-  }, [animateAction, clear]);
+    animateAction(createEmptyBoardTemplate());
+  }, [animateAction]);
 
   const handleRandomize = useCallback(() => {
-    animateAction(randomize);
-  }, [animateAction, randomize]);
+    animateAction(randomizeBoardTemplate(symmetryEnabled));
+  }, [animateAction, symmetryEnabled]);
 
   const handleAccept = () => {
-    onAccept(getTemplate());
+    onAccept(copyBoardTemplate(template));
   };
 
   return (

@@ -87,17 +87,12 @@ export function getBoardCellFromPosition(
   pageY: number,
   layout: BoardLayout
 ): { x: number; y: number } | null {
+  'worklet';
   const relX = pageX - layout.x;
   const relY = pageY - layout.y;
 
-  // FIX (Jan 2026): Added tolerance for edge cases on real devices.
-  //
-  // PROBLEM: On real devices, drops very close to board edges would sometimes
-  // fail to detect a valid cell due to floating point precision issues and
-  // slight timing differences in layout measurements between simulator and device.
-  //
-  // SOLUTION: Allow a small 2px tolerance outside the strict bounds, then clamp
-  // coordinates to valid range before calculating the cell.
+  // Drops up to 2px outside the measured board settle on the nearest edge cell.
+  // Keep this function worklet-safe so JS placement and UI settling agree.
   const tolerance = 2;
   if (
     relX < -tolerance ||
@@ -108,7 +103,7 @@ export function getBoardCellFromPosition(
     return null;
   }
 
-  // Clamp to valid range before calculating cell
+  // Clamp the inclusive far edge to the last cell rather than returning cell 15.
   const clampedX = Math.max(0, Math.min(relX, layout.width - 0.001));
   const clampedY = Math.max(0, Math.min(relY, layout.height - 0.001));
 

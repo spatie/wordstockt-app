@@ -35,7 +35,8 @@ export const friendKeys = {
 };
 
 export const authKeys = {
-  currentUser: () => ['currentUser'] as const,
+  currentUser: (sessionRevision: number) =>
+    ['currentUser', sessionRevision] as const,
 };
 
 export const validationKeys = {

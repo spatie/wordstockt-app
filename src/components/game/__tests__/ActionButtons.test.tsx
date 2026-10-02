@@ -119,6 +119,16 @@ describe('ActionButtons', () => {
     expect(defaultProps.onSwap).not.toHaveBeenCalled();
   });
 
+  it('disables Swap when no handler is available', async () => {
+    const { onSwap: _onSwap, ...props } = defaultProps;
+    await render(<ActionButtons {...props} />);
+
+    expect(
+      screen.getByRole('button', { name: 'Swap' }).props.accessibilityState
+        ?.disabled
+    ).toBe(true);
+  });
+
   it('shows loading indicator when isLoading is true', async () => {
     await render(<ActionButtons {...defaultProps} isLoading={true} />);
 

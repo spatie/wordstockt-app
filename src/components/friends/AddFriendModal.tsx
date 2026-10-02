@@ -13,10 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { BaseModal } from '../ui/BaseModal';
 import { SmartAvatar } from '../ui/SmartAvatar';
-import {
-  useSearchUsers,
-  type UserSearchResult,
-} from '../../api/queries/useUsers';
+import { useSearchUsers } from '../../api/queries/useUsers';
 import { useAddFriend, useIsFriend } from '../../api/queries/useFriends';
 import { getApiError } from '../../api/client';
 import { RADIUS, SPACING } from '../../config/constants';
@@ -39,72 +36,34 @@ export function AddFriendModal({
   const styles = useThemedStyles(createStyles);
   const [username, setUsername] = useState('');
   const [searchTrigger, setSearchTrigger] = useState('');
-  const [searchState, setSearchState] = useState<SearchState>('empty');
-  const [foundUser, setFoundUser] = useState<UserSearchResult | null>(null);
 
   const searchQuery = useSearchUsers(searchTrigger, true);
+  const foundUser =
+    searchTrigger && searchQuery.isSuccess
+      ? (searchQuery.data[0] ?? null)
+      : null;
   const addFriend = useAddFriend();
   const friendCheck = useIsFriend(foundUser?.ulid ?? '');
+  const searchState: SearchState = !searchTrigger
+    ? 'empty'
+    : searchQuery.isPending
+      ? 'searching'
+      : searchQuery.isError || !foundUser
+        ? 'not_found'
+        : friendCheck.isSuccess && friendCheck.data?.isFriend
+          ? 'already_friend'
+          : 'found';
 
   const handleSearch = useCallback(() => {
     const trimmed = username.trim();
     if (trimmed.length < 2) return;
 
-    setSearchState('searching');
-    setFoundUser(null);
     setSearchTrigger(trimmed);
   }, [username]);
-
-  // Handle search result
-  React.useEffect(() => {
-    if (!searchTrigger) return;
-
-    if (searchQuery.isLoading) {
-      setSearchState('searching');
-      return;
-    }
-
-    if (searchQuery.isError) {
-      setSearchState('not_found');
-      return;
-    }
-
-    if (searchQuery.data) {
-      if (searchQuery.data.length === 0) {
-        setSearchState('not_found');
-        setFoundUser(null);
-      } else {
-        setFoundUser(searchQuery.data[0] ?? null);
-        setSearchState('found');
-      }
-    }
-  }, [
-    searchTrigger,
-    searchQuery.isLoading,
-    searchQuery.isError,
-    searchQuery.data,
-  ]);
-
-  // Check if user is already a friend. Only trust `friendCheck.data` once the
-  // friend-check query has actually settled (`isSuccess`) for the CURRENT
-  // foundUser. When `foundUser` changes, React Query returns the previous
-  // key's cached data for a render before the new query resolves, so without
-  // this guard we could flag a brand-new user as "already friends".
-  React.useEffect(() => {
-    if (
-      searchState === 'found' &&
-      friendCheck.isSuccess &&
-      friendCheck.data?.isFriend
-    ) {
-      setSearchState('already_friend');
-    }
-  }, [searchState, friendCheck.isSuccess, friendCheck.data?.isFriend]);
 
   const handleClose = useCallback(() => {
     setUsername('');
     setSearchTrigger('');
-    setSearchState('empty');
-    setFoundUser(null);
     addFriend.reset();
     onClose();
   }, [onClose, addFriend]);
@@ -246,11 +205,7 @@ export function AddFriendModal({
             value={username}
             onChangeText={(text) => {
               setUsername(text);
-              if (searchState !== 'empty') {
-                setSearchState('empty');
-                setFoundUser(null);
-                setSearchTrigger('');
-              }
+              setSearchTrigger('');
             }}
             autoCapitalize="none"
             autoCorrect={false}

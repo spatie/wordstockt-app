@@ -1,11 +1,25 @@
 import React from 'react';
 import {
-  render,
+  act,
+  render as renderNative,
   screen,
   fireEvent,
   waitFor,
 } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { InvitePlayerModal } from '../InvitePlayerModal';
+
+function render(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
+
+  return renderNative(ui, {
+    wrapper: ({ children }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    ),
+  });
+}
 
 // Mock react-native-paper
 jest.mock('react-native-paper', () => ({
@@ -125,6 +139,8 @@ describe('InvitePlayerModal', () => {
             ulid: '01hxyz000000000testuser',
             username: 'testuser',
             avatar: null,
+            avatar_color: null,
+            eloRating: 1200,
           },
         ],
       },
@@ -151,6 +167,8 @@ describe('InvitePlayerModal', () => {
             ulid: '01hxyz000000000testuser',
             username: 'testuser',
             avatar: null,
+            avatar_color: null,
+            eloRating: 1200,
           },
         ],
       },
@@ -191,6 +209,8 @@ describe('InvitePlayerModal', () => {
             ulid: '01hxyz000000000testuser',
             username: 'testuser',
             avatar: null,
+            avatar_color: null,
+            eloRating: 1200,
           },
         ],
       },
@@ -236,5 +256,42 @@ describe('InvitePlayerModal', () => {
     expect(
       screen.getByText('Username must be at least 2 characters')
     ).toBeTruthy();
+  });
+
+  it('keeps the latest query result when an older search finishes later', async () => {
+    const resolvers = new Map<string, (response: unknown) => void>();
+    mockApiClientGet.mockImplementation(
+      (_url: string, options: { params: { query: string } }) =>
+        new Promise((resolve) => {
+          resolvers.set(options.params.query, resolve);
+        })
+    );
+
+    await render(<InvitePlayerModal {...defaultProps} />);
+    const input = screen.getByPlaceholderText('Search by username');
+
+    await fireEvent.changeText(input, 'alice');
+    await fireEvent.press(screen.getByText('Search'));
+    await fireEvent.changeText(input, 'bob');
+    await fireEvent.press(screen.getByText('Search'));
+
+    const user = (username: string) => ({
+      ulid: username,
+      username,
+      avatar: null,
+      avatar_color: null,
+      eloRating: 1200,
+    });
+
+    await act(async () => {
+      resolvers.get('bob')?.({ data: { data: [user('bob')] } });
+    });
+    await waitFor(() => expect(screen.getByText('bob')).toBeTruthy());
+
+    await act(async () => {
+      resolvers.get('alice')?.({ data: { data: [user('alice')] } });
+    });
+    expect(screen.getByText('bob')).toBeTruthy();
+    expect(screen.queryByText('alice')).toBeNull();
   });
 });

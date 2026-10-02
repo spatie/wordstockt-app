@@ -47,7 +47,7 @@ export async function renderWithProviders(
   ui: ReactElement,
   options?: Omit<RenderOptions, 'wrapper'>
 ) {
-  return render(ui, { wrapper: createWrapper(), ...options });
+  return await render(ui, { wrapper: createWrapper(), ...options });
 }
 
 // Mock data factories

@@ -194,6 +194,7 @@ export function CreateGameModal({
         backdropBlur
       >
         <BoardMaker
+          initialTemplate={customTemplate}
           onAccept={handleBoardMakerAccept}
           onCancel={handleBoardMakerCancel}
         />

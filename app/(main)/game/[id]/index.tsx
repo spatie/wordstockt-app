@@ -3,6 +3,7 @@ import { useThemedStyles } from '../../../../src/hooks/useThemeColors';
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -62,10 +63,14 @@ import { FeedbackModal } from '../../../../src/components/ui/FeedbackModal';
 import { AchievementModal } from '../../../../src/components/ui/AchievementModal';
 import { RematchModal } from '../../../../src/components/ui/RematchModal';
 import { Button } from '../../../../src/components/ui/Button';
-import { showConfirm } from '../../../../src/utils/alerts';
+import { showAlert, showConfirm } from '../../../../src/utils/alerts';
 import { SPACING, RADIUS, LAYOUT } from '../../../../src/config/constants';
 import { ROUTES } from '../../../../src/config/routes';
 import { mockGame } from '../../../../src/config/mockData';
+import {
+  getValidationBoardKey,
+  getValidationDraftKey,
+} from '../../../../src/utils/validationKey';
 
 // Set to true to use mock data for UI testing
 const USE_MOCK_DATA = false;
@@ -90,7 +95,7 @@ function GameScreenContent() {
   const setCurrentGame = useGameStore((s) => s.setCurrentGame);
 
   // Set current game context for per-game state (pending tiles, etc.)
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (gameUlid) {
       setCurrentGame(gameUlid);
     }
@@ -180,6 +185,7 @@ function GameScreenContent() {
 
   const { data: apiGame, isLoading, error, refetch } = useGame(gameUlid);
   const setValidationResult = useGameStore((s) => s.setValidationResult);
+  const setBoardKey = useGameStore((s) => s.setBoardKey);
   const revokeInvitation = useRevokeInvitation();
   const joinGame = useJoinGame();
   const acceptInvitation = useAcceptInvitation();
@@ -202,6 +208,13 @@ function GameScreenContent() {
     () => (USE_MOCK_DATA ? { ...mockGame, ulid: gameUlid } : apiGame),
     [apiGame, gameUlid]
   );
+  const boardKey = getValidationBoardKey(game?.board);
+
+  useLayoutEffect(() => {
+    if (gameUlid && boardKey) {
+      setBoardKey(gameUlid, boardKey);
+    }
+  }, [gameUlid, boardKey, setBoardKey]);
 
   // Detect and recall tiles that conflict with opponent's played tiles
   useConflictingTilesRecall(game);
@@ -245,6 +258,7 @@ function GameScreenContent() {
   // Get all game interaction handlers from the hook
   const {
     pendingTiles,
+    validationResult,
     isMyTurn,
     canPlay,
     isGameActive,
@@ -461,26 +475,12 @@ function GameScreenContent() {
     }
   }, [isSwapMode, isSwapExiting, actionButtonsOpacity, swapButtonsOpacity]);
 
-  // Track tile positions to detect when they change
-  const tilePositionsKey = pendingTiles
-    .map((t) => `${t.x},${t.y}`)
-    .sort()
-    .join('|');
-  const prevTilePositionsRef = useRef(tilePositionsKey);
-
-  // Clear validation immediately when tile positions change (before new validation arrives)
-  // This prevents stale highlights from flashing on tiles that are no longer adjacent
-  useEffect(() => {
-    if (tilePositionsKey !== prevTilePositionsRef.current) {
-      prevTilePositionsRef.current = tilePositionsKey;
-      setValidationResult(null);
-    }
-  }, [tilePositionsKey, setValidationResult]);
-
   // Validate pending tiles on every change
-  const { data: validationResult } = useValidation({
+  const draftKey = getValidationDraftKey(pendingTiles);
+  const { data: queryValidationResult } = useValidation({
     gameUlid,
     tiles: pendingTiles,
+    boardKey,
   });
 
   // Fetch word info when a placed tile is tapped
@@ -505,16 +505,22 @@ function GameScreenContent() {
     [pendingTiles]
   );
 
-  // Update store with validation result
-  // Only update when we have actual data (not during loading)
-  // Clear validation only when all tiles are removed
+  // Publish only a result for the exact game, draft, and board being shown.
   useEffect(() => {
+    const scope = { gameUlid, draftKey, boardKey };
     if (pendingTiles.length === 0) {
-      setValidationResult(null);
-    } else if (validationResult !== undefined) {
-      setValidationResult(validationResult);
+      setValidationResult(null, scope);
+    } else if (queryValidationResult !== undefined) {
+      setValidationResult(queryValidationResult, scope);
     }
-  }, [validationResult, pendingTiles.length, setValidationResult]);
+  }, [
+    queryValidationResult,
+    pendingTiles.length,
+    gameUlid,
+    draftKey,
+    boardKey,
+    setValidationResult,
+  ]);
 
   // Get opponent info for rematch (needs to be before early returns)
   const opponent = apiGame?.players.find((p) => p.ulid !== userUlid);
@@ -589,9 +595,15 @@ function GameScreenContent() {
     opponent !== undefined;
 
   const handleRematch = async () => {
-    const newGameUlid = await createRematch();
-    if (newGameUlid) {
-      router.replace(ROUTES.GAME(newGameUlid));
+    const outcome = await createRematch();
+    if (outcome) {
+      router.replace(ROUTES.GAME(outcome.gameUlid));
+      if (outcome.failedInvitations.length > 0) {
+        showAlert(
+          'Rematch created',
+          `Could not invite ${outcome.failedInvitations.join(', ')}. You can invite them from the new game.`
+        );
+      }
     }
   };
 

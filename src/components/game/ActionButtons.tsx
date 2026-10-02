@@ -45,16 +45,17 @@ function SmallActionButton({
 }: {
   iconName: keyof typeof Ionicons.glyphMap;
   label: string;
-  onPress: () => void;
+  onPress?: () => void;
   disabled: boolean;
 }) {
   const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
-  const opacity = useSharedValue(disabled ? 0.72 : 1);
+  const isDisabled = disabled || !onPress;
+  const opacity = useSharedValue(isDisabled ? 0.72 : 1);
 
   useEffect(() => {
-    opacity.value = withTiming(disabled ? 0.72 : 1, { duration: 200 });
-  }, [disabled, opacity]);
+    opacity.value = withTiming(isDisabled ? 0.72 : 1, { duration: 200 });
+  }, [isDisabled, opacity]);
 
   const wrapperStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -63,22 +64,24 @@ function SmallActionButton({
   return (
     <Animated.View style={[styles.smallActionButtonWrapper, wrapperStyle]}>
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={label}
         style={({ pressed }) => [
           styles.smallActionButton,
-          pressed && !disabled && { opacity: 0.7 },
+          pressed && !isDisabled && { opacity: 0.7 },
         ]}
         onPress={onPress}
-        disabled={disabled}
+        disabled={isDisabled}
       >
         <Ionicons
           name={iconName}
           size={20}
-          color={disabled ? colors.textMuted : colors.textPrimary}
+          color={isDisabled ? colors.textMuted : colors.textPrimary}
         />
         <Text
           style={[
             styles.smallActionLabel,
-            disabled && styles.actionTextDisabled,
+            isDisabled && styles.actionTextDisabled,
           ]}
         >
           {label}
@@ -155,14 +158,14 @@ export function ActionButtons({
           <SmallActionButton
             iconName="shuffle-outline"
             label="Shuffle"
-            onPress={onMix ?? (() => {})}
+            onPress={onMix}
             disabled={disabled}
           />
         )}
         <SmallActionButton
           iconName="swap-horizontal-outline"
           label="Swap"
-          onPress={onSwap ?? (() => {})}
+          onPress={onSwap}
           disabled={turnDisabled}
         />
         <MenuView
@@ -176,12 +179,20 @@ export function ActionButtons({
               image: 'forward.end',
               attributes: { disabled: turnDisabled },
             },
-            { id: 'dictionary', title: 'Dictionary', image: 'book' },
+            {
+              id: 'dictionary',
+              title: 'Dictionary',
+              image: 'book',
+              attributes: { disabled: !onDictionary },
+            },
             {
               id: 'resign',
               title: 'Resign',
               image: 'flag',
-              attributes: { destructive: true, disabled },
+              attributes: {
+                destructive: true,
+                disabled: disabled || !onResign,
+              },
             },
           ]}
           onPressAction={({ nativeEvent }) => {
