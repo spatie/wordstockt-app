@@ -606,13 +606,12 @@ const createStyles = (colors: ThemeColors) =>
       aspectRatio: 1,
       borderRightWidth: gridLineWidth,
       borderBottomWidth: gridLineWidth,
-      borderColor: '#0D1520',
+      borderColor: colors.gridLine,
     },
     cell: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      borderRadius: 4,
     },
     tileContainer: {
       width: '100%',

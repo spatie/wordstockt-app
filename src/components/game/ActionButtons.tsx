@@ -49,10 +49,10 @@ function SmallActionButton({
 }) {
   const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
-  const opacity = useSharedValue(disabled ? 0.5 : 1);
+  const opacity = useSharedValue(disabled ? 0.72 : 1);
 
   useEffect(() => {
-    opacity.value = withTiming(disabled ? 0.5 : 1, { duration: 200 });
+    opacity.value = withTiming(disabled ? 0.72 : 1, { duration: 200 });
   }, [disabled, opacity]);
 
   const wrapperStyle = useAnimatedStyle(() => ({
@@ -192,7 +192,7 @@ export function ActionButtons({
         disabled={!canPlay || disabled}
       >
         {isLoading ? (
-          <ActivityIndicator color={colors.textPrimary} />
+          <ActivityIndicator color={colors.onPrimary} />
         ) : (
           <View style={styles.playContent}>
             <Text
@@ -254,7 +254,7 @@ const createStyles = (colors: ThemeColors) =>
       borderRadius: 10,
     },
     smallActionLabel: {
-      fontSize: 9,
+      fontSize: 10,
       color: colors.textSecondary,
       marginTop: 1,
     },
@@ -278,16 +278,16 @@ const createStyles = (colors: ThemeColors) =>
       alignItems: 'center',
     },
     playText: {
-      color: colors.textPrimary,
+      color: colors.onPrimary,
       fontSize: 13,
       fontWeight: 'bold',
       letterSpacing: 1,
     },
     playTextDisabled: {
-      color: colors.textMuted,
+      color: colors.textSecondary,
     },
     playScore: {
-      color: 'rgba(255,255,255,0.7)',
+      color: colors.onPrimary,
       fontSize: 11,
       fontWeight: '600',
       marginTop: 1,

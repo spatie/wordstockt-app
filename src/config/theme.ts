@@ -8,6 +8,9 @@ export const colors = {
   backgroundLight: '#1B2838', // Slightly lighter for cards/sections
   boardBackground: '#1B2838', // Board container background
   cellBackground: 'rgba(44, 62, 80, 0.5)', // Empty cell background (semi-transparent)
+  gridLine: '#0D1520',
+  boardOutline: 'rgba(74, 144, 217, 0.5)',
+  boardShadow: '#FFFFFF',
 
   // Accent colors
   primary: '#4A90D9', // Blue accent color
@@ -44,6 +47,10 @@ export const colors = {
   tileClassicBackground: '#E8E4DC',
   tileClassicSelected: '#D4E4F7',
   tileShadow: '#4A90D9',
+  tileEdgeLight: '#F5F3EF',
+  tileEdgeDark: '#B8B4AA',
+  scoreFooterBackground: 'rgba(0, 0, 0, 0.2)',
+  scoreFooterPressed: 'rgba(0, 0, 0, 0.35)',
 
   // UI feedback colors
   warning: '#FF9800',
@@ -62,8 +69,11 @@ export const palettes: Record<AppearanceName, ThemeColors> = {
   paper: {
     background: '#F5F0E6',
     backgroundLight: '#FFFCF6',
-    boardBackground: '#E5DAC7',
-    cellBackground: '#F2EBDD',
+    boardBackground: '#CDB795',
+    cellBackground: '#D7C5A8',
+    gridLine: '#B09A7C',
+    boardOutline: '#9C7D58',
+    boardShadow: '#8B6244',
     primary: '#985332',
     onPrimary: '#FFFFFF',
     primaryLight: '#B66B43',
@@ -83,9 +93,13 @@ export const palettes: Record<AppearanceName, ThemeColors> = {
     emptySlotBorder: '#B59C7E',
     buttonPrimary: '#985332',
     buttonSecondary: '#D4C4AC',
-    tileClassicBackground: '#FFF9EC',
+    tileClassicBackground: '#FFFCF3',
     tileClassicSelected: '#F2D3AD',
     tileShadow: '#8B6244',
+    tileEdgeLight: '#FFFEF8',
+    tileEdgeDark: '#9C8669',
+    scoreFooterBackground: '#E9DDCA',
+    scoreFooterPressed: '#DDCDB6',
     warning: '#955300',
     warningOverlay: 'rgba(149, 83, 0, 0.14)',
     gameWon: '#276F45',
@@ -97,6 +111,9 @@ export const palettes: Record<AppearanceName, ThemeColors> = {
     backgroundLight: '#161616',
     boardBackground: '#202020',
     cellBackground: '#303030',
+    gridLine: '#898989',
+    boardOutline: '#E8E8E8',
+    boardShadow: '#FFFFFF',
     primary: '#FFDA45',
     onPrimary: '#000000',
     primaryLight: '#FFE780',
@@ -119,6 +136,10 @@ export const palettes: Record<AppearanceName, ThemeColors> = {
     tileClassicBackground: '#FFFFFF',
     tileClassicSelected: '#FFEB99',
     tileShadow: '#FFDA45',
+    tileEdgeLight: '#FFFFFF',
+    tileEdgeDark: '#777777',
+    scoreFooterBackground: '#262626',
+    scoreFooterPressed: '#3A3A3A',
     warning: '#FFBC4D',
     warningOverlay: 'rgba(255, 188, 77, 0.25)',
     gameWon: '#7BE4A1',

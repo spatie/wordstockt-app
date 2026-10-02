@@ -7,7 +7,6 @@ import { useLogout } from '../../api/queries/useAuth';
 import { useAuthStore } from '../../stores/authStore';
 import { showConfirm } from '../../utils/alerts';
 import { useThemeColors } from '../../hooks/useThemeColors';
-import { HeaderControlSurface } from './HeaderControlSurface';
 import { ROUTES } from '../../config/routes';
 
 export function HeaderMenu() {
@@ -117,16 +116,16 @@ export function HeaderMenu() {
       shouldOpenOnLongPress={false}
       style={styles.iconButton}
     >
-      <HeaderControlSurface>
-        <Ionicons name="menu" size={23} color={colors.textPrimary} />
-      </HeaderControlSurface>
+      <Ionicons name="menu" size={23} color={colors.textPrimary} />
     </MenuView>
   );
 }
 
 const styles = StyleSheet.create({
   iconButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

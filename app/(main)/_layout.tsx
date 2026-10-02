@@ -6,7 +6,6 @@ import { useUserWebSocket } from '../../src/hooks/useUserWebSocket';
 import { useInvitationStore } from '../../src/stores/invitationStore';
 import { HeaderLogo } from '../../src/components/ui/HeaderLogo';
 import { HeaderMenu } from '../../src/components/ui/HeaderMenu';
-import { MainNavigationHeader } from '../../src/components/ui/MainNavigationHeader';
 import { InvitationDialog } from '../../src/components/game/InvitationDialog';
 import { GlowingBackground } from '../../src/components/ui/GlowingBackground';
 
@@ -30,7 +29,7 @@ export default function MainLayout() {
       <Stack
         screenOptions={{
           headerStyle: {
-            backgroundColor: 'transparent',
+            backgroundColor: colors.background,
           },
           headerTintColor: colors.textPrimary,
           contentStyle: {
@@ -45,15 +44,6 @@ export default function MainLayout() {
           headerRight: () => <HeaderMenu />,
           headerBackButtonDisplayMode: 'minimal',
           headerShadowVisible: false,
-          header:
-            Platform.OS === 'ios'
-              ? ({ navigation, back }) => (
-                  <MainNavigationHeader
-                    canGoBack={Boolean(back)}
-                    onBack={() => navigation.goBack()}
-                  />
-                )
-              : undefined,
         }}
       >
         <Stack.Screen

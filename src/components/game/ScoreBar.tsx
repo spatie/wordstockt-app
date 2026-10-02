@@ -516,6 +516,7 @@ function FooterHistory({
   showBonus,
   bonus,
 }: FooterHistoryProps) {
+  const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const isFirstRender = useRef(true);
@@ -590,7 +591,7 @@ function FooterHistory({
         <MaterialCommunityIcons
           name="chevron-right"
           size={14}
-          color="rgba(255, 255, 255, 0.4)"
+          color={colors.textMuted}
         />
       </View>
     </Pressable>
@@ -891,8 +892,8 @@ const createStyles = (colors: ThemeColors) =>
       marginBottom: 2,
     },
     playerName: {
-      color: 'rgba(255, 255, 255, 0.6)',
-      fontSize: 10,
+      color: colors.textSecondary,
+      fontSize: 11,
       flexShrink: 1,
     },
     leftScore: {
@@ -925,11 +926,11 @@ const createStyles = (colors: ThemeColors) =>
       marginTop: 3,
     },
     rackCount: {
-      color: 'rgba(255, 255, 255, 0.45)',
-      fontSize: 9,
+      color: colors.textSecondary,
+      fontSize: 10,
     },
     finishBonus: {
-      color: '#4CAF50',
+      color: colors.gameWon,
       fontSize: 9,
       fontWeight: '500',
     },
@@ -1042,7 +1043,7 @@ const createStyles = (colors: ThemeColors) =>
       fontWeight: '600',
     },
     footer: {
-      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+      backgroundColor: colors.scoreFooterBackground,
       paddingVertical: 7,
       paddingHorizontal: 12,
       flexDirection: 'row',
@@ -1050,7 +1051,7 @@ const createStyles = (colors: ThemeColors) =>
       alignItems: 'center',
     },
     footerPressed: {
-      backgroundColor: 'rgba(0, 0, 0, 0.35)',
+      backgroundColor: colors.scoreFooterPressed,
     },
     footerContent: {
       flexDirection: 'row',
@@ -1063,14 +1064,14 @@ const createStyles = (colors: ThemeColors) =>
       gap: 4,
     },
     lastMoveText: {
-      color: 'rgba(255, 255, 255, 0.5)',
-      fontSize: 10,
+      color: colors.textSecondary,
+      fontSize: 11,
       fontStyle: 'italic',
       flex: 1,
     },
     bonusText: {
-      color: '#4CAF50',
-      fontSize: 9,
+      color: colors.gameWon,
+      fontSize: 10,
       fontWeight: '500',
     },
     inviteSeat: {
@@ -1079,7 +1080,7 @@ const createStyles = (colors: ThemeColors) =>
       justifyContent: 'center',
       gap: 6,
       borderWidth: 1.5,
-      borderColor: 'rgba(255, 255, 255, 0.25)',
+      borderColor: colors.border,
       borderStyle: 'dashed',
     },
     invitePrompt: {
