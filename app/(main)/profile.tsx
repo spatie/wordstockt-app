@@ -20,7 +20,12 @@ import {
 } from '../../src/api/queries/useAuth';
 import { useUserStats } from '../../src/api/queries/useStats';
 import { getApiError } from '../../src/api/client';
-import { colors } from '../../src/config/theme';
+import type { ThemeColors } from '../../src/config/theme';
+import {
+  useThemeColors,
+  useThemedStyles,
+} from '../../src/hooks/useThemeColors';
+import { ThemePicker } from '../../src/components/profile/ThemePicker';
 import {
   StatsOverviewCard,
   StatsSection,
@@ -34,6 +39,8 @@ import { AnimatedSaveButton } from '../../src/components/ui/AnimatedSaveButton';
 import { isEmailVerified } from '../../src/utils/emailVerification';
 
 export default function ProfileScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const isGuest = useAuthStore((s) => s.isGuest);
@@ -140,6 +147,8 @@ export default function ProfileScreen() {
             selectedColor={avatarColor}
             onSelectColor={setAvatarColor}
           />
+
+          <ThemePicker />
 
           {/* Save Color Button */}
           {hasColorChanges && (
@@ -325,6 +334,8 @@ export default function ProfileScreen() {
           onSelectColor={setAvatarColor}
         />
 
+        <ThemePicker />
+
         {/* Save Button */}
         <View style={styles.saveSection}>
           {error && <Text style={styles.error}>{error}</Text>}
@@ -453,233 +464,234 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    maxWidth: LAYOUT.contentMaxWidth,
-    width: '100%',
-    alignSelf: 'center' as const,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: 24,
-    paddingBottom: 40,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-    gap: 12,
-  },
-  email: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 8,
-  },
-  verificationCard: {
-    backgroundColor: 'rgba(255, 152, 0, 0.1)',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 152, 0, 0.3)',
-  },
-  verificationHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 8,
-  },
-  verificationTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.warning,
-  },
-  verificationText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 20,
-    marginBottom: 12,
-  },
-  resendButton: {
-    backgroundColor: colors.warning,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  resendButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#000',
-  },
-  labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  unverifiedBadge: {
-    backgroundColor: colors.warning,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  unverifiedText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#000',
-  },
-  warningHint: {
-    fontSize: 12,
-    color: colors.warning,
-    marginTop: 8,
-  },
-  formSection: {
-    marginBottom: 16,
-  },
-  saveSection: {
-    marginBottom: 32,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  input: {
-    backgroundColor: colors.backgroundLight,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: colors.textPrimary,
-  },
-  hint: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 8,
-  },
-  error: {
-    fontSize: 14,
-    color: '#E74C3C',
-    marginBottom: 8,
-  },
-  loadingContainer: {
-    paddingVertical: 40,
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: colors.textMuted,
-  },
-  noStatsContainer: {
-    backgroundColor: colors.backgroundLight,
-    borderRadius: 12,
-    padding: 24,
-    alignItems: 'center',
-  },
-  noStatsText: {
-    fontSize: 14,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-  dangerZone: {
-    marginTop: 48,
-    paddingTop: 24,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    alignItems: 'center',
-  },
-  deleteLink: {
-    padding: 8,
-  },
-  deleteLinkText: {
-    fontSize: 14,
-    color: colors.textMuted,
-  },
-  guestUsername: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginTop: 8,
-  },
-  guestBadge: {
-    backgroundColor: colors.border,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginTop: 4,
-  },
-  guestBadgeText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.textSecondary,
-  },
-  guestPromptCard: {
-    backgroundColor: colors.backgroundLight,
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 24,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  guestPromptTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginTop: 16,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  guestPromptText: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  benefitsList: {
-    alignSelf: 'stretch',
-    gap: 12,
-    marginBottom: 24,
-  },
-  benefitRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  benefitText: {
-    fontSize: 15,
-    color: colors.textPrimary,
-  },
-  createAccountButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 12,
-    width: '100%',
-    alignItems: 'center',
-  },
-  createAccountButtonPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.98 }],
-  },
-  createAccountButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFF',
-  },
-  privacyText: {
-    fontSize: 13,
-    color: colors.textMuted,
-    marginTop: 12,
-    textAlign: 'center',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      maxWidth: LAYOUT.contentMaxWidth,
+      width: '100%',
+      alignSelf: 'center' as const,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    content: {
+      padding: 24,
+      paddingBottom: 40,
+    },
+    header: {
+      alignItems: 'center',
+      marginBottom: 32,
+      gap: 12,
+    },
+    email: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: 8,
+    },
+    verificationCard: {
+      backgroundColor: 'rgba(255, 152, 0, 0.1)',
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 24,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 152, 0, 0.3)',
+    },
+    verificationHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      marginBottom: 8,
+    },
+    verificationTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.warning,
+    },
+    verificationText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 20,
+      marginBottom: 12,
+    },
+    resendButton: {
+      backgroundColor: colors.warning,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+      alignItems: 'center',
+    },
+    resendButtonText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#000',
+    },
+    labelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 8,
+    },
+    unverifiedBadge: {
+      backgroundColor: colors.warning,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+    },
+    unverifiedText: {
+      fontSize: 10,
+      fontWeight: '600',
+      color: '#000',
+    },
+    warningHint: {
+      fontSize: 12,
+      color: colors.warning,
+      marginTop: 8,
+    },
+    formSection: {
+      marginBottom: 16,
+    },
+    saveSection: {
+      marginBottom: 32,
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      marginBottom: 8,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    input: {
+      backgroundColor: colors.backgroundLight,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      fontSize: 16,
+      color: colors.textPrimary,
+    },
+    hint: {
+      fontSize: 12,
+      color: colors.textMuted,
+      marginTop: 8,
+    },
+    error: {
+      fontSize: 14,
+      color: '#E74C3C',
+      marginBottom: 8,
+    },
+    loadingContainer: {
+      paddingVertical: 40,
+      alignItems: 'center',
+    },
+    loadingText: {
+      marginTop: 12,
+      fontSize: 14,
+      color: colors.textMuted,
+    },
+    noStatsContainer: {
+      backgroundColor: colors.backgroundLight,
+      borderRadius: 12,
+      padding: 24,
+      alignItems: 'center',
+    },
+    noStatsText: {
+      fontSize: 14,
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
+    dangerZone: {
+      marginTop: 48,
+      paddingTop: 24,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      alignItems: 'center',
+    },
+    deleteLink: {
+      padding: 8,
+    },
+    deleteLinkText: {
+      fontSize: 14,
+      color: colors.textMuted,
+    },
+    guestUsername: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      marginTop: 8,
+    },
+    guestBadge: {
+      backgroundColor: colors.border,
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      borderRadius: 12,
+      marginTop: 4,
+    },
+    guestBadgeText: {
+      fontSize: 12,
+      fontWeight: '500',
+      color: colors.textSecondary,
+    },
+    guestPromptCard: {
+      backgroundColor: colors.backgroundLight,
+      borderRadius: 16,
+      padding: 24,
+      alignItems: 'center',
+      marginTop: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    guestPromptTitle: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginTop: 16,
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    guestPromptText: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: 20,
+    },
+    benefitsList: {
+      alignSelf: 'stretch',
+      gap: 12,
+      marginBottom: 24,
+    },
+    benefitRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    benefitText: {
+      fontSize: 15,
+      color: colors.textPrimary,
+    },
+    createAccountButton: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 32,
+      paddingVertical: 14,
+      borderRadius: 12,
+      width: '100%',
+      alignItems: 'center',
+    },
+    createAccountButtonPressed: {
+      opacity: 0.9,
+      transform: [{ scale: 0.98 }],
+    },
+    createAccountButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.onPrimary,
+    },
+    privacyText: {
+      fontSize: 13,
+      color: colors.textMuted,
+      marginTop: 12,
+      textAlign: 'center',
+    },
+  });

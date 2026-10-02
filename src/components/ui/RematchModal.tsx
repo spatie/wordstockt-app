@@ -1,10 +1,11 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { BaseModal } from './BaseModal';
 import { Button } from './Button';
 import { Avatar } from './Avatar';
 import { FadeSlideIn } from './FadeSlideIn';
-import { colors } from '../../config/theme';
 import { SPACING } from '../../config/constants';
 
 interface RematchModalProps {
@@ -28,6 +29,7 @@ export function RematchModal({
   isLoading,
   error,
 }: RematchModalProps) {
+  const styles = useThemedStyles(createStyles);
   if (!opponent) return null;
 
   return (
@@ -87,37 +89,38 @@ export function RematchModal({
   );
 }
 
-const styles = StyleSheet.create({
-  modal: {
-    padding: SPACING.xxxl,
-  },
-  content: {
-    alignItems: 'center',
-    width: '100%',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-    marginTop: SPACING.xl,
-    marginBottom: SPACING.md,
-    textAlign: 'center',
-  },
-  message: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: SPACING.xxl,
-    lineHeight: 22,
-  },
-  error: {
-    fontSize: 14,
-    color: '#E74C3C',
-    textAlign: 'center',
-    marginBottom: SPACING.md,
-  },
-  buttons: {
-    width: '100%',
-    gap: SPACING.md,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    modal: {
+      padding: SPACING.xxxl,
+    },
+    content: {
+      alignItems: 'center',
+      width: '100%',
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: colors.textPrimary,
+      marginTop: SPACING.xl,
+      marginBottom: SPACING.md,
+      textAlign: 'center',
+    },
+    message: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: SPACING.xxl,
+      lineHeight: 22,
+    },
+    error: {
+      fontSize: 14,
+      color: '#E74C3C',
+      textAlign: 'center',
+      marginBottom: SPACING.md,
+    },
+    buttons: {
+      width: '100%',
+      gap: SPACING.md,
+    },
+  });

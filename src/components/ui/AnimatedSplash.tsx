@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useEffect, useCallback } from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, {
@@ -8,7 +10,6 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import { colors } from '../../config/theme';
 
 const SPINNER_SIZE = 40;
 const SPINNER_THICKNESS = 4;
@@ -22,6 +23,7 @@ export function AnimatedSplash({
   onAnimationComplete,
   isReady,
 }: AnimatedSplashProps) {
+  const styles = useThemedStyles(createStyles);
   const rotation = useSharedValue(0);
   const containerOpacity = useSharedValue(1);
 
@@ -68,19 +70,20 @@ export function AnimatedSplash({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  spinner: {
-    width: SPINNER_SIZE,
-    height: SPINNER_SIZE,
-    borderRadius: SPINNER_SIZE / 2,
-    borderWidth: SPINNER_THICKNESS,
-    borderColor: colors.backgroundLight,
-    borderTopColor: colors.primary,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      ...StyleSheet.absoluteFill,
+      backgroundColor: colors.background,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    spinner: {
+      width: SPINNER_SIZE,
+      height: SPINNER_SIZE,
+      borderRadius: SPINNER_SIZE / 2,
+      borderWidth: SPINNER_THICKNESS,
+      borderColor: colors.backgroundLight,
+      borderTopColor: colors.primary,
+    },
+  });

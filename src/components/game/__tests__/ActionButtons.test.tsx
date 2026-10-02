@@ -107,13 +107,13 @@ describe('ActionButtons', () => {
   it('shows pending score badge when pendingScore > 0', () => {
     render(<ActionButtons {...defaultProps} pendingScore={25} />);
 
-    expect(screen.getByText('25pts')).toBeTruthy();
+    expect(screen.getByText('25')).toBeTruthy();
   });
 
   it('does not show score badge when pendingScore is 0', () => {
     render(<ActionButtons {...defaultProps} pendingScore={0} />);
 
-    expect(screen.queryByText('0pts')).toBeNull();
+    expect(screen.queryByText('0')).toBeNull();
   });
 
   it('Mix remains enabled when not my turn', () => {

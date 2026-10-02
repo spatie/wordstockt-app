@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeBlurTint, useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -13,7 +15,6 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import { colors } from '../../config/theme';
 import { SPACING } from '../../config/constants';
 
 export interface Tab<T extends string> {
@@ -37,6 +38,8 @@ export function TabBar<T extends string>({
   value,
   onChange,
 }: TabBarProps<T>) {
+  const blurTint = useThemeBlurTint();
+  const styles = useThemedStyles(createStyles);
   const [tabLayouts, setTabLayouts] = useState<Record<string, TabLayout>>({});
   const indicatorX = useSharedValue(0);
   const indicatorWidth = useSharedValue(0);
@@ -70,7 +73,7 @@ export function TabBar<T extends string>({
   }));
 
   return (
-    <BlurView intensity={40} tint="dark" style={styles.tabBarBlur}>
+    <BlurView intensity={40} tint={blurTint} style={styles.tabBarBlur}>
       <View style={styles.tabBar}>
         {tabs.map((tab) => (
           <Pressable
@@ -98,33 +101,34 @@ export function TabBar<T extends string>({
   );
 }
 
-const styles = StyleSheet.create({
-  tabBarBlur: {
-    backgroundColor: 'rgba(27, 40, 56, 0.5)',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  tabBar: {
-    flexDirection: 'row',
-    paddingHorizontal: SPACING.xl,
-  },
-  tab: {
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.lg,
-    marginRight: SPACING.sm,
-  },
-  tabText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-  },
-  tabTextActive: {
-    color: colors.textPrimary,
-    fontWeight: '500',
-  },
-  indicator: {
-    position: 'absolute',
-    bottom: 0,
-    height: 2,
-    backgroundColor: colors.primary,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    tabBarBlur: {
+      backgroundColor: colors.backgroundLight,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    tabBar: {
+      flexDirection: 'row',
+      paddingHorizontal: SPACING.xl,
+    },
+    tab: {
+      paddingVertical: SPACING.md,
+      paddingHorizontal: SPACING.lg,
+      marginRight: SPACING.sm,
+    },
+    tabText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+    },
+    tabTextActive: {
+      color: colors.textPrimary,
+      fontWeight: '500',
+    },
+    indicator: {
+      position: 'absolute',
+      bottom: 0,
+      height: 2,
+      backgroundColor: colors.primary,
+    },
+  });

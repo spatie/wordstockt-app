@@ -1,6 +1,8 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useState, useEffect } from 'react';
 import { Text, StyleSheet } from 'react-native';
-import { colors, theme } from '../../config/theme';
+import { theme } from '../../config/theme';
 import {
   getTimeRemaining,
   type TimeRemainingResult,
@@ -19,6 +21,8 @@ export function TurnTimer({
   compact = false,
   alwaysShow = false,
 }: TurnTimerProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const [timeRemaining, setTimeRemaining] =
     useState<TimeRemainingResult | null>(() => getTimeRemaining(expiresAt));
 
@@ -78,13 +82,14 @@ export function TurnTimer({
   );
 }
 
-const styles = StyleSheet.create({
-  time: {
-    fontSize: 10,
-    fontStyle: 'italic',
-    marginTop: 2,
-  },
-  compactText: {
-    fontSize: 13,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    time: {
+      fontSize: 10,
+      fontStyle: 'italic',
+      marginTop: 2,
+    },
+    compactText: {
+      fontSize: 13,
+    },
+  });

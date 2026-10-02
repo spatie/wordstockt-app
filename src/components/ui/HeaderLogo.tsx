@@ -2,10 +2,11 @@ import React, { useCallback, useEffect, useRef } from 'react';
 import { Text, Pressable, StyleSheet } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import { AnimatedLogoTile } from './AnimatedLogoTile';
-import { colors } from '../../config/theme';
+import { useThemeColors } from '../../hooks/useThemeColors';
 import { SPACING } from '../../config/constants';
 
 export function HeaderLogo() {
+  const colors = useThemeColors();
   const logoAnimationTrigger = useSharedValue(0);
   const logoResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
@@ -50,7 +51,9 @@ export function HeaderLogo() {
         animationTrigger={logoAnimationTrigger}
         delay={50}
       />
-      <Text style={styles.title}>WordStockt</Text>
+      <Text style={[styles.title, { color: colors.textPrimary }]}>
+        WordStockt
+      </Text>
     </Pressable>
   );
 }
@@ -64,7 +67,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.textPrimary,
     marginLeft: SPACING.sm,
     lineHeight: 24,
   },

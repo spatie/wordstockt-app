@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React from 'react';
 import { Text, StyleSheet, Animated } from 'react-native';
 import { useScoreBubble } from '../../hooks/useScoreBubble';
@@ -15,6 +17,7 @@ interface ScoreBubbleProps {
  * Shows the potential score for the current move with fade animations.
  */
 export function ScoreBubble({ score, x, y, cellSize }: ScoreBubbleProps) {
+  const styles = useThemedStyles(createStyles);
   const { isVisible, opacity, displayScore } = useScoreBubble({ score });
 
   if (!isVisible || cellSize <= 0) {
@@ -37,27 +40,28 @@ export function ScoreBubble({ score, x, y, cellSize }: ScoreBubbleProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  bubble: {
-    position: 'absolute',
-    backgroundColor: VALIDATION_COLORS.valid,
-    borderRadius: 10,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    minWidth: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 100,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-    elevation: 4,
-    transform: [{ translateX: -4 }, { translateY: -4 }],
-  },
-  text: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    bubble: {
+      position: 'absolute',
+      backgroundColor: VALIDATION_COLORS.valid,
+      borderRadius: 10,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      minWidth: 22,
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 100,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 3,
+      elevation: 4,
+      transform: [{ translateX: -4 }, { translateY: -4 }],
+    },
+    text: {
+      color: '#FFFFFF',
+      fontSize: 12,
+      fontWeight: '700',
+    },
+  });

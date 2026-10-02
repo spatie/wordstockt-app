@@ -1,3 +1,8 @@
+import type { ThemeColors } from '../../src/config/theme';
+import {
+  useThemeColors,
+  useThemedStyles,
+} from '../../src/hooks/useThemeColors';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
@@ -16,12 +21,13 @@ import { ErrorView } from '../../src/components/ui/ErrorView';
 import { FriendCard } from '../../src/components/friends/FriendCard';
 import { AddFriendModal } from '../../src/components/friends/AddFriendModal';
 import { useSnackbar } from '../../src/components/ui/SnackbarProvider';
-import { colors } from '../../src/config/theme';
-import { SPACING, RADIUS, LAYOUT } from '../../src/config/constants';
+import { SPACING, LAYOUT } from '../../src/config/constants';
 import { ROUTES } from '../../src/config/routes';
 import type { Friend } from '../../src/types';
 
 export default function FriendsScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const { push } = useRouter();
   const { data: friends, isLoading, error, refetch } = useFriends();
   const { showSnackbar } = useSnackbar();
@@ -114,7 +120,7 @@ export default function FriendsScreen() {
           style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
         >
           <View style={styles.fabInner}>
-            <Ionicons name="person-add" size={26} color="#FFF" />
+            <Ionicons name="person-add" size={26} color={colors.onPrimary} />
           </View>
         </Pressable>
       </Animated.View>
@@ -128,79 +134,80 @@ export default function FriendsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    maxWidth: LAYOUT.contentMaxWidth,
-    width: '100%',
-    alignSelf: 'center' as const,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerSection: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
-  list: {
-    padding: 16,
-    paddingTop: 0,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    padding: 32,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 8,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  fabContainer: {
-    position: 'absolute',
-    right: SPACING.xl,
-    bottom: SPACING.xl,
-  },
-  fab: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  fabPressed: {
-    transform: [{ scale: 0.92 }],
-    shadowOpacity: 0.2,
-  },
-  fabInner: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 30,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      maxWidth: LAYOUT.contentMaxWidth,
+      width: '100%',
+      alignSelf: 'center' as const,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    headerSection: {
+      paddingHorizontal: 16,
+      paddingTop: 8,
+      paddingBottom: 16,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    subtitle: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: 4,
+    },
+    list: {
+      padding: 16,
+      paddingTop: 0,
+    },
+    emptyContainer: {
+      alignItems: 'center',
+      padding: 32,
+    },
+    emptyTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      marginBottom: 8,
+    },
+    emptyText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    fabContainer: {
+      position: 'absolute',
+      right: SPACING.xl,
+      bottom: SPACING.xl,
+    },
+    fab: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor: colors.primary,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.4,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+    fabPressed: {
+      transform: [{ scale: 0.92 }],
+      shadowOpacity: 0.2,
+    },
+    fabInner: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderRadius: 30,
+      borderWidth: 2,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+  });

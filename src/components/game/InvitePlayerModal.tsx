@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useMemo, useState } from 'react';
 import {
   View,
@@ -11,7 +13,6 @@ import {
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../config/theme';
 import { RADIUS, SPACING } from '../../config/constants';
 import { useFriends } from '../../api/queries/useFriends';
 import { useInvitePlayer } from '../../api/queries/useInvites';
@@ -48,6 +49,8 @@ export function InvitePlayerModal({
   gameUlid,
   onSuccess,
 }: InvitePlayerModalProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const [activeTab, setActiveTab] = useState<TabValue>('users');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -347,172 +350,173 @@ export function InvitePlayerModal({
   );
 }
 
-const styles = StyleSheet.create({
-  modal: {
-    backgroundColor: colors.backgroundLight,
-    margin: SPACING.xxl,
-    padding: SPACING.xxl,
-    borderRadius: RADIUS.xl,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.lg,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    fontSize: 18,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  tabContainer: {
-    marginBottom: SPACING.lg,
-    marginHorizontal: -SPACING.sm,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
-  searchContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: RADIUS.lg,
-    paddingHorizontal: SPACING.md,
-    height: 48,
-  },
-  searchIcon: {
-    marginRight: SPACING.sm,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.textPrimary,
-    textAlignVertical: 'center',
-    ...(Platform.OS === 'android' && {
-      includeFontPadding: false,
-      paddingVertical: 0,
-    }),
-  },
-  searchButton: {
-    backgroundColor: colors.primary,
-    borderRadius: RADIUS.lg,
-    paddingHorizontal: SPACING.lg,
-    height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  searchButtonDisabled: {
-    backgroundColor: colors.buttonSecondary,
-    opacity: 0.6,
-  },
-  searchButtonText: {
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  searchErrorText: {
-    color: '#EF4444',
-    fontSize: 14,
-    marginBottom: SPACING.md,
-  },
-  section: {
-    marginBottom: SPACING.md,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: SPACING.sm,
-  },
-  userListContainer: {
-    height: 200,
-  },
-  userRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: RADIUS.md,
-    padding: SPACING.sm,
-    marginBottom: SPACING.xs,
-  },
-  userName: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '500',
-    color: colors.textPrimary,
-    marginLeft: SPACING.md,
-  },
-  inviteButton: {
-    backgroundColor: colors.primary,
-    borderRadius: RADIUS.md,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
-    minWidth: 70,
-    alignItems: 'center',
-  },
-  inviteButtonLoading: {
-    opacity: 0.7,
-  },
-  inviteButtonText: {
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  loadingContainer: {
-    padding: SPACING.lg,
-    alignItems: 'center',
-  },
-  hintText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginVertical: SPACING.lg,
-  },
-  errorContainer: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
-  },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  shareContainer: {
-    alignItems: 'center',
-    paddingVertical: SPACING.lg,
-  },
-  shareTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: SPACING.xs,
-  },
-  shareDescription: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: SPACING.xl,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    modal: {
+      backgroundColor: colors.backgroundLight,
+      margin: SPACING.xxl,
+      padding: SPACING.xxl,
+      borderRadius: RADIUS.xl,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: SPACING.lg,
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    closeButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.border,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    closeButtonText: {
+      fontSize: 18,
+      color: colors.textSecondary,
+      fontWeight: '600',
+    },
+    tabContainer: {
+      marginBottom: SPACING.lg,
+      marginHorizontal: -SPACING.sm,
+    },
+    searchRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.sm,
+      marginBottom: SPACING.md,
+    },
+    searchContainer: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      borderRadius: RADIUS.lg,
+      paddingHorizontal: SPACING.md,
+      height: 48,
+    },
+    searchIcon: {
+      marginRight: SPACING.sm,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 16,
+      color: colors.textPrimary,
+      textAlignVertical: 'center',
+      ...(Platform.OS === 'android' && {
+        includeFontPadding: false,
+        paddingVertical: 0,
+      }),
+    },
+    searchButton: {
+      backgroundColor: colors.primary,
+      borderRadius: RADIUS.lg,
+      paddingHorizontal: SPACING.lg,
+      height: 48,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    searchButtonDisabled: {
+      backgroundColor: colors.buttonSecondary,
+      opacity: 0.6,
+    },
+    searchButtonText: {
+      color: colors.textPrimary,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    searchErrorText: {
+      color: '#EF4444',
+      fontSize: 14,
+      marginBottom: SPACING.md,
+    },
+    section: {
+      marginBottom: SPACING.md,
+    },
+    sectionTitle: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginBottom: SPACING.sm,
+    },
+    userListContainer: {
+      height: 200,
+    },
+    userRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      borderRadius: RADIUS.md,
+      padding: SPACING.sm,
+      marginBottom: SPACING.xs,
+    },
+    userName: {
+      flex: 1,
+      fontSize: 15,
+      fontWeight: '500',
+      color: colors.textPrimary,
+      marginLeft: SPACING.md,
+    },
+    inviteButton: {
+      backgroundColor: colors.primary,
+      borderRadius: RADIUS.md,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.xs,
+      minWidth: 70,
+      alignItems: 'center',
+    },
+    inviteButtonLoading: {
+      opacity: 0.7,
+    },
+    inviteButtonText: {
+      color: colors.textPrimary,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    loadingContainer: {
+      padding: SPACING.lg,
+      alignItems: 'center',
+    },
+    hintText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginVertical: SPACING.lg,
+    },
+    errorContainer: {
+      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+      borderRadius: RADIUS.md,
+      padding: SPACING.md,
+      marginBottom: SPACING.md,
+    },
+    errorText: {
+      color: '#EF4444',
+      fontSize: 14,
+      textAlign: 'center',
+    },
+    shareContainer: {
+      alignItems: 'center',
+      paddingVertical: SPACING.lg,
+    },
+    shareTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      marginBottom: SPACING.xs,
+    },
+    shareDescription: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20,
+      marginBottom: SPACING.xl,
+    },
+  });

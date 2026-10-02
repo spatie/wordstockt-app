@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React from 'react';
 import {
   Pressable,
@@ -9,7 +11,7 @@ import {
   type TextStyle,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, gradients, shadows } from '../../config/theme';
+import { shadows } from '../../config/theme';
 import { RADIUS, DIMENSIONS } from '../../config/constants';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline';
@@ -65,6 +67,8 @@ export function Button({
   textStyle,
   testID,
 }: ButtonProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const sizeStyle = SIZE_STYLES[size];
   const isDisabled = disabled || loading;
   const isPrimary = variant === 'primary' && !color;
@@ -81,6 +85,8 @@ export function Button({
   const getTextColor = () => {
     if (isDisabled) return colors.textMuted;
     if (variant === 'outline') return color ?? colors.primary;
+    if (isPrimary) return colors.onPrimary;
+    if (color) return '#FFFFFF';
     return colors.textPrimary;
   };
 
@@ -129,7 +135,7 @@ export function Button({
     >
       {isPrimary && (
         <LinearGradient
-          colors={gradients.primary}
+          colors={[colors.buttonPrimary, colors.primaryLight]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[StyleSheet.absoluteFill, { borderRadius }]}
@@ -140,21 +146,22 @@ export function Button({
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  outline: {
-    borderWidth: 1,
-  },
-  fullWidth: {
-    width: '100%',
-  },
-  text: {
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    base: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+    },
+    outline: {
+      borderWidth: 1,
+    },
+    fullWidth: {
+      width: '100%',
+    },
+    text: {
+      fontWeight: '600',
+      textAlign: 'center',
+    },
+  });

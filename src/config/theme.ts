@@ -1,4 +1,5 @@
-import { MD3DarkTheme } from 'react-native-paper';
+import { MD3DarkTheme, MD3LightTheme } from 'react-native-paper';
+import type { AppearanceName } from '../stores/appearanceStore';
 
 // Dark navy theme colors
 export const colors = {
@@ -10,6 +11,7 @@ export const colors = {
 
   // Accent colors
   primary: '#4A90D9', // Blue accent color
+  onPrimary: '#FFFFFF', // Text on primary buttons
   primaryLight: '#5BA3EC', // Lighter blue for highlights
   secondary: '#3D5A80', // Secondary blue
 
@@ -50,21 +52,102 @@ export const colors = {
   // Game result badges
   gameWon: '#27AE60',
   gameLost: '#7F8C8D',
+  onResult: '#FFFFFF',
 } as const;
 
-export const theme = {
-  ...MD3DarkTheme,
-  colors: {
-    ...MD3DarkTheme.colors,
-    primary: colors.primary,
-    secondary: colors.secondary,
-    secondaryContainer: colors.primary, // Selected state for SegmentedButtons
-    onSecondaryContainer: colors.textPrimary, // Text on selected SegmentedButtons
-    error: '#E91E63',
-    surface: colors.backgroundLight,
-    background: colors.background,
+export type ThemeColors = { [Key in keyof typeof colors]: string };
+
+export const palettes: Record<AppearanceName, ThemeColors> = {
+  navy: colors,
+  paper: {
+    background: '#F5F0E6',
+    backgroundLight: '#FFFCF6',
+    boardBackground: '#E5DAC7',
+    cellBackground: '#F2EBDD',
+    primary: '#985332',
+    onPrimary: '#FFFFFF',
+    primaryLight: '#B66B43',
+    secondary: '#D8BB9A',
+    tripleWord: '#A54838',
+    doubleLetter: '#477E85',
+    tileBackground: '#BF8254',
+    tilePending: '#E5DAC7',
+    tileBorder: '#985332',
+    tileText: '#241B16',
+    textPrimary: '#241B16',
+    textSecondary: '#594B40',
+    textMuted: '#716357',
+    border: '#C8B9A5',
+    rackBackground: '#E5DAC7',
+    emptySlot: '#D4C4AC',
+    emptySlotBorder: '#B59C7E',
+    buttonPrimary: '#985332',
+    buttonSecondary: '#D4C4AC',
+    tileClassicBackground: '#FFF9EC',
+    tileClassicSelected: '#F2D3AD',
+    tileShadow: '#8B6244',
+    warning: '#955300',
+    warningOverlay: 'rgba(149, 83, 0, 0.14)',
+    gameWon: '#276F45',
+    gameLost: '#675E54',
+    onResult: '#FFFFFF',
+  },
+  contrast: {
+    background: '#000000',
+    backgroundLight: '#161616',
+    boardBackground: '#202020',
+    cellBackground: '#303030',
+    primary: '#FFDA45',
+    onPrimary: '#000000',
+    primaryLight: '#FFE780',
+    secondary: '#454545',
+    tripleWord: '#FF6868',
+    doubleLetter: '#66D9F2',
+    tileBackground: '#383838',
+    tilePending: '#202020',
+    tileBorder: '#FFDA45',
+    tileText: '#FFFFFF',
+    textPrimary: '#FFFFFF',
+    textSecondary: '#E8E8E8',
+    textMuted: '#BCBCBC',
+    border: '#888888',
+    rackBackground: '#202020',
+    emptySlot: '#303030',
+    emptySlotBorder: '#AAAAAA',
+    buttonPrimary: '#FFDA45',
+    buttonSecondary: '#454545',
+    tileClassicBackground: '#FFFFFF',
+    tileClassicSelected: '#FFEB99',
+    tileShadow: '#FFDA45',
+    warning: '#FFBC4D',
+    warningOverlay: 'rgba(255, 188, 77, 0.25)',
+    gameWon: '#7BE4A1',
+    gameLost: '#D8D8D8',
+    onResult: '#000000',
   },
 };
+
+export function getPaperTheme(appearance: AppearanceName) {
+  const palette = palettes[appearance];
+  const base = appearance === 'paper' ? MD3LightTheme : MD3DarkTheme;
+
+  return {
+    ...base,
+    colors: {
+      ...base.colors,
+      primary: palette.primary,
+      secondary: palette.secondary,
+      secondaryContainer: palette.primary,
+      onSecondaryContainer: palette.onPrimary,
+      surface: palette.backgroundLight,
+      background: palette.background,
+      onSurface: palette.textPrimary,
+      onBackground: palette.textPrimary,
+    },
+  };
+}
+
+export const theme = getPaperTheme('navy');
 
 export const MULTIPLIER_COLORS = {
   '3W': '#C0392B', // Deep crimson for Triple Word

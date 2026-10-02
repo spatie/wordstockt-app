@@ -1,7 +1,11 @@
+import type { ThemeColors } from '../../../src/config/theme';
+import {
+  useThemeColors,
+  useThemedStyles,
+} from '../../../src/hooks/useThemeColors';
 import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { colors } from '../../../src/config/theme';
 import { SPACING, RADIUS } from '../../../src/config/constants';
 import { ROUTES } from '../../../src/config/routes';
 import {
@@ -13,6 +17,8 @@ import { Button } from '../../../src/components/ui/Button';
 import { SmartAvatar } from '../../../src/components/ui/SmartAvatar';
 
 export default function InviteConfirmScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const { code: codeParam } = useLocalSearchParams<{
     code: string | string[];
   }>();
@@ -131,84 +137,85 @@ export default function InviteConfirmScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: SPACING.xl,
-  },
-  card: {
-    backgroundColor: colors.backgroundLight,
-    borderRadius: RADIUS.xl,
-    padding: SPACING.xxl,
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginTop: SPACING.lg,
-  },
-  errorIcon: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#EF4444',
-    marginBottom: SPACING.md,
-  },
-  errorTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: SPACING.sm,
-  },
-  errorMessage: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: SPACING.xl,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginTop: SPACING.lg,
-    marginBottom: SPACING.md,
-  },
-  inviterText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: SPACING.md,
-  },
-  inviterName: {
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  languageBadge: {
-    backgroundColor: colors.primary + '20',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
-    borderRadius: RADIUS.lg,
-    marginBottom: SPACING.xl,
-  },
-  languageText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.primary,
-  },
-  errorContainer: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.lg,
-    width: '100%',
-  },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  buttonContainer: {
-    width: '100%',
-    gap: SPACING.md,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      justifyContent: 'center',
+      padding: SPACING.xl,
+    },
+    card: {
+      backgroundColor: colors.backgroundLight,
+      borderRadius: RADIUS.xl,
+      padding: SPACING.xxl,
+      alignItems: 'center',
+    },
+    loadingText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      marginTop: SPACING.lg,
+    },
+    errorIcon: {
+      fontSize: 48,
+      fontWeight: 'bold',
+      color: '#EF4444',
+      marginBottom: SPACING.md,
+    },
+    errorTitle: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      marginBottom: SPACING.sm,
+    },
+    errorMessage: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: SPACING.xl,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      marginTop: SPACING.lg,
+      marginBottom: SPACING.md,
+    },
+    inviterText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: SPACING.md,
+    },
+    inviterName: {
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    languageBadge: {
+      backgroundColor: colors.primary + '20',
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: SPACING.sm,
+      borderRadius: RADIUS.lg,
+      marginBottom: SPACING.xl,
+    },
+    languageText: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: colors.primary,
+    },
+    errorContainer: {
+      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+      borderRadius: RADIUS.md,
+      padding: SPACING.md,
+      marginBottom: SPACING.lg,
+      width: '100%',
+    },
+    errorText: {
+      color: '#EF4444',
+      fontSize: 14,
+      textAlign: 'center',
+    },
+    buttonContainer: {
+      width: '100%',
+      gap: SPACING.md,
+    },
+  });

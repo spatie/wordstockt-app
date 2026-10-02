@@ -1,6 +1,7 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors } from '../../config/theme';
 
 type LogoTileSize = 'small' | 'medium' | 'large';
 
@@ -16,6 +17,7 @@ const SIZES = {
 } as const;
 
 export function LogoTile({ letter, size = 'medium' }: LogoTileProps) {
+  const styles = useThemedStyles(createStyles);
   const dimensions = SIZES[size];
 
   return (
@@ -36,14 +38,15 @@ export function LogoTile({ letter, size = 'medium' }: LogoTileProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  tile: {
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  letter: {
-    fontWeight: '700',
-    color: '#FFF',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    tile: {
+      backgroundColor: colors.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    letter: {
+      fontWeight: '700',
+      color: colors.onPrimary,
+    },
+  });

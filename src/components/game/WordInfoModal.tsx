@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
@@ -12,7 +14,6 @@ import {
 import { BaseModal } from '../ui/BaseModal';
 import { Button } from '../ui/Button';
 import { useReportWord } from '../../api/queries/useDictionary';
-import { colors } from '../../config/theme';
 import { SPACING, RADIUS } from '../../config/constants';
 import type { WordInfo } from '../../types';
 
@@ -73,6 +74,7 @@ function FadeSlideIn({
 }
 
 function PosBadge({ pos }: { pos: string }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.posBadge}>
       <Text style={styles.posBadgeText}>{pos}</Text>
@@ -89,6 +91,7 @@ function Section({
   icon: string;
   children: React.ReactNode;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>
@@ -100,6 +103,7 @@ function Section({
 }
 
 function ProverbItem({ text }: { text: string }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.exampleItem}>
       <Text style={styles.exampleQuote}>&quot;</Text>
@@ -117,6 +121,7 @@ function SenseItem({
   index: number;
   showNumber: boolean;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.senseItem}>
       <View style={styles.senseHeader}>
@@ -138,6 +143,7 @@ function SenseItem({
 }
 
 function Stat({ label, value }: { label: string; value: string | number }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.stat}>
       <Text style={styles.statLabel}>{label}</Text>
@@ -159,6 +165,7 @@ function ReportButton({
   isReporting: boolean;
   isReported: boolean;
 }) {
+  const styles = useThemedStyles(createStyles);
   const handlePress = () => {
     Alert.alert(
       'Report Word?',
@@ -201,6 +208,7 @@ function ReportButton({
 }
 
 function WordHeader({ word }: { word: WordInfo }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.wordHeader}>
       <View style={styles.wordTitleRow}>
@@ -227,6 +235,7 @@ function WordContent({
   isReporting: boolean;
   reportedWords: Set<string>;
 }) {
+  const styles = useThemedStyles(createStyles);
   const { definition } = word;
   const senses = definition?.senses ?? [];
   const showNumbers = senses.length > 1;
@@ -289,6 +298,8 @@ export function WordInfoModal({
   isLoading,
   language,
 }: WordInfoModalProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   // Cache content while modal is closing to prevent jarring disappearance
   const cachedWordsRef = useRef<WordInfo[] | undefined>(undefined);
   const cachedLoadingRef = useRef(false);
@@ -378,203 +389,204 @@ export function WordInfoModal({
   );
 }
 
-const styles = StyleSheet.create({
-  modal: {
-    padding: SPACING.xl,
-    maxHeight: '80%',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: SPACING.lg,
-  },
-  scrollView: {
-    height: 400,
-    marginBottom: SPACING.lg,
-  },
-  centered: {
-    height: 400,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  wordHeader: {
-    backgroundColor: colors.background,
-    borderRadius: RADIUS.lg,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    padding: SPACING.lg,
-    paddingBottom: SPACING.md,
-  },
-  wordTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-    gap: SPACING.sm,
-  },
-  wordContent: {
-    backgroundColor: colors.background,
-    borderRadius: RADIUS.lg,
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.lg,
-    marginBottom: SPACING.md,
-  },
-  wordTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.primary,
-  },
-  posBadge: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 2,
-    borderRadius: RADIUS.sm,
-  },
-  posBadgeText: {
-    fontSize: 11,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  stat: {
-    flex: 1,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: 2,
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  definitionSection: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: SPACING.md,
-  },
-  sectionLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: SPACING.sm,
-    fontWeight: '600',
-  },
-  senseItem: {
-    marginBottom: SPACING.md,
-  },
-  senseHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-    marginBottom: SPACING.xs,
-  },
-  senseNumber: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  senseDefinition: {
-    fontSize: 15,
-    color: colors.textPrimary,
-    lineHeight: 22,
-  },
-  senseExamples: {
-    marginTop: SPACING.xs,
-    paddingLeft: SPACING.md,
-  },
-  senseExampleText: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-    lineHeight: 18,
-    marginBottom: SPACING.xs,
-  },
-  section: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    marginTop: SPACING.md,
-    paddingTop: SPACING.md,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    marginBottom: SPACING.sm,
-  },
-  sectionContent: {
-    paddingBottom: SPACING.md,
-  },
-  etymologyText: {
-    fontSize: 14,
-    color: colors.textPrimary,
-    lineHeight: 20,
-  },
-  exampleItem: {
-    flexDirection: 'row',
-    marginBottom: SPACING.sm,
-  },
-  exampleQuote: {
-    fontSize: 24,
-    color: colors.primary,
-    marginRight: SPACING.xs,
-    marginTop: -4,
-    fontWeight: 'bold',
-  },
-  exampleText: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.textPrimary,
-    lineHeight: 20,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    padding: SPACING.xl,
-  },
-  reportButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: RADIUS.sm,
-    backgroundColor: 'rgba(139, 157, 195, 0.1)',
-    marginBottom: SPACING.sm,
-  },
-  reportButtonPressed: {
-    backgroundColor: 'rgba(231, 76, 60, 0.15)',
-  },
-  reportButtonIcon: {
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  reportButtonText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  reportButtonReported: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 4,
-    paddingVertical: 6,
-    marginBottom: SPACING.sm,
-  },
-  reportButtonReportedIcon: {
-    fontSize: 11,
-    color: colors.gameWon,
-  },
-  reportButtonReportedText: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    modal: {
+      padding: SPACING.xl,
+      maxHeight: '80%',
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: colors.textPrimary,
+      textAlign: 'center',
+      marginBottom: SPACING.lg,
+    },
+    scrollView: {
+      height: 400,
+      marginBottom: SPACING.lg,
+    },
+    centered: {
+      height: 400,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    wordHeader: {
+      backgroundColor: colors.background,
+      borderRadius: RADIUS.lg,
+      borderBottomLeftRadius: 0,
+      borderBottomRightRadius: 0,
+      padding: SPACING.lg,
+      paddingBottom: SPACING.md,
+    },
+    wordTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: SPACING.md,
+      gap: SPACING.sm,
+    },
+    wordContent: {
+      backgroundColor: colors.background,
+      borderRadius: RADIUS.lg,
+      borderTopLeftRadius: 0,
+      borderTopRightRadius: 0,
+      paddingHorizontal: SPACING.lg,
+      paddingBottom: SPACING.lg,
+      marginBottom: SPACING.md,
+    },
+    wordTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: colors.primary,
+    },
+    posBadge: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: SPACING.sm,
+      paddingVertical: 2,
+      borderRadius: RADIUS.sm,
+    },
+    posBadgeText: {
+      fontSize: 11,
+      color: '#FFFFFF',
+      fontWeight: '600',
+    },
+    statsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    stat: {
+      flex: 1,
+    },
+    statLabel: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginBottom: 2,
+    },
+    statValue: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    definitionSection: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: SPACING.md,
+    },
+    sectionLabel: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginBottom: SPACING.sm,
+      fontWeight: '600',
+    },
+    senseItem: {
+      marginBottom: SPACING.md,
+    },
+    senseHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.xs,
+      marginBottom: SPACING.xs,
+    },
+    senseNumber: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    senseDefinition: {
+      fontSize: 15,
+      color: colors.textPrimary,
+      lineHeight: 22,
+    },
+    senseExamples: {
+      marginTop: SPACING.xs,
+      paddingLeft: SPACING.md,
+    },
+    senseExampleText: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      fontStyle: 'italic',
+      lineHeight: 18,
+      marginBottom: SPACING.xs,
+    },
+    section: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      marginTop: SPACING.md,
+      paddingTop: SPACING.md,
+    },
+    sectionTitle: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      marginBottom: SPACING.sm,
+    },
+    sectionContent: {
+      paddingBottom: SPACING.md,
+    },
+    etymologyText: {
+      fontSize: 14,
+      color: colors.textPrimary,
+      lineHeight: 20,
+    },
+    exampleItem: {
+      flexDirection: 'row',
+      marginBottom: SPACING.sm,
+    },
+    exampleQuote: {
+      fontSize: 24,
+      color: colors.primary,
+      marginRight: SPACING.xs,
+      marginTop: -4,
+      fontWeight: 'bold',
+    },
+    exampleText: {
+      flex: 1,
+      fontSize: 14,
+      color: colors.textPrimary,
+      lineHeight: 20,
+    },
+    emptyText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      padding: SPACING.xl,
+    },
+    reportButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      gap: 4,
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+      borderRadius: RADIUS.sm,
+      backgroundColor: 'rgba(139, 157, 195, 0.1)',
+      marginBottom: SPACING.sm,
+    },
+    reportButtonPressed: {
+      backgroundColor: 'rgba(231, 76, 60, 0.15)',
+    },
+    reportButtonIcon: {
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    reportButtonText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    reportButtonReported: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      gap: 4,
+      paddingVertical: 6,
+      marginBottom: SPACING.sm,
+    },
+    reportButtonReportedIcon: {
+      fontSize: 11,
+      color: colors.gameWon,
+    },
+    reportButtonReportedText: {
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+  });

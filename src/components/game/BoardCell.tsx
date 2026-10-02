@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, View, Text, StyleSheet, Platform } from 'react-native';
 import Animated, {
@@ -18,7 +20,6 @@ import {
   MULTIPLIER_COLORS,
   MULTIPLIER_LABELS,
   HIGHLIGHT_COLORS,
-  colors,
 } from '../../config/theme';
 import type { SquareType, PlacedTile } from '../../types';
 import type { DropTarget } from '../../context/DragDropContext';
@@ -50,6 +51,8 @@ function BoardCellComponent({
   isLastMove = false,
   cellSize,
 }: BoardCellProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   // Stable per-cell press handler so we don't receive a fresh closure each render
   const onPress = useCallback(() => {
     onCellPress(x, y);
@@ -369,6 +372,7 @@ interface BonusTextProps {
 }
 
 function BonusText({ squareType, isStar, cellSize }: BonusTextProps) {
+  const styles = useThemedStyles(createStyles);
   const fontMultiplier = Platform.OS === 'android' ? 0.38 : 0.45;
   const multiplierFontSize = Math.max(8, Math.round(cellSize * fontMultiplier));
   const starFontSize = Math.max(8, Math.round(cellSize * 0.4));
@@ -404,6 +408,7 @@ interface AnimatedWordHighlightProps {
 }
 
 function AnimatedWordHighlight({ highlight }: AnimatedWordHighlightProps) {
+  const styles = useThemedStyles(createStyles);
   // Don't render at all during delay period, then fade in
   const [shouldRender, setShouldRender] = useState(false);
   const opacity = useSharedValue(0);
@@ -484,6 +489,7 @@ function TileContent({
   isLastMove,
   cellSize,
 }: TileContentProps) {
+  const styles = useThemedStyles(createStyles);
   const validationState = useTileValidationState(x, y);
   const wordHighlight = useBoardTileHighlight(x, y);
   const tileValidationState = isPending ? validationState : wordHighlight;
@@ -531,6 +537,7 @@ function CellContent({
   isLastMove,
   cellSize,
 }: CellContentProps) {
+  const styles = useThemedStyles(createStyles);
   const validationState = useTileValidationState(x, y);
   const wordHighlight = useBoardTileHighlight(x, y);
 
@@ -592,55 +599,56 @@ function CellContent({
 // Android renders hairline borders with artifacts at intersections, so use 1px instead
 const gridLineWidth = Platform.OS === 'android' ? 1 : StyleSheet.hairlineWidth;
 
-const styles = StyleSheet.create({
-  cellWrapper: {
-    flex: 1,
-    aspectRatio: 1,
-    borderRightWidth: gridLineWidth,
-    borderBottomWidth: gridLineWidth,
-    borderColor: '#0D1520',
-  },
-  cell: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 4,
-  },
-  tileContainer: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bonusTextContainer: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  tileOverlay: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  wordHighlight: {
-    position: 'absolute',
-    width: '99%',
-    height: '99%',
-    borderRadius: 4,
-  },
-  lastMoveHighlight: {
-    position: 'absolute',
-    width: '99%',
-    height: '99%',
-    borderRadius: 4,
-    backgroundColor: colors.warningOverlay,
-  },
-  multiplierText: {
-    fontWeight: '600',
-    color: '#FFF',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    cellWrapper: {
+      flex: 1,
+      aspectRatio: 1,
+      borderRightWidth: gridLineWidth,
+      borderBottomWidth: gridLineWidth,
+      borderColor: '#0D1520',
+    },
+    cell: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderRadius: 4,
+    },
+    tileContainer: {
+      width: '100%',
+      height: '100%',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    bonusTextContainer: {
+      position: 'absolute',
+      width: '100%',
+      height: '100%',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    tileOverlay: {
+      position: 'absolute',
+      width: '100%',
+      height: '100%',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    wordHighlight: {
+      position: 'absolute',
+      width: '99%',
+      height: '99%',
+      borderRadius: 4,
+    },
+    lastMoveHighlight: {
+      position: 'absolute',
+      width: '99%',
+      height: '99%',
+      borderRadius: 4,
+      backgroundColor: colors.warningOverlay,
+    },
+    multiplierText: {
+      fontWeight: '600',
+      color: '#FFF',
+    },
+  });

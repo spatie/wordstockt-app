@@ -1,15 +1,17 @@
 import React from 'react';
 import { Stack } from 'expo-router';
 import { Platform, View, StyleSheet } from 'react-native';
-import { colors } from '../../src/config/theme';
+import { useThemeColors } from '../../src/hooks/useThemeColors';
 import { useUserWebSocket } from '../../src/hooks/useUserWebSocket';
 import { useInvitationStore } from '../../src/stores/invitationStore';
 import { HeaderLogo } from '../../src/components/ui/HeaderLogo';
 import { HeaderMenu } from '../../src/components/ui/HeaderMenu';
+import { MainNavigationHeader } from '../../src/components/ui/MainNavigationHeader';
 import { InvitationDialog } from '../../src/components/game/InvitationDialog';
 import { GlowingBackground } from '../../src/components/ui/GlowingBackground';
 
 export default function MainLayout() {
+  const colors = useThemeColors();
   // Subscribe to user channel for real-time updates (invitations, etc.)
   useUserWebSocket();
 
@@ -19,7 +21,7 @@ export default function MainLayout() {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <GlowingBackground />
       <InvitationDialog
         invitation={pendingInvitation}
@@ -43,6 +45,15 @@ export default function MainLayout() {
           headerRight: () => <HeaderMenu />,
           headerBackButtonDisplayMode: 'minimal',
           headerShadowVisible: false,
+          header:
+            Platform.OS === 'ios'
+              ? ({ navigation, back }) => (
+                  <MainNavigationHeader
+                    canGoBack={Boolean(back)}
+                    onBack={() => navigation.goBack()}
+                  />
+                )
+              : undefined,
         }}
       >
         <Stack.Screen
@@ -68,6 +79,5 @@ export default function MainLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
 });

@@ -1,3 +1,8 @@
+import type { ThemeColors } from '../../src/config/theme';
+import {
+  useThemeColors,
+  useThemedStyles,
+} from '../../src/hooks/useThemeColors';
 import React, { useState } from 'react';
 import {
   View,
@@ -15,7 +20,6 @@ import { getApiError } from '../../src/api/client';
 import { FormInput } from '../../src/components/form/FormInput';
 import { MainLogo } from '../../src/components/ui/MainLogo';
 import { FloatingTiles } from '../../src/components/ui/FloatingTiles';
-import { colors } from '../../src/config/theme';
 import {
   SPACING,
   RADIUS,
@@ -24,6 +28,8 @@ import {
 } from '../../src/config/constants';
 
 export default function ForgotPasswordScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const [identifier, setIdentifier] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const forgotPassword = useForgotPassword();
@@ -49,7 +55,11 @@ export default function ForgotPasswordScreen() {
     return (
       <View style={styles.container}>
         <LinearGradient
-          colors={['#0D1B2A', '#152238', '#0D1B2A']}
+          colors={[
+            colors.background,
+            colors.backgroundLight,
+            colors.background,
+          ]}
           locations={[0, 0.5, 1]}
           style={StyleSheet.absoluteFill}
           start={{ x: 0.5, y: 0 }}
@@ -88,7 +98,7 @@ export default function ForgotPasswordScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#0D1B2A', '#152238', '#0D1B2A']}
+        colors={[colors.background, colors.backgroundLight, colors.background]}
         locations={[0, 0.5, 1]}
         style={StyleSheet.absoluteFill}
         start={{ x: 0.5, y: 0 }}
@@ -147,84 +157,85 @@ export default function ForgotPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    padding: SPACING.xxl,
-    alignItems: 'center',
-    maxWidth: LAYOUT.authFormMaxWidth,
-    width: '100%',
-    alignSelf: 'center',
-  },
-  logoContainer: {
-    marginTop: 20,
-    marginBottom: SPACING.xl,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: SPACING.sm,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginBottom: 32,
-    textAlign: 'center',
-    paddingHorizontal: SPACING.lg,
-  },
-  successIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#48bb78',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: SPACING.xl,
-  },
-  successIconText: {
-    fontSize: 40,
-    color: '#FFF',
-    fontWeight: 'bold',
-  },
-  errorContainer: {
-    width: '100%',
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.lg,
-  },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  button: {
-    width: '100%',
-    backgroundColor: 'rgba(74, 144, 217, 0.3)',
-    borderWidth: 1,
-    borderColor: 'rgba(74, 144, 217, 0.5)',
-    borderRadius: 30,
-    height: DIMENSIONS.inputHeight,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    marginTop: SPACING.md,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFF',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    keyboardView: {
+      flex: 1,
+    },
+    content: {
+      flex: 1,
+      padding: SPACING.xxl,
+      alignItems: 'center',
+      maxWidth: LAYOUT.authFormMaxWidth,
+      width: '100%',
+      alignSelf: 'center',
+    },
+    logoContainer: {
+      marginTop: 20,
+      marginBottom: SPACING.xl,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: SPACING.sm,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      marginBottom: 32,
+      textAlign: 'center',
+      paddingHorizontal: SPACING.lg,
+    },
+    successIcon: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: '#48bb78',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: SPACING.xl,
+    },
+    successIconText: {
+      fontSize: 40,
+      color: '#FFF',
+      fontWeight: 'bold',
+    },
+    errorContainer: {
+      width: '100%',
+      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+      borderRadius: RADIUS.md,
+      padding: SPACING.md,
+      marginBottom: SPACING.lg,
+    },
+    errorText: {
+      color: '#EF4444',
+      fontSize: 14,
+      textAlign: 'center',
+    },
+    button: {
+      width: '100%',
+      backgroundColor: 'rgba(74, 144, 217, 0.3)',
+      borderWidth: 1,
+      borderColor: 'rgba(74, 144, 217, 0.5)',
+      borderRadius: 30,
+      height: DIMENSIONS.inputHeight,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: SPACING.sm,
+      marginTop: SPACING.md,
+    },
+    buttonDisabled: {
+      opacity: 0.5,
+    },
+    buttonText: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: '#FFF',
+    },
+  });

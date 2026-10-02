@@ -7,9 +7,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { theme, colors } from '../src/config/theme';
+import { getPaperTheme, palettes } from '../src/config/theme';
 import { useAuthStore } from '../src/stores/authStore';
 import { useNavigationStore } from '../src/stores/navigationStore';
+import { useAppearanceStore } from '../src/stores/appearanceStore';
 import { AnimatedSplash } from '../src/components/ui/AnimatedSplash';
 import { LogoutOverlay } from '../src/components/ui/LogoutOverlay';
 import { SnackbarProvider } from '../src/components/ui/SnackbarProvider';
@@ -34,6 +35,8 @@ let hasSplashCompleted = false;
 let hasEverLoadedAuth = false;
 
 function RootLayoutNav() {
+  const appearance = useAppearanceStore((s) => s.appearance);
+  const colors = palettes[appearance];
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const user = useAuthStore((s) => s.user);
   const segments = useSegments();
@@ -67,7 +70,7 @@ function RootLayoutNav() {
 
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style={appearance === 'paper' ? 'dark' : 'light'} />
       <Stack
         screenOptions={{
           headerShown: false,
@@ -84,12 +87,15 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  const appearance = useAppearanceStore((s) => s.appearance);
+  const isAppearanceHydrated = useAppearanceStore((s) => s.isHydrated);
+  const colors = palettes[appearance];
   const [splashAnimationComplete, setSplashAnimationComplete] =
     useState(hasSplashCompleted);
   const isLoading = useAuthStore((s) => s.isLoading);
   const isNavigationHydrated = useNavigationStore((s) => s.isHydrated);
 
-  const isAppReady = !isLoading && isNavigationHydrated;
+  const isAppReady = !isLoading && isNavigationHydrated && isAppearanceHydrated;
 
   // Track when auth has loaded at least once (distinguishes cold start from logout)
   useEffect(() => {
@@ -117,7 +123,7 @@ export default function RootLayout() {
     >
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <PaperProvider theme={theme}>
+          <PaperProvider theme={getPaperTheme(appearance)}>
             <SnackbarProvider>
               {shouldShowSplash ? (
                 <AnimatedSplash

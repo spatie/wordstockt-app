@@ -1,6 +1,7 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors } from '../../config/theme';
 import type { UserStats } from '../../types';
 
 interface StatsOverviewCardProps {
@@ -8,6 +9,7 @@ interface StatsOverviewCardProps {
 }
 
 export function StatsOverviewCard({ stats }: StatsOverviewCardProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       {/* ELO Section */}
@@ -58,99 +60,100 @@ export function StatsOverviewCard({ stats }: StatsOverviewCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.backgroundLight,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  eloSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  eloMain: {
-    flex: 1,
-  },
-  eloValue: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  eloLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  eloStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  eloStat: {
-    alignItems: 'center',
-  },
-  eloStatValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  eloStatLabel: {
-    fontSize: 10,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  eloStatDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: colors.border,
-    marginHorizontal: 12,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: 12,
-  },
-  gamesSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  gamesText: {
-    fontSize: 14,
-  },
-  gamesWon: {
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  gamesPlayed: {
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  gamesLabel: {
-    color: colors.textSecondary,
-  },
-  winRate: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  streakSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  streakLabel: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  streakValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#27AE60',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      backgroundColor: colors.backgroundLight,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+    },
+    eloSection: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    eloMain: {
+      flex: 1,
+    },
+    eloValue: {
+      fontSize: 32,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    eloLabel: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    eloStats: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    eloStat: {
+      alignItems: 'center',
+    },
+    eloStatValue: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    eloStatLabel: {
+      fontSize: 10,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    eloStatDivider: {
+      width: 1,
+      height: 24,
+      backgroundColor: colors.border,
+      marginHorizontal: 12,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: 12,
+    },
+    gamesSection: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    gamesText: {
+      fontSize: 14,
+    },
+    gamesWon: {
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    gamesPlayed: {
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    gamesLabel: {
+      color: colors.textSecondary,
+    },
+    winRate: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    streakSection: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    streakLabel: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    streakValue: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#27AE60',
+    },
+  });

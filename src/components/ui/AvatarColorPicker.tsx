@@ -1,7 +1,8 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React from 'react';
 import { View, Pressable, StyleSheet, Text } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { colors } from '../../config/theme';
 import { SPACING, RADIUS } from '../../config/constants';
 
 // Colors chosen for good contrast with white text (WCAG AA compliant)
@@ -23,6 +24,7 @@ export function AvatarColorPicker({
   selectedColor,
   onSelectColor,
 }: AvatarColorPickerProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Avatar Color</Text>
@@ -51,38 +53,39 @@ export function AvatarColorPicker({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: SPACING.xl,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    marginBottom: SPACING.md,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  colorGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-  },
-  colorSwatch: {
-    width: 44,
-    height: 44,
-    borderRadius: RADIUS.round,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  colorSwatchSelected: {
-    borderWidth: 3,
-    borderColor: '#FFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      marginBottom: SPACING.xl,
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      marginBottom: SPACING.md,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    colorGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: SPACING.sm,
+    },
+    colorSwatch: {
+      width: 44,
+      height: 44,
+      borderRadius: RADIUS.round,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    colorSwatchSelected: {
+      borderWidth: 3,
+      borderColor: '#FFF',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 4,
+    },
+  });

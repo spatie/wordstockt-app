@@ -1,10 +1,13 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React from 'react';
 import { View, StyleSheet, Modal } from 'react-native';
 import { ActivityIndicator, Text } from 'react-native-paper';
 import { useAuthStore } from '../../stores/authStore';
-import { colors } from '../../config/theme';
 
 export function LogoutOverlay() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const isLoggingOut = useAuthStore((s) => s.isLoggingOut);
 
   if (!isLoggingOut) {
@@ -23,19 +26,20 @@ export function LogoutOverlay() {
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    alignItems: 'center',
-    gap: 16,
-  },
-  text: {
-    color: colors.textPrimary,
-    fontSize: 16,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    content: {
+      alignItems: 'center',
+      gap: 16,
+    },
+    text: {
+      color: colors.textPrimary,
+      fontSize: 16,
+    },
+  });

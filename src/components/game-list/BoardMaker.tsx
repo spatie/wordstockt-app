@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import {
   View,
@@ -10,7 +12,7 @@ import { Switch } from 'react-native-paper';
 import { BoardMakerCell } from './BoardMakerCell';
 import { Button } from '../ui/Button';
 import { useBoardMakerStore } from '../../stores/boardMakerStore';
-import { colors, MULTIPLIER_COLORS } from '../../config/theme';
+import { MULTIPLIER_COLORS } from '../../config/theme';
 import { BOARD_SIZE, SPACING } from '../../config/constants';
 import type { SquareType } from '../../types/game';
 
@@ -22,6 +24,8 @@ interface BoardMakerProps {
 const SQUARE_TYPE_ORDER = ['2L', '3L', '2W', '3W'] as const;
 
 export function BoardMaker({ onAccept, onCancel }: BoardMakerProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const { width: windowWidth } = useWindowDimensions();
   const {
     template,
@@ -197,84 +201,85 @@ export function BoardMaker({ onAccept, onCancel }: BoardMakerProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    paddingVertical: SPACING.md,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: SPACING.md,
-  },
-  countsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: SPACING.md,
-    marginBottom: SPACING.sm,
-  },
-  countBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  countDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 2,
-    marginRight: 4,
-  },
-  countText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  helpText: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginBottom: SPACING.md,
-  },
-  board: {
-    backgroundColor: colors.boardBackground,
-    padding: 4,
-    borderRadius: 4,
-    gap: 2,
-  },
-  row: {
-    flexDirection: 'row',
-  },
-  controls: {
-    width: '100%',
-    marginTop: SPACING.lg,
-    gap: SPACING.md,
-  },
-  symmetryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-  },
-  symmetryLabel: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: SPACING.md,
-  },
-  controlButton: {
-    minWidth: 100,
-  },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: SPACING.md,
-    marginTop: SPACING.xl,
-    width: '100%',
-  },
-  actionButton: {
-    flex: 1,
-    maxWidth: 150,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      alignItems: 'center',
+      paddingVertical: SPACING.md,
+    },
+    title: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      marginBottom: SPACING.md,
+    },
+    countsRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: SPACING.md,
+      marginBottom: SPACING.sm,
+    },
+    countBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    countDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 2,
+      marginRight: 4,
+    },
+    countText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: '500',
+    },
+    helpText: {
+      fontSize: 12,
+      color: colors.textMuted,
+      marginBottom: SPACING.md,
+    },
+    board: {
+      backgroundColor: colors.boardBackground,
+      padding: 4,
+      borderRadius: 4,
+      gap: 2,
+    },
+    row: {
+      flexDirection: 'row',
+    },
+    controls: {
+      width: '100%',
+      marginTop: SPACING.lg,
+      gap: SPACING.md,
+    },
+    symmetryRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: SPACING.sm,
+    },
+    symmetryLabel: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    buttonRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: SPACING.md,
+    },
+    controlButton: {
+      minWidth: 100,
+    },
+    actions: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: SPACING.md,
+      marginTop: SPACING.xl,
+      width: '100%',
+    },
+    actionButton: {
+      flex: 1,
+      maxWidth: 150,
+    },
+  });

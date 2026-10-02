@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Animated, Pressable, Platform } from 'react-native';
 import { Tile } from './Tile';
@@ -25,6 +27,7 @@ export function SelectableTile({
   swapCompleted,
   onToggle,
 }: SelectableTileProps) {
+  const styles = useThemedStyles(createStyles);
   const liftAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const prevSwapCompletedRef = useRef(swapCompleted);
@@ -139,11 +142,12 @@ export function SelectableTile({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    width: TILE_SIZE,
-    height: TILE_SIZE,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      width: TILE_SIZE,
+      height: TILE_SIZE,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+  });

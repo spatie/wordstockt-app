@@ -1,3 +1,9 @@
+import type { ThemeColors } from '../../config/theme';
+import {
+  useThemeBlurTint,
+  useThemeColors,
+  useThemedStyles,
+} from '../../hooks/useThemeColors';
 import React, {
   useEffect,
   useCallback,
@@ -28,7 +34,6 @@ import ReAnimated, {
 import { Text } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { colors } from '../../config/theme';
 import { DIMENSIONS, LAYOUT } from '../../config/constants';
 import { ROUTES } from '../../config/routes';
 import { useAuthStore } from '../../stores/authStore';
@@ -92,6 +97,7 @@ function TilesBadge({
   count: number;
   floating?: boolean;
 }) {
+  const styles = useThemedStyles(createStyles);
   const rotation = useSharedValue(0);
   const scale = useSharedValue(1);
 
@@ -143,6 +149,7 @@ function StatusDots({
   hasReceivedBlank?: boolean;
   onPress?: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   const showBlankPending = hasReceivedBlank === false;
   const showFreeSwap = hasFreeSwap === true;
 
@@ -164,6 +171,7 @@ function StatusDots({
 }
 
 function ResultBadge({ won }: { won: boolean }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View
       style={[styles.resultBadge, won ? styles.wonBadge : styles.lostBadge]}
@@ -190,6 +198,7 @@ function AnimatedPlayerSection({
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
+  const styles = useThemedStyles(createStyles);
   const pulse = useSharedValue(1);
   const boxOpacity = useSharedValue(isActive ? 1 : 0);
   const color = avatarColor || '#4A90D9';
@@ -289,6 +298,8 @@ function PlayerAvatar({
   player: Player | undefined;
   dimmed?: boolean;
 }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const currentUser = useAuthStore((s) => s.user);
   const currentUserUlid = currentUser?.ulid;
@@ -356,6 +367,7 @@ function PlayerChip({
   showRackCount: boolean;
   gridItem?: boolean;
 }) {
+  const styles = useThemedStyles(createStyles);
   const hasLeft = player.hasLeft === true;
   const isActive = !hasLeft && player.isCurrentTurn;
   const gotEmptyRackBonus = player.receivedEmptyRackBonus === true;
@@ -415,6 +427,7 @@ function PendingSeatChip({
   onRevoke?: (invitationUlid: string) => void;
   gridItem?: boolean;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View
       style={[
@@ -466,6 +479,7 @@ function InviteSeatChip({
   onInvite?: () => void;
   gridItem?: boolean;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable
       style={({ pressed }) => [
@@ -502,6 +516,7 @@ function FooterHistory({
   showBonus,
   bonus,
 }: FooterHistoryProps) {
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const isFirstRender = useRef(true);
   const opacity = useSharedValue(1);
@@ -589,6 +604,9 @@ export function ScoreBar({
   onRevokeInvitation,
   tilesPlayed = 0,
 }: ScoreBarProps) {
+  const blurTint = useThemeBlurTint();
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const [statusModalPlayerUlid, setStatusModalPlayerUlid] = useState<
     string | null
   >(null);
@@ -679,7 +697,7 @@ export function ScoreBar({
 
   return (
     <View style={styles.containerWrapper}>
-      <BlurView intensity={40} tint="dark" style={styles.container}>
+      <BlurView intensity={40} tint={blurTint} style={styles.container}>
         {/* Equal-chip row keyed to the original roster size */}
         <View
           style={[styles.mainContent, isMultiplayer && styles.mainContentGrid]}
@@ -759,7 +777,7 @@ export function ScoreBar({
               <MaterialCommunityIcons
                 name="play"
                 size={14}
-                color={colors.textPrimary}
+                color={colors.onPrimary}
               />
               <Text style={styles.startButtonText}>{startLabel}</Text>
             </Pressable>
@@ -785,324 +803,325 @@ export function ScoreBar({
   );
 }
 
-const styles = StyleSheet.create({
-  containerWrapper: {
-    marginHorizontal: 12,
-    marginTop: 8,
-    marginBottom: 8,
-    borderRadius: 16,
-    overflow: 'hidden',
-    maxWidth: LAYOUT.gameControlsMaxWidth,
-    width: '100%',
-    alignSelf: 'center',
-  },
-  container: {
-    backgroundColor: 'rgba(27, 40, 56, 0.5)',
-  },
-  mainContent: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    padding: 10,
-    gap: 6,
-  },
-  // 3-4 players: wrap chips into two rows so each keeps the roomy 2-player
-  // (avatar beside name) layout instead of being squeezed into four columns.
-  // space-between spreads a full row of two to the edges and leaves a lone
-  // bottom chip (3 players) aligned left with the right side empty.
-  mainContentGrid: {
-    flexWrap: 'wrap',
-    alignItems: 'stretch',
-    justifyContent: 'space-between',
-    rowGap: 8,
-  },
-  gridSection: {
-    flexGrow: 0,
-    flexBasis: '41%',
-    maxWidth: '41%',
-  },
-  // Floats the tiles-in-bag badge in the centre of the 2x2 grid (the gutter
-  // between the chips), so it never needs a separate row of its own.
-  bagOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  playerSection: {
-    flex: 1,
-    minWidth: 0,
-    padding: 8,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    justifyContent: 'center',
-  },
-  placeholderSection: {
-    justifyContent: 'center',
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    minWidth: 0,
-  },
-  chipLeft: {
-    opacity: 0.55,
-  },
-  playerInfo: {
-    flex: 1,
-    minWidth: 0,
-  },
-  avatarWrapper: {
-    width: AVATAR_CONTAINER_SIZE,
-    height: AVATAR_CONTAINER_SIZE,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  dimmedAvatar: {
-    opacity: 0.6,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 2,
-  },
-  playerName: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 10,
-    flexShrink: 1,
-  },
-  leftScore: {
-    opacity: 0.6,
-  },
-  resultBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  wonBadge: {
-    backgroundColor: '#4CAF50',
-  },
-  lostBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-  },
-  resultBadgeText: {
-    color: colors.textPrimary,
-    fontSize: 8,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  lostBadgeText: {
-    color: 'rgba(255, 255, 255, 0.6)',
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginTop: 3,
-  },
-  rackCount: {
-    color: 'rgba(255, 255, 255, 0.45)',
-    fontSize: 9,
-  },
-  finishBonus: {
-    color: '#4CAF50',
-    fontSize: 9,
-    fontWeight: '500',
-  },
-  leftTag: {
-    color: colors.textMuted,
-    fontSize: 8,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  pendingTag: {
-    color: colors.textSecondary,
-    fontSize: 8,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
-    marginTop: 3,
-    fontStyle: 'italic',
-  },
-  statusDots: {
-    flexDirection: 'row',
-    gap: 3,
-  },
-  dot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-  },
-  blankDot: {
-    backgroundColor: '#FF6B6B',
-  },
-  swapDot: {
-    backgroundColor: '#4A90D9',
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    paddingBottom: 8,
-    minHeight: 4,
-    gap: 8,
-  },
-  infoRowCompact: {
-    paddingTop: 0,
-    paddingBottom: 6,
-    marginTop: -2,
-  },
-  infoSide: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flex: 1,
-    minWidth: 0,
-  },
-  infoSideRight: {
-    justifyContent: 'flex-end',
-  },
-  inlineBag: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 2,
-  },
-  tilesBadge: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  // Floating variant for the grid centre: a ring in the bar's base colour plus
-  // a shadow so it reads as a token sitting above the chips, not a glitch.
-  tilesBadgeFloating: {
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 3,
-    borderColor: colors.background,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 5,
-    elevation: 6,
-  },
-  tilesLabel: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 7,
-  },
-  startRow: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 10,
-    paddingBottom: 8,
-  },
-  startButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 10,
-  },
-  startButtonDisabled: {
-    opacity: 0.5,
-  },
-  startButtonText: {
-    color: colors.textPrimary,
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  footer: {
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  footerPressed: {
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
-  },
-  footerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  footerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  lastMoveText: {
-    color: 'rgba(255, 255, 255, 0.5)',
-    fontSize: 10,
-    fontStyle: 'italic',
-    flex: 1,
-  },
-  bonusText: {
-    color: '#4CAF50',
-    fontSize: 9,
-    fontWeight: '500',
-  },
-  inviteSeat: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
-    borderStyle: 'dashed',
-  },
-  invitePrompt: {
-    color: colors.textSecondary,
-    fontSize: 11,
-  },
-  inviteButton: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  inviteText: {
-    color: colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  pendingAvatarContainer: {
-    position: 'relative',
-  },
-  revokeOverlay: {
-    position: 'absolute',
-    // Android clips children to the rounded `playerSection` (borderRadius),
-    // so the badge must stay within the avatar's bounds. iOS doesn't clip,
-    // so it can keep floating slightly outside the avatar.
-    top: Platform.OS === 'android' ? 0 : -2,
-    right: Platform.OS === 'android' ? 0 : -2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#E91E63',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  revokeIcon: {
-    color: colors.textPrimary,
-    fontSize: 12,
-    fontWeight: 'bold',
-    lineHeight: 14,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    containerWrapper: {
+      marginHorizontal: 12,
+      marginTop: 8,
+      marginBottom: 8,
+      borderRadius: 16,
+      overflow: 'hidden',
+      maxWidth: LAYOUT.gameControlsMaxWidth,
+      width: '100%',
+      alignSelf: 'center',
+    },
+    container: {
+      backgroundColor: colors.backgroundLight,
+    },
+    mainContent: {
+      flexDirection: 'row',
+      alignItems: 'stretch',
+      padding: 10,
+      gap: 6,
+    },
+    // 3-4 players: wrap chips into two rows so each keeps the roomy 2-player
+    // (avatar beside name) layout instead of being squeezed into four columns.
+    // space-between spreads a full row of two to the edges and leaves a lone
+    // bottom chip (3 players) aligned left with the right side empty.
+    mainContentGrid: {
+      flexWrap: 'wrap',
+      alignItems: 'stretch',
+      justifyContent: 'space-between',
+      rowGap: 8,
+    },
+    gridSection: {
+      flexGrow: 0,
+      flexBasis: '41%',
+      maxWidth: '41%',
+    },
+    // Floats the tiles-in-bag badge in the centre of the 2x2 grid (the gutter
+    // between the chips), so it never needs a separate row of its own.
+    bagOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    playerSection: {
+      flex: 1,
+      minWidth: 0,
+      padding: 8,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: 'transparent',
+      justifyContent: 'center',
+    },
+    placeholderSection: {
+      justifyContent: 'center',
+    },
+    chip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      minWidth: 0,
+    },
+    chipLeft: {
+      opacity: 0.55,
+    },
+    playerInfo: {
+      flex: 1,
+      minWidth: 0,
+    },
+    avatarWrapper: {
+      width: AVATAR_CONTAINER_SIZE,
+      height: AVATAR_CONTAINER_SIZE,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    dimmedAvatar: {
+      opacity: 0.6,
+    },
+    nameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginBottom: 2,
+    },
+    playerName: {
+      color: 'rgba(255, 255, 255, 0.6)',
+      fontSize: 10,
+      flexShrink: 1,
+    },
+    leftScore: {
+      opacity: 0.6,
+    },
+    resultBadge: {
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+    },
+    wonBadge: {
+      backgroundColor: colors.gameWon,
+    },
+    lostBadge: {
+      backgroundColor: colors.gameLost,
+    },
+    resultBadgeText: {
+      color: colors.onResult,
+      fontSize: 8,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+    },
+    lostBadgeText: {
+      color: colors.onResult,
+    },
+    metaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      marginTop: 3,
+    },
+    rackCount: {
+      color: 'rgba(255, 255, 255, 0.45)',
+      fontSize: 9,
+    },
+    finishBonus: {
+      color: '#4CAF50',
+      fontSize: 9,
+      fontWeight: '500',
+    },
+    leftTag: {
+      color: colors.textMuted,
+      fontSize: 8,
+      fontWeight: '700',
+      letterSpacing: 0.5,
+      textTransform: 'uppercase',
+    },
+    pendingTag: {
+      color: colors.textSecondary,
+      fontSize: 8,
+      fontWeight: '700',
+      letterSpacing: 0.3,
+      textTransform: 'uppercase',
+      marginTop: 3,
+      fontStyle: 'italic',
+    },
+    statusDots: {
+      flexDirection: 'row',
+      gap: 3,
+    },
+    dot: {
+      width: 5,
+      height: 5,
+      borderRadius: 2.5,
+    },
+    blankDot: {
+      backgroundColor: '#FF6B6B',
+    },
+    swapDot: {
+      backgroundColor: '#4A90D9',
+    },
+    infoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 10,
+      paddingBottom: 8,
+      minHeight: 4,
+      gap: 8,
+    },
+    infoRowCompact: {
+      paddingTop: 0,
+      paddingBottom: 6,
+      marginTop: -2,
+    },
+    infoSide: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      flex: 1,
+      minWidth: 0,
+    },
+    infoSideRight: {
+      justifyContent: 'flex-end',
+    },
+    inlineBag: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 2,
+    },
+    tilesBadge: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 10,
+      alignItems: 'center',
+    },
+    // Floating variant for the grid centre: a ring in the bar's base colour plus
+    // a shadow so it reads as a token sitting above the chips, not a glitch.
+    tilesBadgeFloating: {
+      paddingHorizontal: 9,
+      paddingVertical: 4,
+      borderRadius: 12,
+      borderWidth: 3,
+      borderColor: colors.background,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.35,
+      shadowRadius: 5,
+      elevation: 6,
+    },
+    tilesLabel: {
+      color: colors.onPrimary,
+      fontSize: 7,
+    },
+    startRow: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 10,
+      paddingBottom: 8,
+    },
+    startButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      backgroundColor: colors.primary,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 10,
+    },
+    startButtonDisabled: {
+      opacity: 0.5,
+    },
+    startButtonText: {
+      color: colors.onPrimary,
+      fontSize: 11,
+      fontWeight: '600',
+    },
+    footer: {
+      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+      paddingVertical: 7,
+      paddingHorizontal: 12,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    footerPressed: {
+      backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    },
+    footerContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    footerRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    lastMoveText: {
+      color: 'rgba(255, 255, 255, 0.5)',
+      fontSize: 10,
+      fontStyle: 'italic',
+      flex: 1,
+    },
+    bonusText: {
+      color: '#4CAF50',
+      fontSize: 9,
+      fontWeight: '500',
+    },
+    inviteSeat: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      borderWidth: 1.5,
+      borderColor: 'rgba(255, 255, 255, 0.25)',
+      borderStyle: 'dashed',
+    },
+    invitePrompt: {
+      color: colors.textSecondary,
+      fontSize: 11,
+    },
+    inviteButton: {
+      width: AVATAR_SIZE,
+      height: AVATAR_SIZE,
+      borderRadius: AVATAR_SIZE / 2,
+      backgroundColor: colors.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    inviteText: {
+      color: colors.onPrimary,
+      fontSize: 18,
+      fontWeight: '600',
+      textAlign: 'center',
+      lineHeight: 18,
+    },
+    pendingAvatarContainer: {
+      position: 'relative',
+    },
+    revokeOverlay: {
+      position: 'absolute',
+      // Android clips children to the rounded `playerSection` (borderRadius),
+      // so the badge must stay within the avatar's bounds. iOS doesn't clip,
+      // so it can keep floating slightly outside the avatar.
+      top: Platform.OS === 'android' ? 0 : -2,
+      right: Platform.OS === 'android' ? 0 : -2,
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      backgroundColor: '#E91E63',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    revokeIcon: {
+      color: colors.textPrimary,
+      fontSize: 12,
+      fontWeight: 'bold',
+      lineHeight: 14,
+    },
+  });

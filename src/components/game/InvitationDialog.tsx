@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -6,7 +8,6 @@ import { SmartAvatar } from '../ui/SmartAvatar';
 import { Button } from '../ui/Button';
 import { useDeclineInvitation } from '../../api/queries/useInvitations';
 import { getApiError } from '../../api/client';
-import { colors } from '../../config/theme';
 import { SPACING } from '../../config/constants';
 import { ROUTES } from '../../config/routes';
 import type { GameInvitation } from '../../types/invitation';
@@ -20,6 +21,7 @@ export function InvitationDialog({
   invitation,
   onClose,
 }: InvitationDialogProps) {
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const declineMutation = useDeclineInvitation();
 
@@ -98,54 +100,55 @@ export function InvitationDialog({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-  },
-  avatarContainer: {
-    marginBottom: SPACING.lg,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: SPACING.sm,
-  },
-  message: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: SPACING.xl,
-  },
-  username: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  languageContainer: {
-    backgroundColor: colors.border,
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.md,
-    borderRadius: 12,
-    marginBottom: SPACING.xl,
-  },
-  languageLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  languageValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    textAlign: 'center',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: SPACING.md,
-    width: '100%',
-  },
-  button: {
-    flex: 1,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      alignItems: 'center',
+    },
+    avatarContainer: {
+      marginBottom: SPACING.lg,
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: SPACING.sm,
+    },
+    message: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: SPACING.xl,
+    },
+    username: {
+      color: colors.primary,
+      fontWeight: '600',
+    },
+    languageContainer: {
+      backgroundColor: colors.border,
+      paddingHorizontal: SPACING.xl,
+      paddingVertical: SPACING.md,
+      borderRadius: 12,
+      marginBottom: SPACING.xl,
+    },
+    languageLabel: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: 4,
+    },
+    languageValue: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      textAlign: 'center',
+    },
+    buttonContainer: {
+      flexDirection: 'row',
+      gap: SPACING.md,
+      width: '100%',
+    },
+    button: {
+      flex: 1,
+    },
+  });

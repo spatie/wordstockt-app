@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React from 'react';
 import {
   Pressable,
@@ -6,7 +8,6 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { colors } from '../../config/theme';
 
 type IconButtonLayout = 'vertical' | 'horizontal';
 
@@ -29,6 +30,7 @@ export function IconButton({
   style,
   testID,
 }: IconButtonProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable
       style={({ pressed }) => [
@@ -51,26 +53,27 @@ export function IconButton({
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  horizontal: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  icon: {
-    fontSize: 18,
-    color: colors.textPrimary,
-    marginBottom: 2,
-  },
-  label: {
-    fontSize: 11,
-    color: colors.textSecondary,
-  },
-  textDisabled: {
-    color: colors.textMuted,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    base: {
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+    },
+    horizontal: {
+      flexDirection: 'row',
+      gap: 6,
+    },
+    icon: {
+      fontSize: 18,
+      color: colors.textPrimary,
+      marginBottom: 2,
+    },
+    label: {
+      fontSize: 11,
+      color: colors.textSecondary,
+    },
+    textDisabled: {
+      color: colors.textMuted,
+    },
+  });

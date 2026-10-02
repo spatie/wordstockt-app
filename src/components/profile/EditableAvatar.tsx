@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useState } from 'react';
 import {
   View,
@@ -10,7 +12,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar } from '../ui/Avatar';
-import { colors } from '../../config/theme';
 import { useUpdateAvatar, useDeleteAvatar } from '../../api/queries/useAuth';
 import { pickAvatar, type AvatarSource } from '../../utils/avatarImage';
 import type { User } from '../../types';
@@ -21,6 +22,7 @@ interface EditableAvatarProps {
 }
 
 export function EditableAvatar({ user, size = 80 }: EditableAvatarProps) {
+  const styles = useThemedStyles(createStyles);
   const [menuVisible, setMenuVisible] = useState(false);
   const updateAvatar = useUpdateAvatar();
   const deleteAvatar = useDeleteAvatar();
@@ -140,6 +142,8 @@ function SheetButton({
   destructive = false,
   testID,
 }: SheetButtonProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable
       onPress={onPress}
@@ -166,68 +170,69 @@ function SheetButton({
   );
 }
 
-const styles = StyleSheet.create({
-  badge: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.background,
-  },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: colors.backgroundLight,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 16,
-    paddingBottom: 32,
-    gap: 4,
-  },
-  sheetTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-  },
-  sheetButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 8,
-    borderRadius: 12,
-  },
-  sheetButtonPressed: {
-    backgroundColor: colors.border,
-  },
-  sheetButtonText: {
-    fontSize: 16,
-    color: colors.textPrimary,
-  },
-  sheetButtonTextDestructive: {
-    color: '#E74C3C',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    badge: {
+      position: 'absolute',
+      right: 0,
+      bottom: 0,
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: colors.background,
+    },
+    overlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.45)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    backdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'flex-end',
+    },
+    sheet: {
+      backgroundColor: colors.backgroundLight,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      padding: 16,
+      paddingBottom: 32,
+      gap: 4,
+    },
+    sheetTitle: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      paddingHorizontal: 8,
+      paddingVertical: 8,
+    },
+    sheetButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+      paddingVertical: 14,
+      paddingHorizontal: 8,
+      borderRadius: 12,
+    },
+    sheetButtonPressed: {
+      backgroundColor: colors.border,
+    },
+    sheetButtonText: {
+      fontSize: 16,
+      color: colors.textPrimary,
+    },
+    sheetButtonTextDestructive: {
+      color: '#E74C3C',
+    },
+  });

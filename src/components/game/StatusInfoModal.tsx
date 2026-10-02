@@ -1,8 +1,9 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { BaseModal } from '../ui/BaseModal';
 import { Button } from '../ui/Button';
-import { colors } from '../../config/theme';
 import { SPACING } from '../../config/constants';
 
 interface StatusItem {
@@ -39,6 +40,7 @@ export function StatusInfoModal({
   showBlankPending,
   showFreeSwap,
 }: StatusInfoModalProps) {
+  const styles = useThemedStyles(createStyles);
   // Preserve content during close animation
   const [displayItems, setDisplayItems] = useState<StatusItem[]>([]);
 
@@ -92,70 +94,71 @@ export function StatusInfoModal({
   );
 }
 
-const styles = StyleSheet.create({
-  modal: {
-    padding: SPACING.xl,
-  },
-  content: {
-    alignItems: 'center',
-    width: '100%',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-    marginBottom: SPACING.xs,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: SPACING.xl,
-  },
-  itemsContainer: {
-    width: '100%',
-    gap: SPACING.lg,
-    marginBottom: SPACING.xl,
-  },
-  statusItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    padding: SPACING.lg,
-  },
-  dotContainer: {
-    width: 32,
-    height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    zIndex: 1,
-  },
-  dotGlow: {
-    position: 'absolute',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-  },
-  textContainer: {
-    flex: 1,
-  },
-  itemTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 4,
-  },
-  itemDescription: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 18,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    modal: {
+      padding: SPACING.xl,
+    },
+    content: {
+      alignItems: 'center',
+      width: '100%',
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: 'bold',
+      color: colors.textPrimary,
+      marginBottom: SPACING.xs,
+      textAlign: 'center',
+    },
+    subtitle: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: SPACING.xl,
+    },
+    itemsContainer: {
+      width: '100%',
+      gap: SPACING.lg,
+      marginBottom: SPACING.xl,
+    },
+    statusItem: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      padding: SPACING.lg,
+    },
+    dotContainer: {
+      width: 32,
+      height: 32,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: SPACING.md,
+    },
+    dot: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      zIndex: 1,
+    },
+    dotGlow: {
+      position: 'absolute',
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+    },
+    textContainer: {
+      flex: 1,
+    },
+    itemTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      marginBottom: 4,
+    },
+    itemDescription: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      lineHeight: 18,
+    },
+  });

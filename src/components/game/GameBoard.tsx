@@ -1,3 +1,9 @@
+import type { ThemeColors } from '../../config/theme';
+import {
+  useThemeBlurTint,
+  useThemeColors,
+  useThemedStyles,
+} from '../../hooks/useThemeColors';
 import React, {
   useCallback,
   useRef,
@@ -20,7 +26,6 @@ import { ScoreBubble } from './ScoreBubble';
 import { useDragDrop } from '../../context/DragDropContext';
 import { usePendingTiles, useGameStore } from '../../stores/gameStore';
 import { BOARD_SIZE } from '../../config/constants';
-import { colors } from '../../config/theme';
 import type { Game } from '../../types';
 import type { DropTarget } from '../../context/DragDropContext';
 
@@ -55,6 +60,9 @@ export function GameBoard({
   onPlacedTileTap,
   potentialScore,
 }: GameBoardProps) {
+  const blurTint = useThemeBlurTint();
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const boardRef = useRef<View>(null);
   const { setBoardLayout, isDragging } = useDragDrop();
   const pendingTiles = usePendingTiles();
@@ -224,7 +232,7 @@ export function GameBoard({
           ]}
         >
           <View style={styles.boardClip}>
-            <BlurView intensity={80} tint="dark" style={styles.boardBlur}>
+            <BlurView intensity={80} tint={blurTint} style={styles.boardBlur}>
               <View ref={boardRef} style={styles.board}>
                 {Array.from({ length: BOARD_SIZE }, (_, y) => (
                   <View key={y} style={styles.row}>
@@ -254,37 +262,38 @@ export function GameBoard({
   );
 }
 
-const styles = StyleSheet.create({
-  boardContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  boardWrapper: {
-    borderRadius: 16,
-    shadowColor: '#ffffff',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  boardClip: {
-    flex: 1,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(74, 144, 217, 0.5)',
-  },
-  boardBlur: {
-    flex: 1,
-    backgroundColor: 'rgba(27, 40, 56, 0.1)',
-  },
-  board: {
-    flex: 1,
-    padding: 8,
-  },
-  row: {
-    flex: 1,
-    flexDirection: 'row',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    boardContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    boardWrapper: {
+      borderRadius: 16,
+      shadowColor: '#ffffff',
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.08,
+      shadowRadius: 16,
+      elevation: 8,
+    },
+    boardClip: {
+      flex: 1,
+      borderRadius: 16,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: 'rgba(74, 144, 217, 0.5)',
+    },
+    boardBlur: {
+      flex: 1,
+      backgroundColor: 'rgba(27, 40, 56, 0.1)',
+    },
+    board: {
+      flex: 1,
+      padding: 8,
+    },
+    row: {
+      flex: 1,
+      flexDirection: 'row',
+    },
+  });

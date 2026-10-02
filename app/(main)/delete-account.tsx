@@ -1,12 +1,14 @@
+import type { ThemeColors } from '../../src/config/theme';
+import { useThemedStyles } from '../../src/hooks/useThemeColors';
 import React, { useState } from 'react';
 import { View, StyleSheet, Text, ScrollView } from 'react-native';
 import { useDeleteAccount } from '../../src/api/queries/useAuth';
 import { Button } from '../../src/components/ui/Button';
 import { showConfirm } from '../../src/utils/alerts';
 import { getApiError } from '../../src/api/client';
-import { colors } from '../../src/config/theme';
 
 export default function DeleteAccountScreen() {
+  const styles = useThemedStyles(createStyles);
   const deleteAccount = useDeleteAccount();
   const [error, setError] = useState<string | null>(null);
 
@@ -80,57 +82,58 @@ export default function DeleteAccountScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 24,
-    paddingBottom: 40,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginBottom: 32,
-    lineHeight: 24,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 12,
-  },
-  list: {
-    gap: 8,
-  },
-  listItem: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    lineHeight: 22,
-  },
-  paragraph: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    lineHeight: 22,
-  },
-  errorContainer: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
-  },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    content: {
+      padding: 24,
+      paddingBottom: 40,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: 8,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      marginBottom: 32,
+      lineHeight: 24,
+    },
+    section: {
+      marginBottom: 24,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      marginBottom: 12,
+    },
+    list: {
+      gap: 8,
+    },
+    listItem: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      lineHeight: 22,
+    },
+    paragraph: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      lineHeight: 22,
+    },
+    errorContainer: {
+      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+      borderRadius: 12,
+      padding: 12,
+      marginBottom: 16,
+    },
+    errorText: {
+      color: '#EF4444',
+      fontSize: 14,
+      textAlign: 'center',
+    },
+  });

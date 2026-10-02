@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, {
@@ -49,6 +51,7 @@ interface PulseCellProps {
 }
 
 function PulseCell({ color, delay }: PulseCellProps) {
+  const styles = useThemedStyles(createStyles);
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0.6);
 
@@ -101,6 +104,7 @@ export function LoadingView({
   visible = true,
   onFadeOutComplete,
 }: LoadingViewProps) {
+  const styles = useThemedStyles(createStyles);
   const [showSpinner, setShowSpinner] = useState(false);
   const [shouldRender, setShouldRender] = useState(visible);
   const containerOpacity = useSharedValue(0);
@@ -171,23 +175,24 @@ export function LoadingView({
 const CELL_SIZE = 28;
 const GAP_SIZE = 4;
 
-const styles = StyleSheet.create({
-  container: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoGrid: {
-    width: CELL_SIZE * 3 + GAP_SIZE * 2,
-    height: CELL_SIZE * 3 + GAP_SIZE * 2,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: GAP_SIZE,
-  },
-  cell: {
-    width: CELL_SIZE,
-    height: CELL_SIZE,
-    borderRadius: 5,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      ...StyleSheet.absoluteFill,
+      backgroundColor: 'transparent',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    logoGrid: {
+      width: CELL_SIZE * 3 + GAP_SIZE * 2,
+      height: CELL_SIZE * 3 + GAP_SIZE * 2,
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: GAP_SIZE,
+    },
+    cell: {
+      width: CELL_SIZE,
+      height: CELL_SIZE,
+      borderRadius: 5,
+    },
+  });

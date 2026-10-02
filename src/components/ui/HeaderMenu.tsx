@@ -1,15 +1,17 @@
 import React from 'react';
-import { Text, StyleSheet, Platform } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { MenuView, MenuAction } from '@react-native-menu/menu';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter, Href } from 'expo-router';
 import { useLogout } from '../../api/queries/useAuth';
 import { useAuthStore } from '../../stores/authStore';
 import { showConfirm } from '../../utils/alerts';
-import { colors } from '../../config/theme';
-import { DIMENSIONS } from '../../config/constants';
+import { useThemeColors } from '../../hooks/useThemeColors';
+import { HeaderControlSurface } from './HeaderControlSurface';
 import { ROUTES } from '../../config/routes';
 
 export function HeaderMenu() {
+  const colors = useThemeColors();
   const router = useRouter();
   const logout = useLogout();
   const isGuest = useAuthStore((s) => s.isGuest);
@@ -115,20 +117,16 @@ export function HeaderMenu() {
       shouldOpenOnLongPress={false}
       style={styles.iconButton}
     >
-      <Text style={styles.iconText}>☰</Text>
+      <HeaderControlSurface>
+        <Ionicons name="menu" size={23} color={colors.textPrimary} />
+      </HeaderControlSurface>
     </MenuView>
   );
 }
 
 const styles = StyleSheet.create({
   iconButton: {
-    width: DIMENSIONS.iconButton,
-    height: DIMENSIONS.iconButton,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconText: {
-    fontSize: 24,
-    color: colors.textPrimary,
+    width: 40,
+    height: 40,
   },
 });

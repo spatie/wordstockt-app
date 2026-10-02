@@ -1,9 +1,10 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { BaseModal } from './BaseModal';
 import { Button } from './Button';
 import { FadeSlideIn } from './FadeSlideIn';
-import { colors } from '../../config/theme';
 import { SPACING } from '../../config/constants';
 import type { Achievement } from '../../types';
 
@@ -18,6 +19,8 @@ export function AchievementModal({
   achievement,
   onDismiss,
 }: AchievementModalProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   if (!achievement) return null;
 
   return (
@@ -58,48 +61,49 @@ export function AchievementModal({
   );
 }
 
-const styles = StyleSheet.create({
-  modal: {
-    padding: SPACING.xxxl,
-  },
-  content: {
-    alignItems: 'center',
-    width: '100%',
-  },
-  achievementLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.primary,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: SPACING.lg,
-  },
-  iconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.backgroundLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: SPACING.xl,
-    borderWidth: 3,
-    borderColor: colors.primary,
-  },
-  iconText: {
-    fontSize: 48,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-    marginBottom: SPACING.md,
-    textAlign: 'center',
-  },
-  description: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: SPACING.xxl,
-    lineHeight: 22,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    modal: {
+      padding: SPACING.xxxl,
+    },
+    content: {
+      alignItems: 'center',
+      width: '100%',
+    },
+    achievementLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.primary,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      marginBottom: SPACING.lg,
+    },
+    iconContainer: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      backgroundColor: colors.backgroundLight,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: SPACING.xl,
+      borderWidth: 3,
+      borderColor: colors.primary,
+    },
+    iconText: {
+      fontSize: 48,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: colors.textPrimary,
+      marginBottom: SPACING.md,
+      textAlign: 'center',
+    },
+    description: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: SPACING.xxl,
+      lineHeight: 22,
+    },
+  });

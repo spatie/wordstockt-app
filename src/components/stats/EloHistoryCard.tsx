@@ -1,7 +1,8 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
-import { colors } from '../../config/theme';
 import type { EloHistoryEntry } from '../../types';
 
 const screenWidth = Dimensions.get('window').width;
@@ -15,6 +16,8 @@ export function EloHistoryCard({
   eloHistory,
   currentElo,
 }: EloHistoryCardProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const [showAll, setShowAll] = useState(false);
 
   const { chartData, minElo, maxElo } = useMemo(() => {
@@ -134,73 +137,74 @@ export function EloHistoryCard({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.backgroundLight,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  toggleContainer: {
-    flexDirection: 'row',
-    backgroundColor: colors.background,
-    borderRadius: 8,
-    padding: 2,
-  },
-  toggleButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  toggleButtonActive: {
-    backgroundColor: colors.primary,
-  },
-  toggleText: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  toggleTextActive: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  chartContainer: {
-    alignItems: 'center',
-  },
-  axisText: {
-    color: colors.textMuted,
-    fontSize: 10,
-  },
-  emptyContainer: {
-    paddingVertical: 40,
-    alignItems: 'center',
-  },
-  emptyText: {
-    color: colors.textMuted,
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  pointerLabel: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  pointerText: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-    fontSize: 12,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      backgroundColor: colors.backgroundLight,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    title: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    toggleContainer: {
+      flexDirection: 'row',
+      backgroundColor: colors.background,
+      borderRadius: 8,
+      padding: 2,
+    },
+    toggleButton: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 6,
+    },
+    toggleButtonActive: {
+      backgroundColor: colors.primary,
+    },
+    toggleText: {
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+    toggleTextActive: {
+      color: colors.textPrimary,
+      fontWeight: '600',
+    },
+    chartContainer: {
+      alignItems: 'center',
+    },
+    axisText: {
+      color: colors.textMuted,
+      fontSize: 10,
+    },
+    emptyContainer: {
+      paddingVertical: 40,
+      alignItems: 'center',
+    },
+    emptyText: {
+      color: colors.textMuted,
+      fontSize: 14,
+      textAlign: 'center',
+    },
+    pointerLabel: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 4,
+    },
+    pointerText: {
+      color: colors.textPrimary,
+      fontWeight: '600',
+      fontSize: 12,
+    },
+  });

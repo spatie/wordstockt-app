@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React, {
   createContext,
   useContext,
@@ -9,7 +11,6 @@ import React, {
 import { View, Text, StyleSheet, Animated, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../config/theme';
 import { RADIUS, SPACING } from '../../config/constants';
 
 type SnackbarType = 'success' | 'error' | 'info';
@@ -40,6 +41,8 @@ export function useSnackbar() {
 const SNACKBAR_DURATION = 3000;
 
 export function SnackbarProvider({ children }: { children: React.ReactNode }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [state, setState] = useState<SnackbarState>({
     visible: false,
@@ -161,41 +164,42 @@ export function SnackbarProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    zIndex: 9999,
-    ...Platform.select({
-      web: {
-        pointerEvents: 'none',
-      },
-    }),
-  },
-  snackbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.xl,
-    borderRadius: RADIUS.xl,
-    borderLeftWidth: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    maxWidth: '90%',
-  },
-  icon: {
-    marginRight: SPACING.md,
-  },
-  message: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    flexShrink: 1,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      alignItems: 'center',
+      zIndex: 9999,
+      ...Platform.select({
+        web: {
+          pointerEvents: 'none',
+        },
+      }),
+    },
+    snackbar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#FFFFFF',
+      paddingVertical: SPACING.md,
+      paddingHorizontal: SPACING.xl,
+      borderRadius: RADIUS.xl,
+      borderLeftWidth: 4,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 8,
+      maxWidth: '90%',
+    },
+    icon: {
+      marginRight: SPACING.md,
+    },
+    message: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#1F2937',
+      flexShrink: 1,
+    },
+  });

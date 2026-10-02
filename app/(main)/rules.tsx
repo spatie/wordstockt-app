@@ -1,6 +1,8 @@
+import type { ThemeColors } from '../../src/config/theme';
+import { useThemedStyles } from '../../src/hooks/useThemeColors';
 import React from 'react';
 import { View, StyleSheet, ScrollView, Text } from 'react-native';
-import { colors, MULTIPLIER_COLORS } from '../../src/config/theme';
+import { MULTIPLIER_COLORS } from '../../src/config/theme';
 
 function RuleCard({
   title,
@@ -11,6 +13,7 @@ function RuleCard({
   children: React.ReactNode;
   highlight?: 'red' | 'blue';
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View
       style={[
@@ -26,6 +29,7 @@ function RuleCard({
 }
 
 function Dot({ color }: { color: 'red' | 'blue' }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View
       style={[
@@ -43,6 +47,7 @@ function MultiplierBadge({
   type: '3W' | '2W' | '3L' | '2L';
   label: string;
 }) {
+  const styles = useThemedStyles(createStyles);
   const bgColor = MULTIPLIER_COLORS[type];
   return (
     <View style={styles.multiplierRow}>
@@ -55,6 +60,7 @@ function MultiplierBadge({
 }
 
 function TileSample({ letter, points }: { letter: string; points: number }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.tileSample}>
       <Text style={styles.tileLetter}>{letter}</Text>
@@ -64,6 +70,7 @@ function TileSample({ letter, points }: { letter: string; points: number }) {
 }
 
 export default function RulesScreen() {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <ScrollView
@@ -310,224 +317,225 @@ export default function RulesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  pageTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 8,
-  },
-  pageSubtitle: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    lineHeight: 22,
-    marginBottom: 24,
-  },
-  card: {
-    backgroundColor: colors.backgroundLight,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.border,
-  },
-  cardHighlightRed: {
-    borderLeftColor: '#FF6B6B',
-  },
-  cardHighlightBlue: {
-    borderLeftColor: '#4A90D9',
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 12,
-  },
-  ruleText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 22,
-  },
-  ruleTextMargin: {
-    marginTop: 12,
-  },
-  highlight: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  ruleList: {
-    marginTop: 12,
-    gap: 6,
-  },
-  ruleListItem: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 20,
-    paddingLeft: 4,
-  },
-  multiplierContainer: {
-    marginTop: 16,
-    gap: 10,
-  },
-  multiplierRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  multiplierBadge: {
-    width: 36,
-    height: 24,
-    borderRadius: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  multiplierBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  multiplierLabel: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  tileExamples: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  tileExampleRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  tileSample: {
-    width: 40,
-    height: 44,
-    backgroundColor: '#E8E4DC',
-    borderRadius: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  tileLetter: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1A1A',
-  },
-  tilePoints: {
-    position: 'absolute',
-    bottom: 2,
-    right: 4,
-    fontSize: 9,
-    fontWeight: '700',
-    color: '#1A1A1A',
-  },
-  tileCaption: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  dotExplanation: {
-    marginBottom: 12,
-  },
-  dotRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  dotLabel: {
-    fontSize: 14,
-    color: colors.textPrimary,
-    fontWeight: '500',
-  },
-  actionList: {
-    marginTop: 12,
-    gap: 12,
-  },
-  actionItem: {
-    backgroundColor: colors.background,
-    padding: 12,
-    borderRadius: 8,
-  },
-  actionTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 4,
-  },
-  actionDesc: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-  bonusTable: {
-    marginTop: 16,
-    backgroundColor: colors.background,
-    borderRadius: 8,
-    padding: 12,
-    gap: 8,
-  },
-  bonusRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  bonusLength: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  bonusPoints: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  exampleBox: {
-    marginTop: 16,
-    backgroundColor: colors.background,
-    borderRadius: 8,
-    padding: 12,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.primary,
-  },
-  exampleTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.primary,
-    marginBottom: 6,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  exampleText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 22,
-  },
-  footer: {
-    marginTop: 8,
-    paddingVertical: 20,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    content: {
+      padding: 20,
+      paddingBottom: 40,
+    },
+    pageTitle: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: 8,
+    },
+    pageSubtitle: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      lineHeight: 22,
+      marginBottom: 24,
+    },
+    card: {
+      backgroundColor: colors.backgroundLight,
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 16,
+      borderLeftWidth: 4,
+      borderLeftColor: colors.border,
+    },
+    cardHighlightRed: {
+      borderLeftColor: '#FF6B6B',
+    },
+    cardHighlightBlue: {
+      borderLeftColor: '#4A90D9',
+    },
+    cardTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: 12,
+    },
+    ruleText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 22,
+    },
+    ruleTextMargin: {
+      marginTop: 12,
+    },
+    highlight: {
+      color: colors.textPrimary,
+      fontWeight: '600',
+    },
+    ruleList: {
+      marginTop: 12,
+      gap: 6,
+    },
+    ruleListItem: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 20,
+      paddingLeft: 4,
+    },
+    multiplierContainer: {
+      marginTop: 16,
+      gap: 10,
+    },
+    multiplierRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    multiplierBadge: {
+      width: 36,
+      height: 24,
+      borderRadius: 4,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    multiplierBadgeText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    multiplierLabel: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    tileExamples: {
+      marginTop: 20,
+      alignItems: 'center',
+    },
+    tileExampleRow: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    tileSample: {
+      width: 40,
+      height: 44,
+      backgroundColor: '#E8E4DC',
+      borderRadius: 4,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.15,
+      shadowRadius: 2,
+      elevation: 2,
+    },
+    tileLetter: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: '#1A1A1A',
+    },
+    tilePoints: {
+      position: 'absolute',
+      bottom: 2,
+      right: 4,
+      fontSize: 9,
+      fontWeight: '700',
+      color: '#1A1A1A',
+    },
+    tileCaption: {
+      fontSize: 12,
+      color: colors.textMuted,
+      marginTop: 10,
+      textAlign: 'center',
+    },
+    dotExplanation: {
+      marginBottom: 12,
+    },
+    dotRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    dot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+    },
+    dotLabel: {
+      fontSize: 14,
+      color: colors.textPrimary,
+      fontWeight: '500',
+    },
+    actionList: {
+      marginTop: 12,
+      gap: 12,
+    },
+    actionItem: {
+      backgroundColor: colors.background,
+      padding: 12,
+      borderRadius: 8,
+    },
+    actionTitle: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      marginBottom: 4,
+    },
+    actionDesc: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      lineHeight: 20,
+    },
+    bonusTable: {
+      marginTop: 16,
+      backgroundColor: colors.background,
+      borderRadius: 8,
+      padding: 12,
+      gap: 8,
+    },
+    bonusRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    bonusLength: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    bonusPoints: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.primary,
+    },
+    exampleBox: {
+      marginTop: 16,
+      backgroundColor: colors.background,
+      borderRadius: 8,
+      padding: 12,
+      borderLeftWidth: 3,
+      borderLeftColor: colors.primary,
+    },
+    exampleTitle: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.primary,
+      marginBottom: 6,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    exampleText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 22,
+    },
+    footer: {
+      marginTop: 8,
+      paddingVertical: 20,
+      alignItems: 'center',
+    },
+    footerText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.primary,
+    },
+  });

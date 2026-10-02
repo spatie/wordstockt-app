@@ -1,3 +1,8 @@
+import type { ThemeColors } from '../../src/config/theme';
+import {
+  useThemeColors,
+  useThemedStyles,
+} from '../../src/hooks/useThemeColors';
 import React from 'react';
 import {
   View,
@@ -14,10 +19,11 @@ import {
 import { useAuthStore } from '../../src/stores/authStore';
 import { MainLogo } from '../../src/components/ui/MainLogo';
 import { FloatingTiles } from '../../src/components/ui/FloatingTiles';
-import { colors } from '../../src/config/theme';
 import { SPACING, RADIUS, DIMENSIONS } from '../../src/config/constants';
 
 export default function VerifyEmailScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const user = useAuthStore((s) => s.user);
   const {
     mutate: resend,
@@ -29,7 +35,7 @@ export default function VerifyEmailScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#0D1B2A', '#152238', '#0D1B2A']}
+        colors={[colors.background, colors.backgroundLight, colors.background]}
         locations={[0, 0.5, 1]}
         style={StyleSheet.absoluteFill}
         start={{ x: 0.5, y: 0 }}
@@ -94,82 +100,83 @@ export default function VerifyEmailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    flex: 1,
-    padding: SPACING.xxl,
-    alignItems: 'center',
-  },
-  logoContainer: {
-    marginTop: 20,
-    marginBottom: SPACING.xl,
-  },
-  iconContainer: {
-    marginBottom: SPACING.lg,
-  },
-  icon: {
-    fontSize: 64,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: SPACING.sm,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: SPACING.lg,
-    lineHeight: 24,
-    paddingHorizontal: SPACING.lg,
-  },
-  email: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.primary,
-    marginBottom: SPACING.xl,
-  },
-  successBox: {
-    backgroundColor: 'rgba(34, 197, 94, 0.1)',
-    padding: SPACING.md,
-    borderRadius: RADIUS.md,
-    marginBottom: SPACING.lg,
-    width: '100%',
-  },
-  successText: {
-    color: '#22C55E',
-    textAlign: 'center',
-  },
-  button: {
-    width: '100%',
-    backgroundColor: 'rgba(74, 144, 217, 0.3)',
-    borderWidth: 1,
-    borderColor: 'rgba(74, 144, 217, 0.5)',
-    borderRadius: 30,
-    height: DIMENSIONS.inputHeight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFF',
-  },
-  secondaryButton: {
-    padding: SPACING.md,
-  },
-  secondaryButtonText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    content: {
+      flex: 1,
+      padding: SPACING.xxl,
+      alignItems: 'center',
+    },
+    logoContainer: {
+      marginTop: 20,
+      marginBottom: SPACING.xl,
+    },
+    iconContainer: {
+      marginBottom: SPACING.lg,
+    },
+    icon: {
+      fontSize: 64,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: SPACING.sm,
+      textAlign: 'center',
+    },
+    subtitle: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: SPACING.lg,
+      lineHeight: 24,
+      paddingHorizontal: SPACING.lg,
+    },
+    email: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.primary,
+      marginBottom: SPACING.xl,
+    },
+    successBox: {
+      backgroundColor: 'rgba(34, 197, 94, 0.1)',
+      padding: SPACING.md,
+      borderRadius: RADIUS.md,
+      marginBottom: SPACING.lg,
+      width: '100%',
+    },
+    successText: {
+      color: '#22C55E',
+      textAlign: 'center',
+    },
+    button: {
+      width: '100%',
+      backgroundColor: 'rgba(74, 144, 217, 0.3)',
+      borderWidth: 1,
+      borderColor: 'rgba(74, 144, 217, 0.5)',
+      borderRadius: 30,
+      height: DIMENSIONS.inputHeight,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: SPACING.md,
+    },
+    buttonDisabled: {
+      opacity: 0.5,
+    },
+    buttonText: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: '#FFF',
+    },
+    secondaryButton: {
+      padding: SPACING.md,
+    },
+    secondaryButtonText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+    },
+  });

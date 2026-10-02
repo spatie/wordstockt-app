@@ -1,9 +1,10 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { BaseModal } from './BaseModal';
 import { Button } from './Button';
 import { FadeSlideIn } from './FadeSlideIn';
-import { colors } from '../../config/theme';
 import { SPACING } from '../../config/constants';
 
 export type FeedbackType = 'error' | 'warning' | 'success' | 'lost';
@@ -55,6 +56,7 @@ export function FeedbackModal({
   onDismiss,
   buttonText,
 }: FeedbackModalProps) {
+  const styles = useThemedStyles(createStyles);
   // Keep the last non-empty message so it stays visible during the fade-out
   // (when the parent clears `message` while closing). Using a ref avoids an
   // extra render / stale frame compared to mirroring the prop into state.
@@ -107,39 +109,40 @@ export function FeedbackModal({
   );
 }
 
-const styles = StyleSheet.create({
-  modal: {
-    padding: SPACING.xxxl,
-  },
-  content: {
-    alignItems: 'center',
-    width: '100%',
-  },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: SPACING.xl,
-  },
-  iconText: {
-    color: '#FFFFFF',
-    fontSize: 40,
-    fontWeight: 'bold',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-    marginBottom: SPACING.md,
-    textAlign: 'center',
-  },
-  message: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: SPACING.xxl,
-    lineHeight: 22,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    modal: {
+      padding: SPACING.xxxl,
+    },
+    content: {
+      alignItems: 'center',
+      width: '100%',
+    },
+    iconCircle: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: SPACING.xl,
+    },
+    iconText: {
+      color: '#FFFFFF',
+      fontSize: 40,
+      fontWeight: 'bold',
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: colors.textPrimary,
+      marginBottom: SPACING.md,
+      textAlign: 'center',
+    },
+    message: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: SPACING.xxl,
+      lineHeight: 22,
+    },
+  });

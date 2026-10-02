@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../src/config/theme';
+import { useThemedStyles } from '../../src/hooks/useThemeColors';
 import React, { useState } from 'react';
 import {
   View,
@@ -12,9 +14,9 @@ import { useChangePassword } from '../../src/api/queries/useAuth';
 import { PasswordInput } from '../../src/components/form/PasswordInput';
 import { AnimatedSaveButton } from '../../src/components/ui/AnimatedSaveButton';
 import { getApiError } from '../../src/api/client';
-import { colors } from '../../src/config/theme';
 
 export default function ChangePasswordScreen() {
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const changePassword = useChangePassword();
 
@@ -130,40 +132,41 @@ export default function ChangePasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  content: {
-    padding: 24,
-    paddingBottom: 40,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginBottom: 32,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  errorContainer: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
-  },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    keyboardView: {
+      flex: 1,
+    },
+    content: {
+      padding: 24,
+      paddingBottom: 40,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: 8,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      marginBottom: 32,
+    },
+    inputGroup: {
+      marginBottom: 16,
+    },
+    errorContainer: {
+      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+      borderRadius: 12,
+      padding: 12,
+      marginBottom: 16,
+    },
+    errorText: {
+      color: '#EF4444',
+      fontSize: 14,
+      textAlign: 'center',
+    },
+  });

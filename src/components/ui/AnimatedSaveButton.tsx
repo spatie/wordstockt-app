@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, ActivityIndicator, Pressable } from 'react-native';
 import Animated, {
@@ -9,7 +11,6 @@ import Animated, {
   interpolateColor,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import { colors } from '../../config/theme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -32,6 +33,8 @@ export function AnimatedSaveButton({
   disabled = false,
   successDuration = 2000,
 }: AnimatedSaveButtonProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const [isPending, setIsPending] = useState(false);
   const [showSpinner, setShowSpinner] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -185,7 +188,7 @@ export function AnimatedSaveButton({
       disabled={isDisabled}
     >
       {showSpinner ? (
-        <ActivityIndicator color="#FFF" size="small" />
+        <ActivityIndicator color={colors.onPrimary} size="small" />
       ) : (
         <>
           <Animated.Text style={[styles.buttonText, labelAnimatedStyle]}>
@@ -206,24 +209,25 @@ export function AnimatedSaveButton({
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 50,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFF',
-  },
-  successText: {
-    position: 'absolute',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    button: {
+      backgroundColor: colors.primary,
+      borderRadius: 12,
+      paddingVertical: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 50,
+    },
+    buttonDisabled: {
+      opacity: 0.5,
+    },
+    buttonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.onPrimary,
+    },
+    successText: {
+      position: 'absolute',
+    },
+  });
