@@ -1,10 +1,11 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React, { memo, useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Card } from '../ui/Card';
 import { SmartAvatar } from '../ui/SmartAvatar';
 import { Button } from '../ui/Button';
 import { timeAgo } from '../../utils/timeAgo';
-import { colors } from '../../config/theme';
 import { RADIUS, SPACING } from '../../config/constants';
 import type { GameInvitation } from '../../types/invitation';
 
@@ -21,6 +22,8 @@ export const InvitationCard = memo(function InvitationCard({
   onDecline,
   isDeclining = false,
 }: InvitationCardProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const { inviter, game, createdAt } = invitation;
 
   const handlePress = useCallback(() => {
@@ -74,60 +77,61 @@ export const InvitationCard = memo(function InvitationCard({
   );
 });
 
-const styles = StyleSheet.create({
-  cardTop: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  cardInfo: {
-    flex: 1,
-    marginLeft: SPACING.md,
-  },
-  inviterName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 4,
-  },
-  inviteText: {
-    fontSize: 14,
-    color: colors.secondary,
-  },
-  languageContainer: {
-    alignItems: 'flex-end',
-  },
-  languageLabel: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginBottom: 4,
-  },
-  languageBox: {
-    backgroundColor: colors.border,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
-    borderRadius: RADIUS.md,
-  },
-  languageText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  cardDivider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: SPACING.md,
-  },
-  cardBottom: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  timeText: {
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    cardTop: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+    },
+    cardInfo: {
+      flex: 1,
+      marginLeft: SPACING.md,
+    },
+    inviterName: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      marginBottom: 4,
+    },
+    inviteText: {
+      fontSize: 14,
+      color: colors.secondary,
+    },
+    languageContainer: {
+      alignItems: 'flex-end',
+    },
+    languageLabel: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginBottom: 4,
+    },
+    languageBox: {
+      backgroundColor: colors.border,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: 6,
+      borderRadius: RADIUS.md,
+    },
+    languageText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    cardDivider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: SPACING.md,
+    },
+    cardBottom: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    timeText: {
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    buttonContainer: {
+      flexDirection: 'row',
+      gap: SPACING.sm,
+    },
+  });

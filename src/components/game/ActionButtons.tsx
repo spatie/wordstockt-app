@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useEffect } from 'react';
 import {
   View,
@@ -16,7 +18,6 @@ import Animated, {
   interpolateColor,
   Easing,
 } from 'react-native-reanimated';
-import { colors } from '../../config/theme';
 import { LAYOUT } from '../../config/constants';
 
 interface ActionButtonsProps {
@@ -46,6 +47,8 @@ function SmallActionButton({
   onPress: () => void;
   disabled: boolean;
 }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const opacity = useSharedValue(disabled ? 0.5 : 1);
 
   useEffect(() => {
@@ -101,6 +104,8 @@ export function ActionButtons({
   pendingScore = 0,
   hasPendingTiles = false,
 }: ActionButtonsProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const turnDisabled = disabled || !isMyTurn;
   const recallDisabled = disabled || !hasPendingTiles;
   const playActive = canPlay && !disabled && isMyTurn;
@@ -217,73 +222,74 @@ export function ActionButtons({
 
 const PLAY_SIZE = 72;
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    gap: 10,
-    maxWidth: LAYOUT.gameControlsMaxWidth,
-    width: '100%',
-    alignSelf: 'center',
-  },
-  grid: {
-    flex: 1,
-    gap: 5,
-  },
-  gridRow: {
-    flexDirection: 'row',
-    gap: 5,
-  },
-  smallActionButtonWrapper: {
-    flex: 1,
-  },
-  smallActionButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 5,
-    backgroundColor: colors.backgroundLight,
-    borderRadius: 10,
-  },
-  smallActionLabel: {
-    fontSize: 9,
-    color: colors.textSecondary,
-    marginTop: 1,
-  },
-  actionTextDisabled: {
-    color: colors.textMuted,
-  },
-  playButton: {
-    width: PLAY_SIZE,
-    height: PLAY_SIZE,
-    borderRadius: PLAY_SIZE / 2,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  playContent: {
-    alignItems: 'center',
-  },
-  playText: {
-    color: colors.textPrimary,
-    fontSize: 13,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-  },
-  playTextDisabled: {
-    color: colors.textMuted,
-  },
-  playScore: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 1,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      paddingBottom: 16,
+      gap: 10,
+      maxWidth: LAYOUT.gameControlsMaxWidth,
+      width: '100%',
+      alignSelf: 'center',
+    },
+    grid: {
+      flex: 1,
+      gap: 5,
+    },
+    gridRow: {
+      flexDirection: 'row',
+      gap: 5,
+    },
+    smallActionButtonWrapper: {
+      flex: 1,
+    },
+    smallActionButton: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 5,
+      backgroundColor: colors.backgroundLight,
+      borderRadius: 10,
+    },
+    smallActionLabel: {
+      fontSize: 9,
+      color: colors.textSecondary,
+      marginTop: 1,
+    },
+    actionTextDisabled: {
+      color: colors.textMuted,
+    },
+    playButton: {
+      width: PLAY_SIZE,
+      height: PLAY_SIZE,
+      borderRadius: PLAY_SIZE / 2,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.4,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+    playContent: {
+      alignItems: 'center',
+    },
+    playText: {
+      color: colors.textPrimary,
+      fontSize: 13,
+      fontWeight: 'bold',
+      letterSpacing: 1,
+    },
+    playTextDisabled: {
+      color: colors.textMuted,
+    },
+    playScore: {
+      color: 'rgba(255,255,255,0.7)',
+      fontSize: 11,
+      fontWeight: '600',
+      marginTop: 1,
+    },
+  });

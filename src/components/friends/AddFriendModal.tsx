@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useState, useCallback } from 'react';
 import {
   View,
@@ -17,7 +19,6 @@ import {
 } from '../../api/queries/useUsers';
 import { useAddFriend, useIsFriend } from '../../api/queries/useFriends';
 import { getApiError } from '../../api/client';
-import { colors } from '../../config/theme';
 import { RADIUS, SPACING } from '../../config/constants';
 
 interface AddFriendModalProps {
@@ -38,6 +39,8 @@ export function AddFriendModal({
   onClose,
   onSuccess,
 }: AddFriendModalProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const [username, setUsername] = useState('');
   const [searchTrigger, setSearchTrigger] = useState('');
   const [searchState, setSearchState] = useState<SearchState>('empty');
@@ -301,158 +304,159 @@ export function AddFriendModal({
   );
 }
 
-const styles = StyleSheet.create({
-  modal: {
-    backgroundColor: colors.backgroundLight,
-    margin: SPACING.xxl,
-    padding: SPACING.xxl,
-    borderRadius: RADIUS.xl,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.lg,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    fontSize: 18,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    marginBottom: SPACING.lg,
-  },
-  searchContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: RADIUS.lg,
-    paddingHorizontal: SPACING.md,
-    height: 48,
-  },
-  searchIcon: {
-    marginRight: SPACING.sm,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.textPrimary,
-    textAlignVertical: 'center',
-    ...(Platform.OS === 'android' && {
-      includeFontPadding: false,
-      paddingVertical: 0,
-    }),
-  },
-  searchButton: {
-    backgroundColor: colors.primary,
-    borderRadius: RADIUS.lg,
-    paddingHorizontal: SPACING.lg,
-    height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  searchButtonDisabled: {
-    backgroundColor: colors.buttonSecondary,
-    opacity: 0.6,
-  },
-  searchButtonText: {
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  stateContainer: {
-    alignItems: 'center',
-    paddingVertical: SPACING.xl,
-  },
-  stateText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginTop: SPACING.sm,
-  },
-  stateSubtext: {
-    fontSize: 14,
-    color: colors.textMuted,
-    marginTop: SPACING.xs,
-  },
-  hintText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  userCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-  },
-  userInfo: {
-    flex: 1,
-    marginLeft: SPACING.md,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  userRating: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  addButton: {
-    backgroundColor: colors.primary,
-    borderRadius: RADIUS.md,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
-    minWidth: 70,
-    alignItems: 'center',
-  },
-  addButtonLoading: {
-    opacity: 0.7,
-  },
-  addButtonText: {
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  alreadyFriendBadge: {
-    backgroundColor: colors.border,
-    borderRadius: RADIUS.md,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-  },
-  alreadyFriendText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  errorContainer: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
-  },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    modal: {
+      backgroundColor: colors.backgroundLight,
+      margin: SPACING.xxl,
+      padding: SPACING.xxl,
+      borderRadius: RADIUS.xl,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: SPACING.lg,
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    closeButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.border,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    closeButtonText: {
+      fontSize: 18,
+      color: colors.textSecondary,
+      fontWeight: '600',
+    },
+    searchRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.sm,
+      marginBottom: SPACING.lg,
+    },
+    searchContainer: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      borderRadius: RADIUS.lg,
+      paddingHorizontal: SPACING.md,
+      height: 48,
+    },
+    searchIcon: {
+      marginRight: SPACING.sm,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 16,
+      color: colors.textPrimary,
+      textAlignVertical: 'center',
+      ...(Platform.OS === 'android' && {
+        includeFontPadding: false,
+        paddingVertical: 0,
+      }),
+    },
+    searchButton: {
+      backgroundColor: colors.primary,
+      borderRadius: RADIUS.lg,
+      paddingHorizontal: SPACING.lg,
+      height: 48,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    searchButtonDisabled: {
+      backgroundColor: colors.buttonSecondary,
+      opacity: 0.6,
+    },
+    searchButtonText: {
+      color: colors.textPrimary,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    stateContainer: {
+      alignItems: 'center',
+      paddingVertical: SPACING.xl,
+    },
+    stateText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      marginTop: SPACING.sm,
+    },
+    stateSubtext: {
+      fontSize: 14,
+      color: colors.textMuted,
+      marginTop: SPACING.xs,
+    },
+    hintText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    userCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      borderRadius: RADIUS.md,
+      padding: SPACING.md,
+    },
+    userInfo: {
+      flex: 1,
+      marginLeft: SPACING.md,
+    },
+    userName: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    userRating: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    addButton: {
+      backgroundColor: colors.primary,
+      borderRadius: RADIUS.md,
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: SPACING.sm,
+      minWidth: 70,
+      alignItems: 'center',
+    },
+    addButtonLoading: {
+      opacity: 0.7,
+    },
+    addButtonText: {
+      color: colors.textPrimary,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    alreadyFriendBadge: {
+      backgroundColor: colors.border,
+      borderRadius: RADIUS.md,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm,
+    },
+    alreadyFriendText: {
+      color: colors.textSecondary,
+      fontSize: 12,
+      fontWeight: '500',
+    },
+    errorContainer: {
+      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+      borderRadius: RADIUS.md,
+      padding: SPACING.md,
+      marginBottom: SPACING.md,
+    },
+    errorText: {
+      color: '#EF4444',
+      fontSize: 14,
+      textAlign: 'center',
+    },
+  });

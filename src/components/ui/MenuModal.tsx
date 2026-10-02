@@ -1,7 +1,8 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { BaseModal } from './BaseModal';
-import { colors } from '../../config/theme';
 import { SPACING, RADIUS } from '../../config/constants';
 
 interface MenuItem {
@@ -21,6 +22,7 @@ interface MenuModalProps {
  * Uses BaseModal for consistent overlay behavior.
  */
 export function MenuModal({ visible, onClose, items }: MenuModalProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <BaseModal
       visible={visible}
@@ -58,37 +60,38 @@ export function MenuModal({ visible, onClose, items }: MenuModalProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  menuContainer: {
-    position: 'absolute',
-    top: 80,
-    right: 20,
-    left: 'auto',
-    width: 'auto',
-    minWidth: 200,
-    maxWidth: 280,
-    padding: SPACING.sm,
-    borderRadius: RADIUS.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  menuItem: {
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.lg,
-  },
-  menuItemText: {
-    fontSize: 16,
-    color: colors.textPrimary,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: SPACING.xs,
-  },
-  destructiveText: {
-    color: '#E74C3C',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    menuContainer: {
+      position: 'absolute',
+      top: 80,
+      right: 20,
+      left: 'auto',
+      width: 'auto',
+      minWidth: 200,
+      maxWidth: 280,
+      padding: SPACING.sm,
+      borderRadius: RADIUS.lg,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+    menuItem: {
+      paddingVertical: SPACING.md,
+      paddingHorizontal: SPACING.lg,
+    },
+    menuItemText: {
+      fontSize: 16,
+      color: colors.textPrimary,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: SPACING.xs,
+    },
+    destructiveText: {
+      color: '#E74C3C',
+    },
+  });

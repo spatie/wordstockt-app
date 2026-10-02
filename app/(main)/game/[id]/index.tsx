@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../../../src/config/theme';
+import { useThemedStyles } from '../../../../src/hooks/useThemeColors';
 import React, {
   useCallback,
   useEffect,
@@ -55,7 +57,6 @@ import { AchievementModal } from '../../../../src/components/ui/AchievementModal
 import { RematchModal } from '../../../../src/components/ui/RematchModal';
 import { Button } from '../../../../src/components/ui/Button';
 import { showConfirm } from '../../../../src/utils/alerts';
-import { colors } from '../../../../src/config/theme';
 import { SPACING, RADIUS, LAYOUT } from '../../../../src/config/constants';
 import { ROUTES } from '../../../../src/config/routes';
 import { mockGame } from '../../../../src/config/mockData';
@@ -68,6 +69,7 @@ const USE_MOCK_DATA = false;
 const BUTTON_FADE_DURATION = 200;
 
 function GameScreenContent() {
+  const styles = useThemedStyles(createStyles);
   const { id, invitation } = useLocalSearchParams<{
     id: string | string[];
     invitation?: string | string[];
@@ -801,75 +803,76 @@ export default function GameScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    maxWidth: '100%',
-    overflow: 'hidden',
-  },
-  boardSection: {
-    flex: 1,
-    position: 'relative',
-  },
-  boardWrapper: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: SPACING.xl,
-  },
-  errorText: {
-    color: colors.textSecondary,
-    fontSize: 16,
-    marginBottom: SPACING.lg,
-  },
-  retryButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: SPACING.xxl,
-    paddingVertical: SPACING.md,
-    borderRadius: RADIUS.md,
-  },
-  retryText: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  buttonArea: {
-    position: 'relative',
-  },
-  buttonContainer: {
-    width: '100%',
-  },
-  swapButtonContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-  },
-  joinContainer: {
-    padding: SPACING.xl,
-    alignItems: 'center',
-    gap: SPACING.lg,
-    maxWidth: LAYOUT.gameControlsMaxWidth,
-    width: '100%',
-    alignSelf: 'center' as const,
-  },
-  joinText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  joinButtons: {
-    flexDirection: 'row',
-    gap: SPACING.md,
-    width: '100%',
-  },
-  declineButton: {
-    flex: 1,
-  },
-  joinButton: {
-    flex: 1,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      maxWidth: '100%',
+      overflow: 'hidden',
+    },
+    boardSection: {
+      flex: 1,
+      position: 'relative',
+    },
+    boardWrapper: {
+      flex: 1,
+      justifyContent: 'center',
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: SPACING.xl,
+    },
+    errorText: {
+      color: colors.textSecondary,
+      fontSize: 16,
+      marginBottom: SPACING.lg,
+    },
+    retryButton: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: SPACING.xxl,
+      paddingVertical: SPACING.md,
+      borderRadius: RADIUS.md,
+    },
+    retryText: {
+      color: colors.textPrimary,
+      fontWeight: '600',
+    },
+    buttonArea: {
+      position: 'relative',
+    },
+    buttonContainer: {
+      width: '100%',
+    },
+    swapButtonContainer: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+    },
+    joinContainer: {
+      padding: SPACING.xl,
+      alignItems: 'center',
+      gap: SPACING.lg,
+      maxWidth: LAYOUT.gameControlsMaxWidth,
+      width: '100%',
+      alignSelf: 'center' as const,
+    },
+    joinText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    joinButtons: {
+      flexDirection: 'row',
+      gap: SPACING.md,
+      width: '100%',
+    },
+    declineButton: {
+      flex: 1,
+    },
+    joinButton: {
+      flex: 1,
+    },
+  });

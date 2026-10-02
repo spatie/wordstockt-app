@@ -1,8 +1,9 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { BaseModal } from './BaseModal';
 import { Button } from './Button';
-import { colors } from '../../config/theme';
 import { SPACING } from '../../config/constants';
 
 interface ConfirmModalProps {
@@ -25,9 +26,11 @@ export function ConfirmModal({
   onConfirm,
   confirmText = 'Confirm',
   cancelText = 'Cancel',
-  confirmColor = colors.primary,
+  confirmColor,
   isLoading = false,
 }: ConfirmModalProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   return (
     <BaseModal
       visible={visible}
@@ -56,7 +59,7 @@ export function ConfirmModal({
         <Button
           label={confirmText}
           onPress={onConfirm}
-          color={confirmColor}
+          color={confirmColor ?? colors.primary}
           rounded
           size="lg"
           loading={isLoading}
@@ -67,46 +70,47 @@ export function ConfirmModal({
   );
 }
 
-const styles = StyleSheet.create({
-  modal: {
-    alignItems: 'center',
-    padding: SPACING.xxxl,
-  },
-  iconContainer: {
-    marginBottom: SPACING.xl,
-  },
-  iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconText: {
-    color: '#FFFFFF',
-    fontSize: 32,
-    fontWeight: 'bold',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-    marginBottom: SPACING.md,
-    textAlign: 'center',
-  },
-  message: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: SPACING.xxl,
-    lineHeight: 22,
-  },
-  buttons: {
-    flexDirection: 'row',
-    gap: SPACING.md,
-    width: '100%',
-  },
-  button: {
-    flex: 1,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    modal: {
+      alignItems: 'center',
+      padding: SPACING.xxxl,
+    },
+    iconContainer: {
+      marginBottom: SPACING.xl,
+    },
+    iconCircle: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    iconText: {
+      color: '#FFFFFF',
+      fontSize: 32,
+      fontWeight: 'bold',
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: colors.textPrimary,
+      marginBottom: SPACING.md,
+      textAlign: 'center',
+    },
+    message: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: SPACING.xxl,
+      lineHeight: 22,
+    },
+    buttons: {
+      flexDirection: 'row',
+      gap: SPACING.md,
+      width: '100%',
+    },
+    button: {
+      flex: 1,
+    },
+  });

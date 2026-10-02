@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React, { memo, useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,7 +8,6 @@ import { SmartAvatar } from '../ui/SmartAvatar';
 import { Button } from '../ui/Button';
 import { TurnTimer } from '../game/TurnTimer';
 import { timeAgo } from '../../utils/timeAgo';
-import { colors } from '../../config/theme';
 import { RADIUS, SPACING } from '../../config/constants';
 import { useStartGame } from '../../api/queries/useGames';
 import type { GameListItem, GameListPlayer } from '../../types';
@@ -107,6 +108,8 @@ export const GameCard = memo(function GameCard({
   onPress,
   onDelete,
 }: GameCardProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const startGame = useStartGame();
 
   const isCompleted = game.status === 'finished';
@@ -351,176 +354,177 @@ export const GameCard = memo(function GameCard({
   );
 });
 
-const styles = StyleSheet.create({
-  cardTop: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  avatarStack: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  cardInfo: {
-    flex: 1,
-    marginLeft: SPACING.md,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    marginBottom: 4,
-  },
-  opponentName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    flexShrink: 1,
-  },
-  inviteIconContainer: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
-    backgroundColor: colors.backgroundLight,
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  publicIconContainer: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
-    backgroundColor: colors.primary + '20',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  invitedBadge: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 2,
-    borderRadius: RADIUS.sm,
-  },
-  invitedBadgeText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    letterSpacing: 0.5,
-  },
-  lastMove: {
-    fontSize: 14,
-    color: colors.primary,
-  },
-  scoreContainer: {
-    alignItems: 'flex-end',
-  },
-  scoreLabel: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginBottom: 4,
-  },
-  scoreBox: {
-    backgroundColor: colors.border,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
-    borderRadius: RADIUS.md,
-  },
-  scoreText: {
-    fontSize: 16,
-    fontWeight: '400',
-    color: colors.textSecondary,
-  },
-  scoreMine: {
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  scoreLeft: {
-    textDecorationLine: 'line-through',
-    color: colors.textMuted,
-  },
-  scoreSeparator: {
-    color: colors.textMuted,
-    fontWeight: '400',
-  },
-  cardDivider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: SPACING.md,
-  },
-  cardBottom: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  timeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  languageBadge: {
-    fontSize: 11,
-    color: colors.textMuted,
-    fontWeight: '600',
-  },
-  timeSeparator: {
-    color: colors.textMuted,
-    marginHorizontal: 6,
-    fontSize: 13,
-  },
-  timeText: {
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  timerSeparator: {
-    color: colors.textSecondary,
-    marginHorizontal: 6,
-    fontSize: 13,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-  },
-  playButton: {
-    paddingHorizontal: SPACING.xl,
-  },
-  deleteButton: {
-    paddingHorizontal: SPACING.md,
-  },
-  outcomeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  placementText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  outcomeBadge: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
-    borderRadius: 20,
-  },
-  wonBadge: {
-    backgroundColor: colors.gameWon,
-  },
-  lostBadge: {
-    backgroundColor: colors.gameLost,
-  },
-  outcomeText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFF',
-  },
-  opponentTurnCard: {
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  viewButton: {
-    backgroundColor: colors.backgroundLight,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  lastMoveOpponentTurn: {
-    color: colors.textSecondary,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    cardTop: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+    },
+    avatarStack: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    cardInfo: {
+      flex: 1,
+      marginLeft: SPACING.md,
+    },
+    nameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.sm,
+      marginBottom: 4,
+    },
+    opponentName: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      flexShrink: 1,
+    },
+    inviteIconContainer: {
+      width: AVATAR_SIZE,
+      height: AVATAR_SIZE,
+      borderRadius: AVATAR_SIZE / 2,
+      backgroundColor: colors.backgroundLight,
+      borderWidth: 1.5,
+      borderColor: colors.primary,
+      borderStyle: 'dashed',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    publicIconContainer: {
+      width: AVATAR_SIZE,
+      height: AVATAR_SIZE,
+      borderRadius: AVATAR_SIZE / 2,
+      backgroundColor: colors.primary + '20',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    invitedBadge: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: SPACING.sm,
+      paddingVertical: 2,
+      borderRadius: RADIUS.sm,
+    },
+    invitedBadgeText: {
+      fontSize: 9,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      letterSpacing: 0.5,
+    },
+    lastMove: {
+      fontSize: 14,
+      color: colors.primary,
+    },
+    scoreContainer: {
+      alignItems: 'flex-end',
+    },
+    scoreLabel: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginBottom: 4,
+    },
+    scoreBox: {
+      backgroundColor: colors.border,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: 6,
+      borderRadius: RADIUS.md,
+    },
+    scoreText: {
+      fontSize: 16,
+      fontWeight: '400',
+      color: colors.textSecondary,
+    },
+    scoreMine: {
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    scoreLeft: {
+      textDecorationLine: 'line-through',
+      color: colors.textMuted,
+    },
+    scoreSeparator: {
+      color: colors.textMuted,
+      fontWeight: '400',
+    },
+    cardDivider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: SPACING.md,
+    },
+    cardBottom: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    timeContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    languageBadge: {
+      fontSize: 11,
+      color: colors.textMuted,
+      fontWeight: '600',
+    },
+    timeSeparator: {
+      color: colors.textMuted,
+      marginHorizontal: 6,
+      fontSize: 13,
+    },
+    timeText: {
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    timerSeparator: {
+      color: colors.textSecondary,
+      marginHorizontal: 6,
+      fontSize: 13,
+    },
+    actionButtons: {
+      flexDirection: 'row',
+      gap: SPACING.sm,
+    },
+    playButton: {
+      paddingHorizontal: SPACING.xl,
+    },
+    deleteButton: {
+      paddingHorizontal: SPACING.md,
+    },
+    outcomeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.sm,
+    },
+    placementText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    outcomeBadge: {
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: SPACING.sm,
+      borderRadius: 20,
+    },
+    wonBadge: {
+      backgroundColor: colors.gameWon,
+    },
+    lostBadge: {
+      backgroundColor: colors.gameLost,
+    },
+    outcomeText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.onResult,
+    },
+    opponentTurnCard: {
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    viewButton: {
+      backgroundColor: colors.backgroundLight,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    lastMoveOpponentTurn: {
+      color: colors.textSecondary,
+    },
+  });

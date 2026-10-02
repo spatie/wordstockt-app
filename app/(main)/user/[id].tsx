@@ -1,3 +1,8 @@
+import type { ThemeColors } from '../../../src/config/theme';
+import {
+  useThemeColors,
+  useThemedStyles,
+} from '../../../src/hooks/useThemeColors';
 import React, { useState } from 'react';
 import {
   View,
@@ -19,7 +24,6 @@ import { useAuthStore } from '../../../src/stores/authStore';
 import { SmartAvatar } from '../../../src/components/ui/SmartAvatar';
 import { FeedbackModal } from '../../../src/components/ui/FeedbackModal';
 import { getApiError } from '../../../src/api/client';
-import { colors } from '../../../src/config/theme';
 import { ROUTES } from '../../../src/config/routes';
 import {
   StatsOverviewCard,
@@ -30,6 +34,8 @@ import {
 import { LAYOUT } from '../../../src/config/constants';
 
 export default function UserProfileScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const { id } = useLocalSearchParams<{ id: string | string[] }>();
   const router = useRouter();
   const userUlid = (Array.isArray(id) ? id[0] : id) || '';
@@ -285,97 +291,98 @@ export default function UserProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    maxWidth: LAYOUT.contentMaxWidth,
-    width: '100%',
-    alignSelf: 'center' as const,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: 24,
-    paddingBottom: 40,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  username: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginTop: 12,
-  },
-  actionSection: {
-    marginBottom: 24,
-  },
-  friendButton: {
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  buttonContent: {
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addFriendButton: {
-    backgroundColor: colors.primary,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  removeFriendButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  addFriendText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFF',
-    lineHeight: 20,
-  },
-  removeFriendText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-  statsLoadingContainer: {
-    paddingVertical: 40,
-    alignItems: 'center',
-  },
-  statsLoadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: colors.textMuted,
-  },
-  noStatsContainer: {
-    backgroundColor: colors.backgroundLight,
-    borderRadius: 12,
-    padding: 24,
-    alignItems: 'center',
-  },
-  noStatsText: {
-    fontSize: 14,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      maxWidth: LAYOUT.contentMaxWidth,
+      width: '100%',
+      alignSelf: 'center' as const,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    content: {
+      padding: 24,
+      paddingBottom: 40,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    errorText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+    },
+    header: {
+      alignItems: 'center',
+      marginBottom: 24,
+    },
+    username: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginTop: 12,
+    },
+    actionSection: {
+      marginBottom: 24,
+    },
+    friendButton: {
+      borderRadius: 12,
+      paddingVertical: 14,
+      alignItems: 'center',
+    },
+    buttonContent: {
+      height: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    addFriendButton: {
+      backgroundColor: colors.primary,
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+    removeFriendButton: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    addFriendText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.onPrimary,
+      lineHeight: 20,
+    },
+    removeFriendText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      lineHeight: 20,
+    },
+    statsLoadingContainer: {
+      paddingVertical: 40,
+      alignItems: 'center',
+    },
+    statsLoadingText: {
+      marginTop: 12,
+      fontSize: 14,
+      color: colors.textMuted,
+    },
+    noStatsContainer: {
+      backgroundColor: colors.backgroundLight,
+      borderRadius: 12,
+      padding: 24,
+      alignItems: 'center',
+    },
+    noStatsText: {
+      fontSize: 14,
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
+  });

@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../src/config/theme';
+import { useThemedStyles } from '../../src/hooks/useThemeColors';
 import React from 'react';
 import {
   View,
@@ -8,7 +10,6 @@ import {
   Pressable,
   Linking,
 } from 'react-native';
-import { colors } from '../../src/config/theme';
 
 function InfoCard({
   title,
@@ -17,6 +18,7 @@ function InfoCard({
   title: string;
   children: React.ReactNode;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>{title}</Text>
@@ -34,6 +36,7 @@ function LinkButton({
   label: string;
   icon: string;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable
       style={({ pressed }) => [
@@ -50,6 +53,7 @@ function LinkButton({
 }
 
 export default function AboutScreen() {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <ScrollView
@@ -126,104 +130,105 @@ export default function AboutScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  pageTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 8,
-  },
-  pageSubtitle: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    lineHeight: 22,
-    marginBottom: 24,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 24,
-    backgroundColor: colors.backgroundLight,
-    borderRadius: 16,
-    padding: 24,
-  },
-  logo: {
-    width: 120,
-    height: 120,
-    borderRadius: 16,
-  },
-  card: {
-    backgroundColor: colors.backgroundLight,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.border,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 12,
-  },
-  cardText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 22,
-  },
-  cardTextMargin: {
-    marginTop: 12,
-  },
-  highlight: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  linksContainer: {
-    marginTop: 16,
-    gap: 10,
-  },
-  linkButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    padding: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  linkButtonPressed: {
-    opacity: 0.7,
-  },
-  linkIcon: {
-    fontSize: 18,
-    marginRight: 12,
-  },
-  linkText: {
-    flex: 1,
-    fontSize: 15,
-    color: colors.textPrimary,
-    fontWeight: '500',
-  },
-  linkArrow: {
-    fontSize: 16,
-    color: colors.textMuted,
-  },
-  footer: {
-    marginTop: 8,
-    paddingVertical: 20,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 14,
-    color: colors.textMuted,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    content: {
+      padding: 20,
+      paddingBottom: 40,
+    },
+    pageTitle: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: 8,
+    },
+    pageSubtitle: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      lineHeight: 22,
+      marginBottom: 24,
+    },
+    logoContainer: {
+      alignItems: 'center',
+      marginBottom: 24,
+      backgroundColor: colors.backgroundLight,
+      borderRadius: 16,
+      padding: 24,
+    },
+    logo: {
+      width: 120,
+      height: 120,
+      borderRadius: 16,
+    },
+    card: {
+      backgroundColor: colors.backgroundLight,
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 16,
+      borderLeftWidth: 4,
+      borderLeftColor: colors.border,
+    },
+    cardTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: 12,
+    },
+    cardText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 22,
+    },
+    cardTextMargin: {
+      marginTop: 12,
+    },
+    highlight: {
+      color: colors.textPrimary,
+      fontWeight: '600',
+    },
+    linksContainer: {
+      marginTop: 16,
+      gap: 10,
+    },
+    linkButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      padding: 14,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    linkButtonPressed: {
+      opacity: 0.7,
+    },
+    linkIcon: {
+      fontSize: 18,
+      marginRight: 12,
+    },
+    linkText: {
+      flex: 1,
+      fontSize: 15,
+      color: colors.textPrimary,
+      fontWeight: '500',
+    },
+    linkArrow: {
+      fontSize: 16,
+      color: colors.textMuted,
+    },
+    footer: {
+      marginTop: 8,
+      paddingVertical: 20,
+      alignItems: 'center',
+    },
+    footerText: {
+      fontSize: 14,
+      color: colors.textMuted,
+    },
+  });

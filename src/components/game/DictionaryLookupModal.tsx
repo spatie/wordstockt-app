@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
@@ -15,7 +17,6 @@ import {
   useDictionaryLookup,
   useRequestWord,
 } from '../../api/queries/useDictionary';
-import { colors } from '../../config/theme';
 import { SPACING, RADIUS, DIMENSIONS } from '../../config/constants';
 import type { WordInfo } from '../../types';
 
@@ -64,6 +65,7 @@ function FadeSlideIn({
 }
 
 function PosBadge({ pos }: { pos: string }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.posBadge}>
       <Text style={styles.posBadgeText}>{pos}</Text>
@@ -72,6 +74,7 @@ function PosBadge({ pos }: { pos: string }) {
 }
 
 function DefinitionContent({ wordInfo }: { wordInfo: WordInfo }) {
+  const styles = useThemedStyles(createStyles);
   const { definition } = wordInfo;
   const senses = definition?.senses ?? [];
   const showNumbers = senses.length > 1;
@@ -148,6 +151,8 @@ export function DictionaryLookupModal({
   onClose,
   language,
 }: DictionaryLookupModalProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const [searchText, setSearchText] = useState('');
   const [requested, setRequested] = useState<Set<string>>(new Set());
   const inputRef = useRef<TextInput>(null);
@@ -210,7 +215,7 @@ export function DictionaryLookupModal({
       return (
         <View style={styles.centered}>
           <Text style={styles.hintText}>
-            Look up a word to check if it's valid and see its definition.
+            Look up a word to check if it is valid and see its definition.
           </Text>
         </View>
       );
@@ -308,180 +313,181 @@ export function DictionaryLookupModal({
   );
 }
 
-const styles = StyleSheet.create({
-  modal: {
-    padding: SPACING.xl,
-    maxHeight: '80%',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: SPACING.lg,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    marginBottom: SPACING.lg,
-  },
-  searchInput: {
-    flex: 1,
-    height: DIMENSIONS.modalInputHeight,
-    backgroundColor: colors.background,
-    borderRadius: RADIUS.md,
-    paddingHorizontal: SPACING.lg,
-    fontSize: 16,
-    color: colors.textPrimary,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  searchButton: {
-    height: DIMENSIONS.modalInputHeight,
-    paddingHorizontal: SPACING.lg,
-    backgroundColor: colors.primary,
-    borderRadius: RADIUS.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  searchButtonText: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  scrollView: {
-    height: 350,
-    marginBottom: SPACING.lg,
-  },
-  centered: {
-    height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: SPACING.lg,
-  },
-  hintText: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  errorText: {
-    fontSize: 15,
-    color: '#EF4444',
-    textAlign: 'center',
-  },
-  notFoundText: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: SPACING.lg,
-  },
-  requestButton: {
-    marginTop: SPACING.sm,
-  },
-  requestedContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-    marginTop: SPACING.sm,
-  },
-  requestedIcon: {
-    fontSize: 14,
-    color: colors.gameWon,
-  },
-  requestedText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  resultWord: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.primary,
-    marginBottom: SPACING.md,
-  },
-  definitionSection: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: SPACING.md,
-  },
-  sectionLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: SPACING.sm,
-    fontWeight: '600',
-  },
-  senseItem: {
-    marginBottom: SPACING.md,
-  },
-  senseHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-    marginBottom: SPACING.xs,
-  },
-  senseNumber: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  posBadge: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 2,
-    borderRadius: RADIUS.sm,
-  },
-  posBadgeText: {
-    fontSize: 11,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  senseDefinition: {
-    fontSize: 15,
-    color: colors.textPrimary,
-    lineHeight: 22,
-  },
-  senseExamples: {
-    marginTop: SPACING.xs,
-    paddingLeft: SPACING.md,
-  },
-  senseExampleText: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-    lineHeight: 18,
-    marginBottom: SPACING.xs,
-  },
-  section: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    marginTop: SPACING.md,
-    paddingTop: SPACING.md,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    marginBottom: SPACING.sm,
-  },
-  etymologyText: {
-    fontSize: 14,
-    color: colors.textPrimary,
-    lineHeight: 20,
-  },
-  proverbItem: {
-    flexDirection: 'row',
-    marginBottom: SPACING.sm,
-  },
-  proverbQuote: {
-    fontSize: 24,
-    color: colors.primary,
-    marginRight: SPACING.xs,
-    marginTop: -4,
-    fontWeight: 'bold',
-  },
-  proverbText: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.textPrimary,
-    lineHeight: 20,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    modal: {
+      padding: SPACING.xl,
+      maxHeight: '80%',
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: colors.textPrimary,
+      textAlign: 'center',
+      marginBottom: SPACING.lg,
+    },
+    searchRow: {
+      flexDirection: 'row',
+      gap: SPACING.sm,
+      marginBottom: SPACING.lg,
+    },
+    searchInput: {
+      flex: 1,
+      height: DIMENSIONS.modalInputHeight,
+      backgroundColor: colors.background,
+      borderRadius: RADIUS.md,
+      paddingHorizontal: SPACING.lg,
+      fontSize: 16,
+      color: colors.textPrimary,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    searchButton: {
+      height: DIMENSIONS.modalInputHeight,
+      paddingHorizontal: SPACING.lg,
+      backgroundColor: colors.primary,
+      borderRadius: RADIUS.md,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    searchButtonText: {
+      color: colors.textPrimary,
+      fontWeight: '600',
+      fontSize: 14,
+    },
+    scrollView: {
+      height: 350,
+      marginBottom: SPACING.lg,
+    },
+    centered: {
+      height: 200,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: SPACING.lg,
+    },
+    hintText: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    errorText: {
+      fontSize: 15,
+      color: '#EF4444',
+      textAlign: 'center',
+    },
+    notFoundText: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: SPACING.lg,
+    },
+    requestButton: {
+      marginTop: SPACING.sm,
+    },
+    requestedContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.xs,
+      marginTop: SPACING.sm,
+    },
+    requestedIcon: {
+      fontSize: 14,
+      color: colors.gameWon,
+    },
+    requestedText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    resultWord: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: colors.primary,
+      marginBottom: SPACING.md,
+    },
+    definitionSection: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: SPACING.md,
+    },
+    sectionLabel: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginBottom: SPACING.sm,
+      fontWeight: '600',
+    },
+    senseItem: {
+      marginBottom: SPACING.md,
+    },
+    senseHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.xs,
+      marginBottom: SPACING.xs,
+    },
+    senseNumber: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    posBadge: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: SPACING.sm,
+      paddingVertical: 2,
+      borderRadius: RADIUS.sm,
+    },
+    posBadgeText: {
+      fontSize: 11,
+      color: '#FFFFFF',
+      fontWeight: '600',
+    },
+    senseDefinition: {
+      fontSize: 15,
+      color: colors.textPrimary,
+      lineHeight: 22,
+    },
+    senseExamples: {
+      marginTop: SPACING.xs,
+      paddingLeft: SPACING.md,
+    },
+    senseExampleText: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      fontStyle: 'italic',
+      lineHeight: 18,
+      marginBottom: SPACING.xs,
+    },
+    section: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      marginTop: SPACING.md,
+      paddingTop: SPACING.md,
+    },
+    sectionTitle: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      marginBottom: SPACING.sm,
+    },
+    etymologyText: {
+      fontSize: 14,
+      color: colors.textPrimary,
+      lineHeight: 20,
+    },
+    proverbItem: {
+      flexDirection: 'row',
+      marginBottom: SPACING.sm,
+    },
+    proverbQuote: {
+      fontSize: 24,
+      color: colors.primary,
+      marginRight: SPACING.xs,
+      marginTop: -4,
+      fontWeight: 'bold',
+    },
+    proverbText: {
+      flex: 1,
+      fontSize: 14,
+      color: colors.textPrimary,
+      lineHeight: 20,
+    },
+  });

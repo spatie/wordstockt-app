@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal,
@@ -10,7 +12,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { colors, shadows } from '../../config/theme';
+import { shadows } from '../../config/theme';
 import { RADIUS, SPACING } from '../../config/constants';
 
 type OverlayOpacity = 0.5 | 0.7;
@@ -46,6 +48,7 @@ export function BaseModal({
   centered = true,
   testID,
 }: BaseModalProps) {
+  const styles = useThemedStyles(createStyles);
   const [modalVisible, setModalVisible] = useState(visible);
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -174,18 +177,19 @@ export function BaseModal({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    alignItems: 'center',
-    padding: SPACING.xxl,
-  },
-  content: {
-    backgroundColor: colors.backgroundLight,
-    borderRadius: RADIUS.xl,
-    padding: SPACING.xxl,
-    width: '100%',
-    maxWidth: 400,
-    ...shadows.xl,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      alignItems: 'center',
+      padding: SPACING.xxl,
+    },
+    content: {
+      backgroundColor: colors.backgroundLight,
+      borderRadius: RADIUS.xl,
+      padding: SPACING.xxl,
+      width: '100%',
+      maxWidth: 400,
+      ...shadows.xl,
+    },
+  });

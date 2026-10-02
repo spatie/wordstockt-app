@@ -1,11 +1,9 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React, { memo } from 'react';
 import { StyleSheet, Pressable, Text } from 'react-native';
 import type { SquareType } from '../../types/game';
-import {
-  colors,
-  MULTIPLIER_COLORS,
-  MULTIPLIER_LABELS,
-} from '../../config/theme';
+import { MULTIPLIER_COLORS, MULTIPLIER_LABELS } from '../../config/theme';
 
 interface BoardMakerCellProps {
   squareType: SquareType;
@@ -20,6 +18,8 @@ export const BoardMakerCell = memo(function BoardMakerCell({
   onPress,
   disabled = false,
 }: BoardMakerCellProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const backgroundColor = squareType
     ? MULTIPLIER_COLORS[squareType]
     : colors.cellBackground;
@@ -49,14 +49,15 @@ export const BoardMakerCell = memo(function BoardMakerCell({
   );
 });
 
-const styles = StyleSheet.create({
-  cell: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 2,
-  },
-  label: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    cell: {
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderRadius: 2,
+    },
+    label: {
+      color: colors.textPrimary,
+      fontWeight: '600',
+    },
+  });

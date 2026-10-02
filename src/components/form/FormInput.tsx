@@ -1,3 +1,9 @@
+import type { ThemeColors } from '../../config/theme';
+import {
+  useThemeBlurTint,
+  useThemeColors,
+  useThemedStyles,
+} from '../../hooks/useThemeColors';
 import React from 'react';
 import {
   View,
@@ -7,7 +13,6 @@ import {
   TextInputProps,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { colors } from '../../config/theme';
 import { DIMENSIONS, RADIUS, SPACING } from '../../config/constants';
 
 interface FormInputProps extends Omit<TextInputProps, 'style'> {
@@ -20,10 +25,13 @@ export function FormInput({
   rightElement,
   ...inputProps
 }: FormInputProps) {
+  const blurTint = useThemeBlurTint();
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.wrapper}>
       <View style={[styles.containerOuter, error && styles.containerError]}>
-        <BlurView intensity={25} tint="dark" style={styles.blur}>
+        <BlurView intensity={25} tint={blurTint} style={styles.blur}>
           <View style={styles.container}>
             <TextInput
               style={styles.input}
@@ -39,38 +47,39 @@ export function FormInput({
   );
 }
 
-const styles = StyleSheet.create({
-  wrapper: {
-    width: '100%',
-    marginBottom: SPACING.lg,
-  },
-  containerOuter: {
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
-    overflow: 'hidden',
-  },
-  blur: {
-    backgroundColor: 'rgba(27, 40, 56, 0.7)',
-  },
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
-    height: DIMENSIONS.inputHeight,
-  },
-  containerError: {
-    borderColor: '#EF4444',
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.textPrimary,
-  },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 12,
-    marginTop: SPACING.xs,
-    marginLeft: SPACING.xs,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    wrapper: {
+      width: '100%',
+      marginBottom: SPACING.lg,
+    },
+    containerOuter: {
+      borderRadius: RADIUS.lg,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.25)',
+      overflow: 'hidden',
+    },
+    blur: {
+      backgroundColor: colors.backgroundLight,
+    },
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: SPACING.lg,
+      height: DIMENSIONS.inputHeight,
+    },
+    containerError: {
+      borderColor: '#EF4444',
+    },
+    input: {
+      flex: 1,
+      fontSize: 16,
+      color: colors.textPrimary,
+    },
+    errorText: {
+      color: '#EF4444',
+      fontSize: 12,
+      marginTop: SPACING.xs,
+      marginLeft: SPACING.xs,
+    },
+  });

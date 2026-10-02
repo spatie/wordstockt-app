@@ -8,7 +8,9 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 
-import { colors, shadows } from '../../config/theme';
+import { shadows } from '../../config/theme';
+import { useThemeColors } from '../../hooks/useThemeColors';
+import { useAppearanceStore } from '../../stores/appearanceStore';
 import { RADIUS, SPACING } from '../../config/constants';
 
 type SpacingKey = keyof typeof SPACING;
@@ -96,13 +98,16 @@ export function Card({
   padding = 'lg',
   borderRadius = 'xl',
   marginBottom = 'md',
-  accentColor = colors.primary,
+  accentColor,
   showAccent = false,
   elevated = true,
   style,
   testID,
 }: CardProps) {
+  const colors = useThemeColors();
+  const appearance = useAppearanceStore((state) => state.appearance);
   const { wrapperStyles, contentStyles } = splitStyles(style);
+  const tint = appearance === 'paper' ? 'light' : 'dark';
 
   const radiusValue = RADIUS[borderRadius];
 
@@ -115,7 +120,8 @@ export function Card({
 
   const blurContentStyle: ViewStyle = {
     padding: SPACING[padding],
-    backgroundColor: 'rgba(27, 40, 56, 0.5)',
+    backgroundColor:
+      appearance === 'navy' ? 'rgba(27, 40, 56, 0.5)' : colors.backgroundLight,
     ...contentStyles,
   };
 
@@ -130,11 +136,14 @@ export function Card({
         onPress={onPress}
         testID={testID}
       >
-        <BlurView intensity={40} tint="dark" style={blurContentStyle}>
+        <BlurView intensity={40} tint={tint} style={blurContentStyle}>
           {children}
         </BlurView>
         {showAccent && (
-          <AccentBar color={accentColor} borderRadius={radiusValue} />
+          <AccentBar
+            color={accentColor ?? colors.primary}
+            borderRadius={radiusValue}
+          />
         )}
       </Pressable>
     );
@@ -142,11 +151,14 @@ export function Card({
 
   return (
     <View style={[baseWrapperStyle, wrapperStyles]} testID={testID}>
-      <BlurView intensity={40} tint="dark" style={blurContentStyle}>
+      <BlurView intensity={40} tint={tint} style={blurContentStyle}>
         {children}
       </BlurView>
       {showAccent && (
-        <AccentBar color={accentColor} borderRadius={radiusValue} />
+        <AccentBar
+          color={accentColor ?? colors.primary}
+          borderRadius={radiusValue}
+        />
       )}
     </View>
   );

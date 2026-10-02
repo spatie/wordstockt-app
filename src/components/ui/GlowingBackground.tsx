@@ -1,3 +1,6 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
+import { useAppearanceStore } from '../../stores/appearanceStore';
 import React, { useEffect, useMemo } from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { shuffle as shuffleArray } from 'lodash-es';
@@ -77,6 +80,7 @@ function GlowOrb({
   initialDelay = 0,
   startProgress = 0,
 }: OrbProps) {
+  const styles = useThemedStyles(createStyles);
   const moveProgress = useSharedValue(startProgress);
   const scaleProgress = useSharedValue(startProgress);
   const colorProgress = useSharedValue(startProgress);
@@ -221,6 +225,8 @@ const COLOR_PAIRS = [
 ];
 
 export function GlowingBackground() {
+  const appearance = useAppearanceStore((state) => state.appearance);
+  const styles = useThemedStyles(createStyles);
   // Randomize on mount - useMemo ensures values persist during component lifetime
   const randomValues = useMemo(() => {
     const shuffledColors = shuffleArray(COLOR_PAIRS);
@@ -241,6 +247,10 @@ export function GlowingBackground() {
   const orbSize5 = Math.min(SCREEN_WIDTH * 1.1, 420);
   const orbSize6 = Math.min(SCREEN_WIDTH * 0.9, 340);
   const orbSize7 = Math.min(SCREEN_WIDTH * 1.3, 500);
+
+  if (appearance !== 'navy') {
+    return null;
+  }
 
   return (
     <View style={styles.container} pointerEvents="none">
@@ -381,12 +391,13 @@ export function GlowingBackground() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    ...StyleSheet.absoluteFill,
-    overflow: 'hidden',
-  },
-  orbContainer: {
-    position: 'absolute',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      ...StyleSheet.absoluteFill,
+      overflow: 'hidden',
+    },
+    orbContainer: {
+      position: 'absolute',
+    },
+  });

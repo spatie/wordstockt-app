@@ -18,6 +18,15 @@ export function useWebSocket(gameUlid: string | null) {
         queryClient.invalidateQueries({
           queryKey: gameKeys.lists(),
         });
+        queryClient.invalidateQueries({
+          queryKey: gameKeys.moveHistory(gameUlid),
+        });
+      }
+
+      if (message.event === 'move.reaction.changed') {
+        queryClient.invalidateQueries({
+          queryKey: gameKeys.moveHistory(gameUlid),
+        });
       }
 
       if (message.event === 'game.started') {

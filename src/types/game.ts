@@ -1,4 +1,5 @@
 import type { Tile, PlacedTile } from './tile';
+import type { MoveReactionType } from '../config/reactions';
 
 export type GameStatus = 'pending' | 'active' | 'finished';
 export type MoveType = 'play' | 'pass' | 'swap' | 'resign';
@@ -78,6 +79,7 @@ export interface MoveHistoryItem {
   tilesCount: number;
   tiles: PlacedTile[] | null;
   createdAt: string;
+  reactions: { userUlid: string; reaction: MoveReactionType }[];
 }
 
 export interface PendingInvitation {

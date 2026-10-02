@@ -1,7 +1,8 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
-import { colors } from '../../config/theme';
 
 interface AvatarProps {
   uri?: string | null;
@@ -46,6 +47,7 @@ export function Avatar({
   showOnlineIndicator = false,
   backgroundColor,
 }: AvatarProps) {
+  const styles = useThemedStyles(createStyles);
   const initials = getInitials(name);
   const bgColor = backgroundColor || getColorFromName(name);
 
@@ -101,22 +103,23 @@ export function Avatar({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    position: 'relative',
-  },
-  image: {},
-  initialsContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  initials: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  onlineIndicator: {
-    position: 'absolute',
-    backgroundColor: '#4CAF50',
-    borderColor: colors.background,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      position: 'relative',
+    },
+    image: {},
+    initialsContainer: {
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    initials: {
+      color: '#FFFFFF',
+      fontWeight: '600',
+    },
+    onlineIndicator: {
+      position: 'absolute',
+      backgroundColor: '#4CAF50',
+      borderColor: colors.background,
+    },
+  });

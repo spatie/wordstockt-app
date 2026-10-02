@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React, {
   useRef,
   useCallback,
@@ -38,7 +40,6 @@ import {
   SPRING_CONFIG_FAST,
   LAYOUT,
 } from '../../config/constants';
-import { colors } from '../../config/theme';
 import type { Tile as TileType } from '../../types';
 import type { DropTarget, RackLayout } from '../../context/DragDropContext';
 
@@ -92,6 +93,7 @@ function AnimatedTileSlot({
   disabled,
   onDragEnd,
 }: AnimatedTileSlotProps) {
+  const styles = useThemedStyles(createStyles);
   const isUsed = useRackTileUsed(actualRackIndex);
   const isSwapMode = useIsSwapMode();
   const isSwapSelected = useIsSwapSelected(actualRackIndex);
@@ -273,6 +275,7 @@ interface TileRackProps {
 }
 
 export function TileRack({ tiles, disabled, onTileDrop }: TileRackProps) {
+  const styles = useThemedStyles(createStyles);
   const rackRef = useRef<View>(null);
   const { setRackLayout, isDragging, updateRackTiles } = useDragDrop();
   const [rackLayout, setLocalRackLayout] = useState<RackLayout | null>(null);
@@ -373,42 +376,43 @@ export function TileRack({ tiles, disabled, onTileDrop }: TileRackProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  rack: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    marginHorizontal: 24,
-    marginTop: 12,
-    backgroundColor: 'transparent',
-    borderRadius: 12,
-    maxWidth: LAYOUT.gameControlsMaxWidth,
-    width: '100%',
-    alignSelf: 'center',
-  },
-  slotsContainer: {
-    height: SLOT_WIDTH,
-    position: 'relative',
-  },
-  absoluteSlot: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: SLOT_WIDTH,
-    height: SLOT_WIDTH,
-  },
-  staticSlot: {
-    position: 'absolute',
-    top: 0,
-    width: SLOT_WIDTH,
-    height: SLOT_WIDTH,
-  },
-  emptySlot: {
-    width: SLOT_WIDTH,
-    height: SLOT_WIDTH,
-    backgroundColor: colors.emptySlot,
-    borderRadius: 6,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    rack: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+      marginHorizontal: 24,
+      marginTop: 12,
+      backgroundColor: 'transparent',
+      borderRadius: 12,
+      maxWidth: LAYOUT.gameControlsMaxWidth,
+      width: '100%',
+      alignSelf: 'center',
+    },
+    slotsContainer: {
+      height: SLOT_WIDTH,
+      position: 'relative',
+    },
+    absoluteSlot: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: SLOT_WIDTH,
+      height: SLOT_WIDTH,
+    },
+    staticSlot: {
+      position: 'absolute',
+      top: 0,
+      width: SLOT_WIDTH,
+      height: SLOT_WIDTH,
+    },
+    emptySlot: {
+      width: SLOT_WIDTH,
+      height: SLOT_WIDTH,
+      backgroundColor: colors.emptySlot,
+      borderRadius: 6,
+    },
+  });

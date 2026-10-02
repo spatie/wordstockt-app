@@ -1,3 +1,9 @@
+import type { ThemeColors } from '../../src/config/theme';
+import {
+  useThemeBlurTint,
+  useThemeColors,
+  useThemedStyles,
+} from '../../src/hooks/useThemeColors';
 import React, { useState } from 'react';
 import {
   View,
@@ -18,7 +24,6 @@ import { FormInput } from '../../src/components/form/FormInput';
 import { PasswordInput } from '../../src/components/form/PasswordInput';
 import { MainLogo } from '../../src/components/ui/MainLogo';
 import { FloatingTiles } from '../../src/components/ui/FloatingTiles';
-import { colors } from '../../src/config/theme';
 import {
   SPACING,
   RADIUS,
@@ -28,6 +33,7 @@ import {
 import { ROUTES } from '../../src/config/routes';
 
 function GlowingLogo() {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.logoWrapper}>
       <MainLogo />
@@ -36,6 +42,9 @@ function GlowingLogo() {
 }
 
 export default function LoginScreen() {
+  const blurTint = useThemeBlurTint();
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const login = useLogin();
@@ -64,7 +73,7 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#0D1B2A', '#152238', '#0D1B2A']}
+        colors={[colors.background, colors.backgroundLight, colors.background]}
         locations={[0, 0.5, 1]}
         style={StyleSheet.absoluteFill}
         start={{ x: 0.5, y: 0 }}
@@ -142,7 +151,11 @@ export default function LoginScreen() {
                 onPress={handleLogin}
                 disabled={!canSubmit || isLoading}
               >
-                <BlurView intensity={30} tint="dark" style={styles.loginButton}>
+                <BlurView
+                  intensity={30}
+                  tint={blurTint}
+                  style={styles.loginButton}
+                >
                   {login.isPending ? (
                     <ActivityIndicator color="#FFF" />
                   ) : (
@@ -194,7 +207,11 @@ export default function LoginScreen() {
                 onPress={handleGuestLogin}
                 disabled={isLoading}
               >
-                <BlurView intensity={25} tint="dark" style={styles.guestButton}>
+                <BlurView
+                  intensity={25}
+                  tint={blurTint}
+                  style={styles.guestButton}
+                >
                   {guestLogin.isPending ? (
                     <ActivityIndicator color={colors.textSecondary} />
                   ) : (
@@ -214,157 +231,158 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: SPACING.xxl,
-    paddingTop: 20,
-    alignItems: 'center',
-    maxWidth: LAYOUT.authFormMaxWidth,
-    width: '100%',
-    alignSelf: 'center',
-  },
-  logoContainer: {
-    marginTop: 40,
-    marginBottom: SPACING.xl,
-  },
-  logoWrapper: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    letterSpacing: 0.5,
-    marginBottom: 40,
-  },
-  formContainer: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  inputWrapper: {
-    width: '100%',
-  },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: SPACING.xl,
-    marginTop: -SPACING.sm,
-  },
-  forgotPasswordText: {
-    fontSize: 14,
-    color: colors.primary,
-    fontWeight: '500',
-  },
-  errorContainer: {
-    width: '100%',
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.2)',
-  },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  loginButtonOuter: {
-    width: '100%',
-    borderRadius: 28,
-    marginBottom: SPACING.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(74, 144, 217, 0.5)',
-    overflow: 'hidden',
-  },
-  loginButton: {
-    height: DIMENSIONS.inputHeight,
-    backgroundColor: 'rgba(74, 144, 217, 0.25)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loginButtonDisabled: {
-    opacity: 0.5,
-  },
-  loginButtonText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#FFF',
-    letterSpacing: 0.3,
-  },
-  signUpContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  signUpText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  signUpLink: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  guestSection: {
-    width: '100%',
-    marginTop: 36,
-    alignItems: 'center',
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: SPACING.xl,
-  },
-  dividerGradient: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    marginHorizontal: SPACING.lg,
-    fontSize: 13,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  guestButtonOuter: {
-    width: '100%',
-    borderRadius: 28,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    overflow: 'hidden',
-    marginBottom: SPACING.md,
-  },
-  guestButton: {
-    height: DIMENSIONS.inputHeight,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  guestButtonDisabled: {
-    opacity: 0.5,
-  },
-  guestButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.textSecondary,
-  },
-  guestHelperText: {
-    fontSize: 13,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    safeArea: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: SPACING.xxl,
+      paddingTop: 20,
+      alignItems: 'center',
+      maxWidth: LAYOUT.authFormMaxWidth,
+      width: '100%',
+      alignSelf: 'center',
+    },
+    logoContainer: {
+      marginTop: 40,
+      marginBottom: SPACING.xl,
+    },
+    logoWrapper: {
+      position: 'relative',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    title: {
+      fontSize: 32,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      letterSpacing: 0.5,
+      marginBottom: 40,
+    },
+    formContainer: {
+      width: '100%',
+      alignItems: 'center',
+    },
+    inputWrapper: {
+      width: '100%',
+    },
+    forgotPassword: {
+      alignSelf: 'flex-end',
+      marginBottom: SPACING.xl,
+      marginTop: -SPACING.sm,
+    },
+    forgotPasswordText: {
+      fontSize: 14,
+      color: colors.primary,
+      fontWeight: '500',
+    },
+    errorContainer: {
+      width: '100%',
+      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+      borderRadius: RADIUS.md,
+      padding: SPACING.md,
+      marginBottom: SPACING.lg,
+      borderWidth: 1,
+      borderColor: 'rgba(239, 68, 68, 0.2)',
+    },
+    errorText: {
+      color: '#EF4444',
+      fontSize: 14,
+      textAlign: 'center',
+    },
+    loginButtonOuter: {
+      width: '100%',
+      borderRadius: 28,
+      marginBottom: SPACING.xl,
+      borderWidth: 1,
+      borderColor: 'rgba(74, 144, 217, 0.5)',
+      overflow: 'hidden',
+    },
+    loginButton: {
+      height: DIMENSIONS.inputHeight,
+      backgroundColor: 'rgba(74, 144, 217, 0.25)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loginButtonDisabled: {
+      opacity: 0.5,
+    },
+    loginButtonText: {
+      fontSize: 17,
+      fontWeight: '600',
+      color: '#FFF',
+      letterSpacing: 0.3,
+    },
+    signUpContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    signUpText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    signUpLink: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.primary,
+    },
+    guestSection: {
+      width: '100%',
+      marginTop: 36,
+      alignItems: 'center',
+    },
+    dividerContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      width: '100%',
+      marginBottom: SPACING.xl,
+    },
+    dividerGradient: {
+      flex: 1,
+      height: 1,
+    },
+    dividerText: {
+      marginHorizontal: SPACING.lg,
+      fontSize: 13,
+      color: colors.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+    },
+    guestButtonOuter: {
+      width: '100%',
+      borderRadius: 28,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
+      overflow: 'hidden',
+      marginBottom: SPACING.md,
+    },
+    guestButton: {
+      height: DIMENSIONS.inputHeight,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    guestButtonDisabled: {
+      opacity: 0.5,
+    },
+    guestButtonText: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: colors.textSecondary,
+    },
+    guestHelperText: {
+      fontSize: 13,
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
+  });

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MOVE_REACTIONS } from '../config/reactions';
 import type {
   Game,
   GameListItem,
@@ -394,6 +395,15 @@ export const MoveHistoryItemSchema = z
     tiles_count: z.number(),
     tiles: z.array(MoveTileSchema).nullable().optional(),
     created_at: z.string(),
+    reactions: z
+      .array(
+        z.object({
+          user_ulid: z.string(),
+          reaction: z.enum(MOVE_REACTIONS.map((item) => item.id)),
+        })
+      )
+      .optional()
+      .default([]),
   })
   .passthrough();
 
@@ -447,5 +457,9 @@ export function transformMoveHistoryItem(
           isBlank: t.is_blank ?? false,
         })) ?? null,
     createdAt: data.created_at,
+    reactions: data.reactions.map((reaction) => ({
+      userUlid: reaction.user_ulid,
+      reaction: reaction.reaction,
+    })),
   };
 }

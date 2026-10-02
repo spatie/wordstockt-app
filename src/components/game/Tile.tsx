@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Pressable, Platform } from 'react-native';
 import Animated, {
@@ -7,7 +9,7 @@ import Animated, {
   withRepeat,
   interpolateColor,
 } from 'react-native-reanimated';
-import { VALIDATION_COLORS, colors } from '../../config/theme';
+import { VALIDATION_COLORS } from '../../config/theme';
 import { TILE_SIZE } from '../../config/constants';
 import type { TileValidationState } from '../../types';
 
@@ -59,6 +61,7 @@ export function Tile({
   onPress,
   disabled = false,
 }: TileProps) {
+  const styles = useThemedStyles(createStyles);
   // Animated color transition
   const getColorValue = (state: TileValidationState) =>
     state === 'valid'
@@ -292,6 +295,7 @@ interface ScaledTileProps extends TileProps {
 }
 
 export function ScaledTile({ displaySize, ...tileProps }: ScaledTileProps) {
+  const styles = useThemedStyles(createStyles);
   const scale = displaySize / TILE_SIZE;
 
   return (
@@ -308,95 +312,96 @@ export function ScaledTile({ displaySize, ...tileProps }: ScaledTileProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    width: TILE_SIZE,
-    height: TILE_SIZE,
-  },
-  tile: {
-    width: TILE_SIZE,
-    height: TILE_SIZE,
-    backgroundColor: colors.tileClassicBackground,
-    borderRadius: BORDER_RADIUS,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderTopWidth: BORDER_WIDTH,
-    borderLeftWidth: BORDER_WIDTH,
-    borderBottomWidth: BORDER_WIDTH,
-    borderRightWidth: BORDER_WIDTH,
-    borderTopColor: '#F5F3EF',
-    borderLeftColor: '#F5F3EF',
-    borderBottomColor: '#B8B4AA',
-    borderRightColor: '#B8B4AA',
-    shadowColor: '#000',
-    shadowOffset: { width: 1, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 4,
-  },
-  pendingTile: {
-    shadowColor: colors.tileShadow,
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-  },
-  selectedTile: {
-    backgroundColor: colors.tileClassicSelected,
-  },
-  disabledTile: {
-    opacity: 0.5,
-  },
-  letter: {
-    fontSize: LETTER_FONT_SIZE,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginRight: '15%',
-    ...Platform.select({
-      android: {
-        includeFontPadding: false,
-        textAlignVertical: 'center',
-      },
-      default: {},
-    }),
-  },
-  letterQ: {
-    marginRight: '30%',
-  },
-  points: {
-    position: 'absolute',
-    bottom: '-4%',
-    right: 0,
-    fontSize: POINTS_FONT_SIZE,
-    fontWeight: '600',
-    fontFamily: Platform.select({
-      ios: 'System',
-      android: 'sans-serif-condensed',
-      default: 'System',
-    }),
-    ...Platform.select({
-      android: {
-        includeFontPadding: false,
-      },
-      default: {},
-    }),
-  },
-  pointsDouble: {
-    fontSize: POINTS_FONT_SIZE * 0.7,
-  },
-  disabledText: {
-    color: '#666',
-  },
-  blankTile: {
-    borderWidth: 5,
-    borderColor: '#555555',
-    borderStyle: 'dotted',
-  },
-  scaledContainer: {
-    overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scaleWrapper: {
-    width: TILE_SIZE,
-    height: TILE_SIZE,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      width: TILE_SIZE,
+      height: TILE_SIZE,
+    },
+    tile: {
+      width: TILE_SIZE,
+      height: TILE_SIZE,
+      backgroundColor: colors.tileClassicBackground,
+      borderRadius: BORDER_RADIUS,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderTopWidth: BORDER_WIDTH,
+      borderLeftWidth: BORDER_WIDTH,
+      borderBottomWidth: BORDER_WIDTH,
+      borderRightWidth: BORDER_WIDTH,
+      borderTopColor: '#F5F3EF',
+      borderLeftColor: '#F5F3EF',
+      borderBottomColor: '#B8B4AA',
+      borderRightColor: '#B8B4AA',
+      shadowColor: '#000',
+      shadowOffset: { width: 1, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 3,
+      elevation: 4,
+    },
+    pendingTile: {
+      shadowColor: colors.tileShadow,
+      shadowOpacity: 0.4,
+      shadowRadius: 4,
+    },
+    selectedTile: {
+      backgroundColor: colors.tileClassicSelected,
+    },
+    disabledTile: {
+      opacity: 0.5,
+    },
+    letter: {
+      fontSize: LETTER_FONT_SIZE,
+      fontWeight: '700',
+      textAlign: 'center',
+      marginRight: '15%',
+      ...Platform.select({
+        android: {
+          includeFontPadding: false,
+          textAlignVertical: 'center',
+        },
+        default: {},
+      }),
+    },
+    letterQ: {
+      marginRight: '30%',
+    },
+    points: {
+      position: 'absolute',
+      bottom: '-4%',
+      right: 0,
+      fontSize: POINTS_FONT_SIZE,
+      fontWeight: '600',
+      fontFamily: Platform.select({
+        ios: 'System',
+        android: 'sans-serif-condensed',
+        default: 'System',
+      }),
+      ...Platform.select({
+        android: {
+          includeFontPadding: false,
+        },
+        default: {},
+      }),
+    },
+    pointsDouble: {
+      fontSize: POINTS_FONT_SIZE * 0.7,
+    },
+    disabledText: {
+      color: '#666',
+    },
+    blankTile: {
+      borderWidth: 5,
+      borderColor: '#555555',
+      borderStyle: 'dotted',
+    },
+    scaledContainer: {
+      overflow: 'hidden',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    scaleWrapper: {
+      width: TILE_SIZE,
+      height: TILE_SIZE,
+    },
+  });

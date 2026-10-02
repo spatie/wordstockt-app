@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, {
@@ -8,7 +10,6 @@ import Animated, {
   SharedValue,
   Easing,
 } from 'react-native-reanimated';
-import { colors } from '../../config/theme';
 
 type LogoTileSize = 'small' | 'medium' | 'large';
 
@@ -31,6 +32,7 @@ export function AnimatedLogoTile({
   animationTrigger,
   delay = 0,
 }: AnimatedLogoTileProps) {
+  const styles = useThemedStyles(createStyles);
   const dimensions = SIZES[size];
 
   const animatedStyle = useAnimatedStyle(() => {
@@ -137,15 +139,16 @@ export function AnimatedLogoTile({
   );
 }
 
-const styles = StyleSheet.create({
-  tile: {
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  letter: {
-    fontWeight: '700',
-    color: '#FFF',
-    textAlign: 'center',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    tile: {
+      backgroundColor: colors.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    letter: {
+      fontWeight: '700',
+      color: colors.onPrimary,
+      textAlign: 'center',
+    },
+  });

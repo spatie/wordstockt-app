@@ -1,3 +1,8 @@
+import type { ThemeColors } from '../../src/config/theme';
+import {
+  useThemeColors,
+  useThemedStyles,
+} from '../../src/hooks/useThemeColors';
 import React, { memo, useState, useCallback } from 'react';
 import {
   View,
@@ -19,7 +24,6 @@ import { ErrorView } from '../../src/components/ui/ErrorView';
 import { Card } from '../../src/components/ui/Card';
 import { TabBar } from '../../src/components/ui/TabBar';
 import { SmartAvatar } from '../../src/components/ui/SmartAvatar';
-import { colors } from '../../src/config/theme';
 import { SPACING, LAYOUT } from '../../src/config/constants';
 import type { LeaderboardEntry, LeaderboardType } from '../../src/types';
 
@@ -34,6 +38,7 @@ const LeaderboardEntryCard = memo(function LeaderboardEntryCard({
   rank,
   isTimeBased,
 }: LeaderboardEntryCardProps) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Card padding="md" marginBottom="sm">
       <View style={styles.cardContent}>
@@ -84,6 +89,7 @@ function PeriodToggle({
   value: PeriodType;
   onChange: (value: PeriodType) => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   const translateX = useSharedValue(value === 'monthly' ? 0 : PILL_WIDTH);
 
   const animatedIndicatorStyle = useAnimatedStyle(() => ({
@@ -133,6 +139,8 @@ function PeriodToggle({
 }
 
 export default function LeaderboardScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const [mainType, setMainType] = useState<MainType>('wins');
   const [period, setPeriod] = useState<PeriodType>('monthly');
 
@@ -304,138 +312,139 @@ export default function LeaderboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    maxWidth: LAYOUT.contentMaxWidth,
-    width: '100%',
-    alignSelf: 'center' as const,
-  },
-  contentContainer: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.sm,
-  },
-  title: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    letterSpacing: 0.5,
-  },
-  periodToggle: {
-    flexDirection: 'row',
-    backgroundColor: colors.backgroundLight,
-    borderRadius: 8,
-    padding: 2,
-    position: 'relative',
-  },
-  periodIndicator: {
-    position: 'absolute',
-    top: 2,
-    left: 2,
-    width: PILL_WIDTH,
-    height: 28,
-    backgroundColor: colors.primary,
-    borderRadius: 6,
-  },
-  periodPill: {
-    width: PILL_WIDTH,
-    paddingVertical: 6,
-    borderRadius: 6,
-    alignItems: 'center',
-    zIndex: 1,
-  },
-  periodPillText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.textSecondary,
-  },
-  periodPillTextActive: {
-    color: colors.textPrimary,
-  },
-  list: {
-    padding: SPACING.lg,
-    paddingTop: SPACING.sm,
-    paddingBottom: 120,
-  },
-  cardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  rank: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-    minWidth: 24,
-    textAlign: 'center',
-  },
-  info: {
-    flex: 1,
-  },
-  username: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  stats: {
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  valueContainer: {
-    alignItems: 'flex-end',
-  },
-  valueText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.primary,
-  },
-  metricLabel: {
-    fontSize: 11,
-    color: colors.textSecondary,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    padding: 32,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-  },
-  currentUserFooter: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: colors.background,
-    padding: SPACING.lg,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  footerLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    letterSpacing: 0.5,
-    marginBottom: SPACING.sm,
-  },
-  currentUserMessage: {
-    alignItems: 'center',
-    paddingVertical: SPACING.sm,
-  },
-  messageText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      maxWidth: LAYOUT.contentMaxWidth,
+      width: '100%',
+      alignSelf: 'center' as const,
+    },
+    contentContainer: {
+      flex: 1,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: SPACING.lg,
+      paddingTop: SPACING.lg,
+      paddingBottom: SPACING.sm,
+    },
+    title: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      letterSpacing: 0.5,
+    },
+    periodToggle: {
+      flexDirection: 'row',
+      backgroundColor: colors.backgroundLight,
+      borderRadius: 8,
+      padding: 2,
+      position: 'relative',
+    },
+    periodIndicator: {
+      position: 'absolute',
+      top: 2,
+      left: 2,
+      width: PILL_WIDTH,
+      height: 28,
+      backgroundColor: colors.primary,
+      borderRadius: 6,
+    },
+    periodPill: {
+      width: PILL_WIDTH,
+      paddingVertical: 6,
+      borderRadius: 6,
+      alignItems: 'center',
+      zIndex: 1,
+    },
+    periodPillText: {
+      fontSize: 12,
+      fontWeight: '500',
+      color: colors.textSecondary,
+    },
+    periodPillTextActive: {
+      color: colors.textPrimary,
+    },
+    list: {
+      padding: SPACING.lg,
+      paddingTop: SPACING.sm,
+      paddingBottom: 120,
+    },
+    cardContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    rank: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: colors.textPrimary,
+      minWidth: 24,
+      textAlign: 'center',
+    },
+    info: {
+      flex: 1,
+    },
+    username: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    stats: {
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    valueContainer: {
+      alignItems: 'flex-end',
+    },
+    valueText: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: colors.primary,
+    },
+    metricLabel: {
+      fontSize: 11,
+      color: colors.textSecondary,
+    },
+    emptyContainer: {
+      alignItems: 'center',
+      padding: 32,
+    },
+    emptyText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+    },
+    currentUserFooter: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: colors.background,
+      padding: SPACING.lg,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    footerLabel: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      letterSpacing: 0.5,
+      marginBottom: SPACING.sm,
+    },
+    currentUserMessage: {
+      alignItems: 'center',
+      paddingVertical: SPACING.sm,
+    },
+    messageText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+  });

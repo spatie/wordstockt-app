@@ -1,8 +1,9 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '../../config/theme';
 import { SPACING, RADIUS } from '../../config/constants';
 import { useAuthStore } from '../../stores/authStore';
 import { useResendVerification } from '../../api/queries/useAuth';
@@ -12,6 +13,7 @@ import {
 } from '../../utils/emailVerification';
 
 export function VerificationBanner() {
+  const styles = useThemedStyles(createStyles);
   const user = useAuthStore((s) => s.user);
   const { mutate: resend, isPending } = useResendVerification();
   const insets = useSafeAreaInsets();
@@ -48,34 +50,35 @@ export function VerificationBanner() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.warning,
-    paddingHorizontal: SPACING.md,
-    paddingBottom: SPACING.sm,
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  text: {
-    color: '#000',
-    fontSize: 14,
-    flex: 1,
-  },
-  button: {
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
-    borderRadius: RADIUS.sm,
-    marginLeft: SPACING.sm,
-    minWidth: 70,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#000',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      backgroundColor: colors.warning,
+      paddingHorizontal: SPACING.md,
+      paddingBottom: SPACING.sm,
+    },
+    content: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    text: {
+      color: '#000',
+      fontSize: 14,
+      flex: 1,
+    },
+    button: {
+      backgroundColor: 'rgba(0,0,0,0.2)',
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.xs,
+      borderRadius: RADIUS.sm,
+      marginLeft: SPACING.sm,
+      minWidth: 70,
+      alignItems: 'center',
+    },
+    buttonText: {
+      color: '#000',
+      fontWeight: '600',
+      fontSize: 14,
+    },
+  });

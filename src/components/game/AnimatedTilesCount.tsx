@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useEffect, useRef, memo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
@@ -10,7 +12,6 @@ import Animated, {
   withDelay,
   Easing,
 } from 'react-native-reanimated';
-import { colors } from '../../config/theme';
 
 const DIGIT_HEIGHT = 18;
 const ANIMATION_DURATION = 500;
@@ -32,6 +33,7 @@ const AnimatedDigit = memo(function AnimatedDigit({
   totalDigits: number;
   countChanged: number;
 }) {
+  const styles = useThemedStyles(createStyles);
   const translateY = useSharedValue(0);
   const prevDigit = useRef(digit);
   const isFirstRender = useRef(true);
@@ -88,6 +90,7 @@ const AnimatedDigit = memo(function AnimatedDigit({
 });
 
 export function AnimatedTilesCount({ count }: AnimatedTilesCountProps) {
+  const styles = useThemedStyles(createStyles);
   const scale = useSharedValue(1);
   const prevCount = useRef(count);
   const isFirstRender = useRef(true);
@@ -149,29 +152,30 @@ export function AnimatedTilesCount({ count }: AnimatedTilesCountProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  digitContainer: {
-    height: DIGIT_HEIGHT,
-    overflow: 'hidden',
-  },
-  digitStrip: {
-    flexDirection: 'column',
-  },
-  digitWrapper: {
-    height: DIGIT_HEIGHT,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  digit: {
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-    fontSize: 14,
-    lineHeight: DIGIT_HEIGHT,
-    textAlign: 'center',
-    minWidth: 9,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    digitContainer: {
+      height: DIGIT_HEIGHT,
+      overflow: 'hidden',
+    },
+    digitStrip: {
+      flexDirection: 'column',
+    },
+    digitWrapper: {
+      height: DIGIT_HEIGHT,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    digit: {
+      fontWeight: 'bold',
+      color: colors.onPrimary,
+      fontSize: 14,
+      lineHeight: DIGIT_HEIGHT,
+      textAlign: 'center',
+      minWidth: 9,
+    },
+  });

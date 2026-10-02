@@ -1,3 +1,8 @@
+import type { ThemeColors } from '../../src/config/theme';
+import {
+  useThemeColors,
+  useThemedStyles,
+} from '../../src/hooks/useThemeColors';
 import React, { useState } from 'react';
 import {
   View,
@@ -18,7 +23,6 @@ import { FormInput } from '../../src/components/form/FormInput';
 import { PasswordInput } from '../../src/components/form/PasswordInput';
 import { MainLogo } from '../../src/components/ui/MainLogo';
 import { FloatingTiles } from '../../src/components/ui/FloatingTiles';
-import { colors } from '../../src/config/theme';
 import {
   SPACING,
   RADIUS,
@@ -34,6 +38,8 @@ import {
 } from '../../src/utils/validation';
 
 export default function RegisterScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -66,7 +72,7 @@ export default function RegisterScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#0D1B2A', '#152238', '#0D1B2A']}
+        colors={[colors.background, colors.backgroundLight, colors.background]}
         locations={[0, 0.5, 1]}
         style={StyleSheet.absoluteFill}
         start={{ x: 0.5, y: 0 }}
@@ -177,100 +183,101 @@ export default function RegisterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  content: {
-    flex: 1,
-    padding: SPACING.xxl,
-    alignItems: 'center',
-    maxWidth: LAYOUT.authFormMaxWidth,
-    width: '100%',
-    alignSelf: 'center',
-  },
-  logoContainer: {
-    marginTop: 20,
-    marginBottom: SPACING.xl,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: SPACING.sm,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginBottom: 32,
-    textAlign: 'center',
-  },
-  errorContainer: {
-    width: '100%',
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.lg,
-  },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  privacyNotice: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginTop: SPACING.sm,
-  },
-  privacyLink: {
-    color: colors.primary,
-    textDecorationLine: 'underline',
-  },
-  registerButton: {
-    width: '100%',
-    backgroundColor: 'rgba(74, 144, 217, 0.3)',
-    borderWidth: 1,
-    borderColor: 'rgba(74, 144, 217, 0.5)',
-    borderRadius: 30,
-    height: DIMENSIONS.inputHeight,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    marginTop: SPACING.md,
-    marginBottom: SPACING.xxl,
-  },
-  registerButtonDisabled: {
-    opacity: 0.5,
-  },
-  registerButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFF',
-  },
-  registerButtonIcon: {
-    fontSize: 18,
-    color: '#FFF',
-  },
-  signInContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  signInText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  signInLink: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    keyboardView: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+    },
+    content: {
+      flex: 1,
+      padding: SPACING.xxl,
+      alignItems: 'center',
+      maxWidth: LAYOUT.authFormMaxWidth,
+      width: '100%',
+      alignSelf: 'center',
+    },
+    logoContainer: {
+      marginTop: 20,
+      marginBottom: SPACING.xl,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: SPACING.sm,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      marginBottom: 32,
+      textAlign: 'center',
+    },
+    errorContainer: {
+      width: '100%',
+      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+      borderRadius: RADIUS.md,
+      padding: SPACING.md,
+      marginBottom: SPACING.lg,
+    },
+    errorText: {
+      color: '#EF4444',
+      fontSize: 14,
+      textAlign: 'center',
+    },
+    privacyNotice: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginTop: SPACING.sm,
+    },
+    privacyLink: {
+      color: colors.primary,
+      textDecorationLine: 'underline',
+    },
+    registerButton: {
+      width: '100%',
+      backgroundColor: 'rgba(74, 144, 217, 0.3)',
+      borderWidth: 1,
+      borderColor: 'rgba(74, 144, 217, 0.5)',
+      borderRadius: 30,
+      height: DIMENSIONS.inputHeight,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: SPACING.sm,
+      marginTop: SPACING.md,
+      marginBottom: SPACING.xxl,
+    },
+    registerButtonDisabled: {
+      opacity: 0.5,
+    },
+    registerButtonText: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: '#FFF',
+    },
+    registerButtonIcon: {
+      fontSize: 18,
+      color: '#FFF',
+    },
+    signInContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    signInText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    signInLink: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.primary,
+    },
+  });

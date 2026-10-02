@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../src/config/theme';
+import { useThemedStyles } from '../../src/hooks/useThemeColors';
 import React, { useState } from 'react';
 import {
   View,
@@ -14,7 +16,6 @@ import { FormInput } from '../../src/components/form/FormInput';
 import { PasswordInput } from '../../src/components/form/PasswordInput';
 import { AnimatedSaveButton } from '../../src/components/ui/AnimatedSaveButton';
 import { getApiError } from '../../src/api/client';
-import { colors } from '../../src/config/theme';
 import {
   isValidUsername,
   isValidEmail,
@@ -23,6 +24,7 @@ import {
 } from '../../src/utils/validation';
 
 export default function ConvertAccountScreen() {
+  const styles = useThemedStyles(createStyles);
   const router = useRouter();
   const convertGuest = useConvertGuest();
   const user = useAuthStore((s) => s.user);
@@ -147,46 +149,47 @@ export default function ConvertAccountScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  content: {
-    padding: 24,
-    paddingBottom: 40,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginBottom: 32,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  errorContainer: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
-  },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  footerText: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginTop: 16,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    keyboardView: {
+      flex: 1,
+    },
+    content: {
+      padding: 24,
+      paddingBottom: 40,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: 8,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      marginBottom: 32,
+    },
+    inputGroup: {
+      marginBottom: 16,
+    },
+    errorContainer: {
+      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+      borderRadius: 12,
+      padding: 12,
+      marginBottom: 16,
+    },
+    errorText: {
+      color: '#EF4444',
+      fontSize: 14,
+      textAlign: 'center',
+    },
+    footerText: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginTop: 16,
+    },
+  });

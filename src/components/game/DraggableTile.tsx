@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import Animated, {
@@ -8,7 +10,6 @@ import { Tile } from './Tile';
 import { useDragDrop } from '../../context/DragDropContext';
 import { usePointerDrag } from '../../hooks/usePointerDrag';
 import { TILE_SIZE, GAP } from '../../config/constants';
-import { colors } from '../../config/theme';
 import type { Tile as TileType } from '../../types';
 import type { DropTarget, RackLayout } from '../../context/DragDropContext';
 
@@ -29,6 +30,7 @@ export function DraggableTile({
   disabled,
   onDragEnd,
 }: DraggableTileProps) {
+  const styles = useThemedStyles(createStyles);
   const {
     startDragFromRack,
     updateDrag,
@@ -215,30 +217,31 @@ export function DraggableTile({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    width: TILE_SIZE,
-    height: TILE_SIZE,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-    borderRadius: 6,
-    // Expand touch area beyond visual bounds for better drag initiation
-    // Add padding to ensure minimum touch target size (44x44 is iOS guideline)
-    minWidth: Math.max(TILE_SIZE, 44),
-    minHeight: Math.max(TILE_SIZE, 44),
-    ...Platform.select({
-      web: {
-        userSelect: 'none',
-        touchAction: 'none',
-      },
-      default: {},
-    }),
-  },
-  emptySlot: {
-    width: TILE_SIZE,
-    height: TILE_SIZE,
-    backgroundColor: colors.emptySlot,
-    borderRadius: 6,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      width: TILE_SIZE,
+      height: TILE_SIZE,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'transparent',
+      borderRadius: 6,
+      // Expand touch area beyond visual bounds for better drag initiation
+      // Add padding to ensure minimum touch target size (44x44 is iOS guideline)
+      minWidth: Math.max(TILE_SIZE, 44),
+      minHeight: Math.max(TILE_SIZE, 44),
+      ...Platform.select({
+        web: {
+          userSelect: 'none',
+          touchAction: 'none',
+        },
+        default: {},
+      }),
+    },
+    emptySlot: {
+      width: TILE_SIZE,
+      height: TILE_SIZE,
+      backgroundColor: colors.emptySlot,
+      borderRadius: 6,
+    },
+  });

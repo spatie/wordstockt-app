@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SegmentedButtons, Switch, IconButton } from 'react-native-paper';
@@ -13,7 +15,6 @@ import { BaseModal } from '../ui/BaseModal';
 import { Button } from '../ui/Button';
 import { BoardMaker } from './BoardMaker';
 import { usePreferencesStore } from '../../stores/preferencesStore';
-import { colors } from '../../config/theme';
 import { SPACING, RADIUS } from '../../config/constants';
 import type { SquareType } from '../../types/game';
 
@@ -50,6 +51,8 @@ function BoardOption({
   description,
   onPress,
 }: BoardOptionProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const progress = useSharedValue(selected ? 1 : 0);
 
   useEffect(() => {
@@ -115,6 +118,8 @@ export function CreateGameModal({
   onConfirm,
   isPending,
 }: CreateGameModalProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const preferredLanguage = usePreferencesStore((s) => s.preferredLanguage);
   const setPreferredLanguage = usePreferencesStore(
     (s) => s.setPreferredLanguage
@@ -319,136 +324,137 @@ export function CreateGameModal({
   );
 }
 
-const styles = StyleSheet.create({
-  title: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: SPACING.xxl,
-  },
-  label: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: SPACING.sm,
-  },
-  segmentedButtons: {
-    marginBottom: SPACING.xxl,
-  },
-  playersSegmentedButtons: {
-    marginBottom: SPACING.sm,
-  },
-  playersHint: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: SPACING.xxl,
-  },
-  boardOptions: {
-    gap: SPACING.sm,
-    marginBottom: SPACING.lg,
-  },
-  boardOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: SPACING.md,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
-  },
-  boardOptionSelectedOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: colors.primary,
-    borderRadius: RADIUS.md,
-  },
-  boardOptionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: RADIUS.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: SPACING.md,
-    backgroundColor: colors.background,
-  },
-  boardOptionIconSelected: {
-    backgroundColor: `${colors.primary}20`,
-  },
-  boardOptionText: {
-    flex: 1,
-  },
-  boardOptionLabel: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: colors.textPrimary,
-  },
-  boardOptionLabelSelected: {
-    color: colors.primary,
-  },
-  boardOptionDescription: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  boardOptionRadio: {
-    marginLeft: SPACING.sm,
-  },
-  radioOuter: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioOuterSelected: {
-    borderColor: colors.primary,
-  },
-  radioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.primary,
-  },
-  customBoardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.xxl,
-    paddingHorizontal: SPACING.sm,
-  },
-  customBoardText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  switchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.xs,
-  },
-  switchLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  switchLabel: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  infoIcon: {
-    margin: 0,
-    marginLeft: -4,
-  },
-  infoBox: {
-    backgroundColor: colors.background,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-  },
-  buttonContainer: {
-    marginTop: SPACING.xxl,
-  },
-  infoText: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 18,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    title: {
+      fontSize: 22,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      marginBottom: SPACING.xxl,
+    },
+    label: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginBottom: SPACING.sm,
+    },
+    segmentedButtons: {
+      marginBottom: SPACING.xxl,
+    },
+    playersSegmentedButtons: {
+      marginBottom: SPACING.sm,
+    },
+    playersHint: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginBottom: SPACING.xxl,
+    },
+    boardOptions: {
+      gap: SPACING.sm,
+      marginBottom: SPACING.lg,
+    },
+    boardOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: SPACING.md,
+      borderRadius: RADIUS.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+    },
+    boardOptionSelectedOverlay: {
+      ...StyleSheet.absoluteFill,
+      backgroundColor: colors.primary,
+      borderRadius: RADIUS.md,
+    },
+    boardOptionIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: RADIUS.sm,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: SPACING.md,
+      backgroundColor: colors.background,
+    },
+    boardOptionIconSelected: {
+      backgroundColor: `${colors.primary}20`,
+    },
+    boardOptionText: {
+      flex: 1,
+    },
+    boardOptionLabel: {
+      fontSize: 15,
+      fontWeight: '500',
+      color: colors.textPrimary,
+    },
+    boardOptionLabelSelected: {
+      color: colors.primary,
+    },
+    boardOptionDescription: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    boardOptionRadio: {
+      marginLeft: SPACING.sm,
+    },
+    radioOuter: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    radioOuterSelected: {
+      borderColor: colors.primary,
+    },
+    radioInner: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.primary,
+    },
+    customBoardRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: SPACING.xxl,
+      paddingHorizontal: SPACING.sm,
+    },
+    customBoardText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    switchRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: SPACING.xs,
+    },
+    switchLabelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    switchLabel: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    infoIcon: {
+      margin: 0,
+      marginLeft: -4,
+    },
+    infoBox: {
+      backgroundColor: colors.background,
+      borderRadius: RADIUS.md,
+      padding: SPACING.md,
+    },
+    buttonContainer: {
+      marginTop: SPACING.xxl,
+    },
+    infoText: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      lineHeight: 18,
+    },
+  });

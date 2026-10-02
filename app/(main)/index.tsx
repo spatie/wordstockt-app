@@ -1,3 +1,8 @@
+import type { ThemeColors } from '../../src/config/theme';
+import {
+  useThemeColors,
+  useThemedStyles,
+} from '../../src/hooks/useThemeColors';
 import React, {
   useState,
   useEffect,
@@ -51,7 +56,6 @@ import {
 } from '../../src/components/game-list';
 import { TabBar } from '../../src/components/ui/TabBar';
 import { getApiError } from '../../src/api/client';
-import { colors } from '../../src/config/theme';
 import { SPACING, RADIUS, LAYOUT } from '../../src/config/constants';
 import { ROUTES } from '../../src/config/routes';
 
@@ -67,6 +71,7 @@ const GAME_TABS = [
 const FLATLIST_DATA = [1] as const;
 
 function PulsingDot() {
+  const styles = useThemedStyles(createStyles);
   const pulse = useSharedValue(1);
 
   useEffect(() => {
@@ -96,6 +101,7 @@ function SectionHeader({
   count?: number;
   isYourTurn?: boolean;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.sectionHeader}>
       <View style={styles.sectionHeaderLeft}>
@@ -112,6 +118,8 @@ function SectionHeader({
 }
 
 export default function HomeScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const { push } = useRouter();
   const user = useAuthStore((s) => s.user);
   const { isGuest, showGameLimitPrompt } = useGuestRestriction();
@@ -530,7 +538,7 @@ export default function HomeScreen() {
           style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
         >
           <View style={styles.fabInner}>
-            <Ionicons name="add" size={32} color="#FFF" />
+            <Ionicons name="add" size={32} color={colors.onPrimary} />
           </View>
         </Pressable>
       </Animated.View>
@@ -545,94 +553,95 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    maxWidth: LAYOUT.contentMaxWidth,
-    width: '100%',
-    alignSelf: 'center' as const,
-  },
-  listContent: {
-    flexGrow: 1,
-  },
-  content: {
-    padding: SPACING.lg,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
-  sectionHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  greenDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#4CAF50',
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    letterSpacing: 0.5,
-  },
-  waitingBadge: {
-    backgroundColor: colors.border,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
-    borderRadius: RADIUS.lg,
-  },
-  waitingBadgeText: {
-    fontSize: 12,
-    color: colors.primary,
-    fontWeight: '500',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    padding: 48,
-  },
-  emptyText: {
-    fontSize: 18,
-    color: colors.textSecondary,
-    marginBottom: SPACING.sm,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    opacity: 0.7,
-  },
-  fabContainer: {
-    position: 'absolute',
-    right: SPACING.xl,
-    bottom: SPACING.xl,
-  },
-  fab: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  fabPressed: {
-    transform: [{ scale: 0.92 }],
-    shadowOpacity: 0.2,
-  },
-  fabInner: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 30,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      maxWidth: LAYOUT.contentMaxWidth,
+      width: '100%',
+      alignSelf: 'center' as const,
+    },
+    listContent: {
+      flexGrow: 1,
+    },
+    content: {
+      padding: SPACING.lg,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginTop: SPACING.sm,
+      marginBottom: SPACING.md,
+    },
+    sectionHeaderLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.sm,
+    },
+    greenDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: '#4CAF50',
+    },
+    sectionTitle: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      letterSpacing: 0.5,
+    },
+    waitingBadge: {
+      backgroundColor: colors.border,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.xs,
+      borderRadius: RADIUS.lg,
+    },
+    waitingBadgeText: {
+      fontSize: 12,
+      color: colors.primary,
+      fontWeight: '500',
+    },
+    emptyContainer: {
+      alignItems: 'center',
+      padding: 48,
+    },
+    emptyText: {
+      fontSize: 18,
+      color: colors.textSecondary,
+      marginBottom: SPACING.sm,
+    },
+    emptySubtext: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      opacity: 0.7,
+    },
+    fabContainer: {
+      position: 'absolute',
+      right: SPACING.xl,
+      bottom: SPACING.xl,
+    },
+    fab: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor: colors.primary,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.4,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+    fabPressed: {
+      transform: [{ scale: 0.92 }],
+      shadowOpacity: 0.2,
+    },
+    fabInner: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderRadius: 30,
+      borderWidth: 2,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+  });

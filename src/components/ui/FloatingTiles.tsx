@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, {
@@ -32,6 +34,7 @@ function FloatingTile({
   rotationRange: number;
   scaleRange: [number, number];
 }) {
+  const styles = useThemedStyles(createStyles);
   // Consolidated: 2 shared values instead of 4
   const moveProgress = useSharedValue(0); // for translateX, translateY
   const styleProgress = useSharedValue(0); // for rotation, scale, opacity
@@ -109,6 +112,7 @@ function FloatingTile({
 }
 
 export function FloatingTiles() {
+  const styles = useThemedStyles(createStyles);
   const { width, height } = useWindowDimensions();
   const tiles = useMemo(() => createTiles(width, height), [width, height]);
 
@@ -126,21 +130,22 @@ export function FloatingTiles() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    ...StyleSheet.absoluteFill,
-  },
-  floatingTile: {
-    position: 'absolute',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-  },
-  floatingTileLetter: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      ...StyleSheet.absoluteFill,
+    },
+    floatingTile: {
+      position: 'absolute',
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+    },
+    floatingTileLetter: {
+      color: '#FFFFFF',
+      fontWeight: '700',
+    },
+  });

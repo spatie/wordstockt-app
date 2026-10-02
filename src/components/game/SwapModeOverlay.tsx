@@ -1,3 +1,5 @@
+import type { ThemeColors } from '../../config/theme';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useEffect, useRef } from 'react';
 import {
   View,
@@ -9,7 +11,6 @@ import {
   Platform,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { colors } from '../../config/theme';
 import { SPACING, RADIUS } from '../../config/constants';
 
 // Animated version of BlurView for native
@@ -35,6 +36,8 @@ export function SwapModeOverlay({
   onCancel,
   isLoading,
 }: SwapModeOverlayProps) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const textFadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -160,6 +163,7 @@ export function SwapModeDarkOverlay({
   onExitComplete: () => void;
   hasFreeSwap: boolean;
 }) {
+  const styles = useThemedStyles(createStyles);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const textFadeAnim = useRef(new Animated.Value(0)).current;
   const hasAnimatedIn = useRef(false);
@@ -288,6 +292,8 @@ export function SwapModeButtons({
   onDismiss: () => void;
   isLoading: boolean;
 }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const canSwap = selectedCount > 0;
 
   // Show "Ok" button after swap completes
@@ -341,101 +347,102 @@ export function SwapModeButtons({
   );
 }
 
-const styles = StyleSheet.create({
-  darkOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.xxl,
-    zIndex: 50,
-    // @ts-ignore - backdropFilter works on web
-    backdropFilter: 'blur(8px)',
-  },
-  darkOverlayNative: {
-    ...StyleSheet.absoluteFill,
-    // iOS: lighter bg since BlurView provides real blur
-    // Android: darker bg since BlurView doesn't support blur
-    backgroundColor:
-      Platform.OS === 'ios' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.85)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.xxl,
-    zIndex: 50,
-  },
-  textContainer: {
-    alignItems: 'center',
-  },
-  instruction: {
-    color: colors.textPrimary,
-    fontSize: 24,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: SPACING.md,
-  },
-  hint: {
-    color: colors.textSecondary,
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  subHint: {
-    color: colors.textSecondary,
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: SPACING.xs,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.sm,
-    paddingBottom: SPACING.md,
-    gap: SPACING.md,
-    minHeight: 70,
-  },
-  cancelButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: RADIUS.round,
-    backgroundColor: colors.backgroundLight,
-  },
-  cancelText: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  swapButton: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: RADIUS.round,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-  },
-  swapButtonDisabled: {
-    backgroundColor: colors.buttonSecondary,
-    opacity: 0.6,
-  },
-  swapText: {
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  swapTextDisabled: {
-    color: colors.textMuted,
-  },
-  okButton: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: RADIUS.round,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-  },
-  okText: {
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    darkOverlay: {
+      ...StyleSheet.absoluteFill,
+      backgroundColor: 'rgba(0, 0, 0, 0.85)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: SPACING.xxl,
+      zIndex: 50,
+      // @ts-ignore - backdropFilter works on web
+      backdropFilter: 'blur(8px)',
+    },
+    darkOverlayNative: {
+      ...StyleSheet.absoluteFill,
+      // iOS: lighter bg since BlurView provides real blur
+      // Android: darker bg since BlurView doesn't support blur
+      backgroundColor:
+        Platform.OS === 'ios' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.85)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: SPACING.xxl,
+      zIndex: 50,
+    },
+    textContainer: {
+      alignItems: 'center',
+    },
+    instruction: {
+      color: colors.textPrimary,
+      fontSize: 24,
+      fontWeight: '600',
+      textAlign: 'center',
+      marginBottom: SPACING.md,
+    },
+    hint: {
+      color: colors.textSecondary,
+      fontSize: 16,
+      textAlign: 'center',
+    },
+    subHint: {
+      color: colors.textSecondary,
+      fontSize: 16,
+      textAlign: 'center',
+      marginTop: SPACING.xs,
+    },
+    buttonContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: SPACING.lg,
+      paddingTop: SPACING.sm,
+      paddingBottom: SPACING.md,
+      gap: SPACING.md,
+      minHeight: 70,
+    },
+    cancelButton: {
+      paddingVertical: 10,
+      paddingHorizontal: 18,
+      borderRadius: RADIUS.round,
+      backgroundColor: colors.backgroundLight,
+    },
+    cancelText: {
+      color: colors.textSecondary,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    swapButton: {
+      flex: 1,
+      paddingVertical: 10,
+      paddingHorizontal: 18,
+      borderRadius: RADIUS.round,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+    },
+    swapButtonDisabled: {
+      backgroundColor: colors.buttonSecondary,
+      opacity: 0.6,
+    },
+    swapText: {
+      color: colors.textPrimary,
+      fontSize: 14,
+      fontWeight: 'bold',
+    },
+    swapTextDisabled: {
+      color: colors.textMuted,
+    },
+    okButton: {
+      flex: 1,
+      paddingVertical: 10,
+      paddingHorizontal: 18,
+      borderRadius: RADIUS.round,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+    },
+    okText: {
+      color: colors.textPrimary,
+      fontSize: 14,
+      fontWeight: 'bold',
+    },
+  });

@@ -1,17 +1,32 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, Text } from 'react-native';
+import type { ThemeColors } from '../../../../src/config/theme';
+import {
+  useThemeColors,
+  useThemedStyles,
+} from '../../../../src/hooks/useThemeColors';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView, Text, Pressable } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useMoveHistory } from '../../../../src/api/queries/useMoveHistory';
+import { useMoveReaction } from '../../../../src/api/queries/useMoveReaction';
 import { useGame } from '../../../../src/api/queries/useGame';
+import { useWebSocket } from '../../../../src/hooks/useWebSocket';
+import { useAuthStore } from '../../../../src/stores/authStore';
+import { useSnackbar } from '../../../../src/components/ui/SnackbarProvider';
+import { getApiError } from '../../../../src/api/client';
+import {
+  MOVE_REACTIONS,
+  type MoveReactionType,
+} from '../../../../src/config/reactions';
 import { LoadingView } from '../../../../src/components/ui/LoadingView';
 import { Avatar } from '../../../../src/components/ui/Avatar';
-import { colors, MULTIPLIER_COLORS } from '../../../../src/config/theme';
+import { MULTIPLIER_COLORS } from '../../../../src/config/theme';
 import { SPACING, RADIUS } from '../../../../src/config/constants';
-import type { MoveHistoryItem, Bonus } from '../../../../src/types';
+import type { MoveHistoryItem, Bonus, Player } from '../../../../src/types';
 
 const MINI_TILE_SIZE = 22;
 
 function MiniTile({ letter }: { letter: string }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.miniTile}>
       <Text style={styles.miniTileLetter}>{letter.toUpperCase()}</Text>
@@ -20,6 +35,7 @@ function MiniTile({ letter }: { letter: string }) {
 }
 
 function TilesPlayedDisplay({ letters }: { letters: string[] }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.tilesPlayedContainer}>
       {letters.map((letter, idx) => (
@@ -45,6 +61,8 @@ function formatRelativeTime(dateString: string): string {
 }
 
 function MultiplierBadge({ type }: { type: string }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(createStyles);
   const normalizedType = type.toUpperCase();
   const bgColor =
     MULTIPLIER_COLORS[normalizedType as keyof typeof MULTIPLIER_COLORS] ??
@@ -60,12 +78,34 @@ function MultiplierBadge({ type }: { type: string }) {
 function MoveCard({
   move,
   moveNumber,
+  gamePlayers,
+  isGamePlayer,
+  currentUserUlid,
+  isPickerOpen,
+  isUpdating,
+  onTogglePicker,
+  onReact,
 }: {
   move: MoveHistoryItem;
   moveNumber: number;
+  gamePlayers: Player[];
+  isGamePlayer: boolean;
+  currentUserUlid: string | null;
+  isPickerOpen: boolean;
+  isUpdating: boolean;
+  onTogglePicker: () => void;
+  onReact: (reaction: MoveReactionType | null) => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   const isPlay = move.type === 'play';
   const hasBreakdown = move.scoreBreakdown !== null;
+  const myReaction = move.reactions.find(
+    (reaction) => reaction.userUlid === currentUserUlid
+  )?.reaction;
+  const canReact =
+    isGamePlayer &&
+    currentUserUlid !== null &&
+    move.user.ulid !== currentUserUlid;
 
   // Get the letters played from actual tiles, or fall back to inference for older moves
   const longestWord =
@@ -224,28 +264,96 @@ function MoveCard({
           </Text>
         </View>
       )}
-    </View>
-  );
-}
+      <View style={styles.reactionsSection}>
+        {move.reactions.map((reaction) => {
+          const option = MOVE_REACTIONS.find(
+            (item) => item.id === reaction.reaction
+          );
+          const reactingPlayer = gamePlayers.find(
+            (player) => player.ulid === reaction.userUlid
+          );
 
-function EmptyState() {
-  return (
-    <View style={styles.emptyState}>
-      <Text style={styles.emptyTitle}>History Not Available</Text>
-      <Text style={styles.emptyDescription}>
-        Detailed move history is only available for games started after this
-        feature was added.
-      </Text>
+          return option ? (
+            <View
+              key={reaction.userUlid}
+              style={styles.existingReaction}
+              accessible
+              accessibilityLabel={`${reactingPlayer?.username ?? 'Player'} reacted with ${option.label.toLowerCase()}`}
+            >
+              <Text style={styles.existingReactionEmoji}>{option.emoji}</Text>
+              <Text style={styles.existingReactionName} numberOfLines={1}>
+                {reactingPlayer?.username ?? 'Player'}
+              </Text>
+            </View>
+          ) : null;
+        })}
+        {canReact && (
+          <Pressable
+            onPress={onTogglePicker}
+            disabled={isUpdating}
+            style={styles.reactButton}
+            accessibilityRole="button"
+            accessibilityLabel={
+              myReaction ? 'Change reaction' : 'React to move'
+            }
+          >
+            <Text style={styles.reactButtonText}>
+              {myReaction ? 'Change reaction' : 'React'}
+            </Text>
+          </Pressable>
+        )}
+      </View>
+      {canReact && isPickerOpen && (
+        <View style={styles.reactionPicker}>
+          {MOVE_REACTIONS.map((option) => (
+            <Pressable
+              key={option.id}
+              onPress={() =>
+                onReact(myReaction === option.id ? null : option.id)
+              }
+              disabled={isUpdating}
+              style={[
+                styles.reactionOption,
+                myReaction === option.id && styles.reactionOptionSelected,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`${myReaction === option.id ? 'Remove' : 'Add'} ${option.label} reaction`}
+            >
+              <Text style={styles.reactionEmoji}>{option.emoji}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
 
 export default function MoveHistoryScreen() {
+  const styles = useThemedStyles(createStyles);
   const { id } = useLocalSearchParams<{ id: string | string[] }>();
   const gameUlid = (Array.isArray(id) ? id[0] : id) ?? '';
+  const currentUserUlid = useAuthStore((state) => state.user?.ulid ?? null);
+  const { showSnackbar } = useSnackbar();
+  const [openReactionMoveUlid, setOpenReactionMoveUlid] = useState<
+    string | null
+  >(null);
 
   const { data: game, isLoading: isGameLoading } = useGame(gameUlid);
   const { data: moves, isLoading: isMovesLoading } = useMoveHistory(gameUlid);
+  const changeReaction = useMoveReaction();
+  useWebSocket(gameUlid || null);
+
+  const handleReact = async (
+    moveUlid: string,
+    reaction: MoveReactionType | null
+  ) => {
+    try {
+      await changeReaction.mutateAsync({ gameUlid, moveUlid, reaction });
+      setOpenReactionMoveUlid(null);
+    } catch (error) {
+      showSnackbar(getApiError(error).message, 'error');
+    }
+  };
 
   const isLoading = isGameLoading || isMovesLoading;
 
@@ -257,18 +365,10 @@ export default function MoveHistoryScreen() {
     );
   }
 
-  // Check if any move has score_breakdown - if not, show empty state
-  const hasDetailedHistory = moves?.some((m) => m.scoreBreakdown !== null);
-
-  if (!hasDetailedHistory && moves && moves.length > 0) {
-    return (
-      <View style={styles.container}>
-        <EmptyState />
-      </View>
-    );
-  }
-
   const totalMoves = moves?.length ?? 0;
+  const isGamePlayer =
+    currentUserUlid !== null &&
+    (game?.players.some((player) => player.ulid === currentUserUlid) ?? false);
 
   return (
     <View style={styles.container}>
@@ -289,6 +389,17 @@ export default function MoveHistoryScreen() {
             key={move.ulid}
             move={move}
             moveNumber={totalMoves - index}
+            gamePlayers={game?.players ?? []}
+            isGamePlayer={isGamePlayer}
+            currentUserUlid={currentUserUlid}
+            isPickerOpen={openReactionMoveUlid === move.ulid}
+            isUpdating={changeReaction.isPending}
+            onTogglePicker={() =>
+              setOpenReactionMoveUlid((current) =>
+                current === move.ulid ? null : move.ulid
+              )
+            }
+            onReact={(reaction) => handleReact(move.ulid, reaction)}
           />
         ))}
 
@@ -302,295 +413,335 @@ export default function MoveHistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xxl,
-  },
-  header: {
-    marginBottom: SPACING.lg,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
-  moveCard: {
-    backgroundColor: 'rgba(27, 40, 56, 0.75)',
-    borderRadius: RADIUS.lg,
-    marginBottom: SPACING.md,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(74, 144, 217, 0.15)',
-  },
-  moveHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(74, 144, 217, 0.08)',
-  },
-  playerInfo: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  playerDetails: {
-    flex: 1,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  playerName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  moveNumberBadge: {
-    backgroundColor: 'rgba(74, 144, 217, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  moveNumberText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  moveTime: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  moveBody: {
-    padding: SPACING.md,
-  },
-  tilesSection: {
-    marginBottom: SPACING.md,
-  },
-  wordsSection: {
-    marginBottom: SPACING.md,
-  },
-  sectionLabel: {
-    fontSize: 11,
-    color: colors.textMuted,
-    letterSpacing: 0.8,
-    marginBottom: SPACING.sm,
-    fontWeight: '600',
-  },
-  wordRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: SPACING.sm,
-    backgroundColor: 'rgba(44, 62, 80, 0.5)',
-    borderRadius: RADIUS.md,
-    marginBottom: SPACING.xs,
-  },
-  wordLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  wordText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.primary,
-    fontFamily: 'monospace',
-    letterSpacing: 2,
-  },
-  multipliers: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  multiplierBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  multiplierBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  wordScore: {
-    alignItems: 'flex-end',
-  },
-  wordScoreValue: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  wordScoreCalc: {
-    fontSize: 11,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  bonusesSection: {
-    marginTop: SPACING.sm,
-    paddingTop: SPACING.sm,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(74, 144, 217, 0.15)',
-    borderStyle: 'dashed',
-  },
-  bonusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: SPACING.xs,
-  },
-  bonusText: {
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  bonusScore: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#F39C12',
-  },
-  tilesPlayedContainer: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  miniTile: {
-    width: MINI_TILE_SIZE,
-    height: MINI_TILE_SIZE,
-    backgroundColor: '#E8E4D8',
-    borderRadius: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderTopColor: '#F5F3EF',
-    borderLeftColor: '#F5F3EF',
-    borderBottomColor: '#B8B4AA',
-    borderRightColor: '#B8B4AA',
-  },
-  miniTileLetter: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#2C3E50',
-  },
-  totalBreakdown: {
-    marginTop: SPACING.md,
-    paddingTop: SPACING.md,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(74, 144, 217, 0.15)',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  breakdownItems: {
-    flexDirection: 'row',
-    gap: SPACING.lg,
-  },
-  breakdownItem: {
-    alignItems: 'center',
-  },
-  breakdownValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  breakdownLabel: {
-    fontSize: 10,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 2,
-  },
-  breakdownTotal: {
-    alignItems: 'flex-end',
-  },
-  breakdownTotalValue: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#27AE60',
-    lineHeight: 30,
-  },
-  breakdownTotalLabel: {
-    fontSize: 10,
-    color: '#27AE60',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 2,
-  },
-  moveSimple: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: SPACING.md,
-    gap: SPACING.sm,
-  },
-  simpleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  simpleIconPass: {
-    backgroundColor: 'rgba(139, 157, 195, 0.15)',
-  },
-  simpleIconSwap: {
-    backgroundColor: 'rgba(74, 144, 217, 0.15)',
-  },
-  simpleIconResign: {
-    backgroundColor: 'rgba(231, 76, 60, 0.15)',
-  },
-  simpleIconText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-  },
-  simpleText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-  },
-  simpleTextResign: {
-    color: '#E74C3C',
-    fontWeight: '600',
-    fontStyle: 'normal',
-  },
-  noMoves: {
-    padding: SPACING.xxl,
-    alignItems: 'center',
-  },
-  noMovesText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: SPACING.xxl,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: SPACING.sm,
-  },
-  emptyDescription: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-    maxWidth: 280,
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: 'transparent',
+    },
+    scrollView: {
+      flex: 1,
+    },
+    content: {
+      padding: SPACING.md,
+      paddingBottom: SPACING.xxl,
+    },
+    header: {
+      marginBottom: SPACING.lg,
+    },
+    headerTitle: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    headerSubtitle: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: 4,
+    },
+    moveCard: {
+      backgroundColor: colors.backgroundLight,
+      borderRadius: RADIUS.lg,
+      marginBottom: SPACING.md,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    reactionsSection: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      gap: SPACING.sm,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm,
+      borderTopWidth: 1,
+      borderTopColor: 'rgba(74, 144, 217, 0.08)',
+    },
+    existingReaction: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      borderRadius: RADIUS.md,
+      paddingHorizontal: SPACING.sm,
+      paddingVertical: 4,
+      backgroundColor: 'rgba(74, 144, 217, 0.12)',
+    },
+    existingReactionEmoji: {
+      fontSize: 20,
+    },
+    existingReactionName: {
+      color: colors.textSecondary,
+      fontSize: 12,
+      maxWidth: 90,
+    },
+    reactButton: {
+      minHeight: 36,
+      paddingHorizontal: SPACING.sm,
+      justifyContent: 'center',
+    },
+    reactButtonText: {
+      color: colors.primary,
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    reactionPicker: {
+      flexDirection: 'row',
+      gap: SPACING.sm,
+      paddingHorizontal: SPACING.md,
+      paddingBottom: SPACING.md,
+    },
+    reactionOption: {
+      width: 44,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: RADIUS.md,
+      backgroundColor: 'rgba(74, 144, 217, 0.12)',
+    },
+    reactionOptionSelected: {
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+    reactionEmoji: {
+      fontSize: 24,
+    },
+    moveHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: SPACING.md,
+      borderBottomWidth: 1,
+      borderBottomColor: 'rgba(74, 144, 217, 0.08)',
+    },
+    playerInfo: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.sm,
+    },
+    playerDetails: {
+      flex: 1,
+    },
+    nameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.sm,
+    },
+    playerName: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    moveNumberBadge: {
+      backgroundColor: 'rgba(74, 144, 217, 0.15)',
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 10,
+    },
+    moveNumberText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    moveTime: {
+      fontSize: 12,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    moveBody: {
+      padding: SPACING.md,
+    },
+    tilesSection: {
+      marginBottom: SPACING.md,
+    },
+    wordsSection: {
+      marginBottom: SPACING.md,
+    },
+    sectionLabel: {
+      fontSize: 11,
+      color: colors.textMuted,
+      letterSpacing: 0.8,
+      marginBottom: SPACING.sm,
+      fontWeight: '600',
+    },
+    wordRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: SPACING.sm,
+      backgroundColor: 'rgba(44, 62, 80, 0.5)',
+      borderRadius: RADIUS.md,
+      marginBottom: SPACING.xs,
+    },
+    wordLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: SPACING.sm,
+    },
+    wordText: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.primary,
+      fontFamily: 'monospace',
+      letterSpacing: 2,
+    },
+    multipliers: {
+      flexDirection: 'row',
+      gap: 4,
+    },
+    multiplierBadge: {
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+    },
+    multiplierBadgeText: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: '#FFFFFF',
+    },
+    wordScore: {
+      alignItems: 'flex-end',
+    },
+    wordScoreValue: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    wordScoreCalc: {
+      fontSize: 11,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    bonusesSection: {
+      marginTop: SPACING.sm,
+      paddingTop: SPACING.sm,
+      borderTopWidth: 1,
+      borderTopColor: 'rgba(74, 144, 217, 0.15)',
+      borderStyle: 'dashed',
+    },
+    bonusRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: SPACING.xs,
+    },
+    bonusText: {
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    bonusScore: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: '#F39C12',
+    },
+    tilesPlayedContainer: {
+      flexDirection: 'row',
+      gap: 4,
+    },
+    miniTile: {
+      width: MINI_TILE_SIZE,
+      height: MINI_TILE_SIZE,
+      backgroundColor: '#E8E4D8',
+      borderRadius: 3,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderTopColor: '#F5F3EF',
+      borderLeftColor: '#F5F3EF',
+      borderBottomColor: '#B8B4AA',
+      borderRightColor: '#B8B4AA',
+    },
+    miniTileLetter: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: '#2C3E50',
+    },
+    totalBreakdown: {
+      marginTop: SPACING.md,
+      paddingTop: SPACING.md,
+      borderTopWidth: 1,
+      borderTopColor: 'rgba(74, 144, 217, 0.15)',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-end',
+    },
+    breakdownItems: {
+      flexDirection: 'row',
+      gap: SPACING.lg,
+    },
+    breakdownItem: {
+      alignItems: 'center',
+    },
+    breakdownValue: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    breakdownLabel: {
+      fontSize: 10,
+      color: colors.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginTop: 2,
+    },
+    breakdownTotal: {
+      alignItems: 'flex-end',
+    },
+    breakdownTotalValue: {
+      fontSize: 28,
+      fontWeight: '800',
+      color: '#27AE60',
+      lineHeight: 30,
+    },
+    breakdownTotalLabel: {
+      fontSize: 10,
+      color: '#27AE60',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginTop: 2,
+    },
+    moveSimple: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: SPACING.md,
+      gap: SPACING.sm,
+    },
+    simpleIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    simpleIconPass: {
+      backgroundColor: 'rgba(139, 157, 195, 0.15)',
+    },
+    simpleIconSwap: {
+      backgroundColor: 'rgba(74, 144, 217, 0.15)',
+    },
+    simpleIconResign: {
+      backgroundColor: 'rgba(231, 76, 60, 0.15)',
+    },
+    simpleIconText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+    },
+    simpleText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      fontStyle: 'italic',
+    },
+    simpleTextResign: {
+      color: '#E74C3C',
+      fontWeight: '600',
+      fontStyle: 'normal',
+    },
+    noMoves: {
+      padding: SPACING.xxl,
+      alignItems: 'center',
+    },
+    noMovesText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+    },
+  });
