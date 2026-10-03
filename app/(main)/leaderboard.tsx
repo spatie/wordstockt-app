@@ -24,6 +24,7 @@ import { TabBar } from '../../src/components/ui/TabBar';
 import { SmartAvatar } from '../../src/components/ui/SmartAvatar';
 import { SPACING, LAYOUT } from '../../src/config/constants';
 import type { LeaderboardEntry, LeaderboardType } from '../../src/types';
+import { typography } from '../../src/config/typography';
 
 const RANK_WIDTH = 24;
 const AVATAR_SIZE = 40;
@@ -341,24 +342,24 @@ const createStyles = (colors: ThemeColors) =>
       flex: 1,
     },
     username: {
-      fontSize: 16,
-      fontWeight: '600',
+      ...typography.headline,
       color: colors.textPrimary,
     },
     stats: {
-      fontSize: 13,
+      ...typography.footnote,
+      ...typography.number,
       color: colors.textSecondary,
     },
     valueContainer: {
       alignItems: 'flex-end',
     },
     valueText: {
-      fontSize: 20,
-      fontWeight: 'bold',
+      ...typography.title,
+      ...typography.number,
       color: colors.primary,
     },
     metricLabel: {
-      fontSize: 11,
+      ...typography.caption,
       color: colors.textSecondary,
     },
     currentUserFooter: {
@@ -372,10 +373,8 @@ const createStyles = (colors: ThemeColors) =>
       borderTopColor: colors.border,
     },
     footerLabel: {
-      fontSize: 13,
-      fontWeight: '600',
+      ...typography.sectionLabel,
       color: colors.textSecondary,
-      letterSpacing: 0.5,
       marginBottom: SPACING.sm,
     },
     currentUserMessage: {

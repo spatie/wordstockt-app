@@ -28,6 +28,7 @@ import { LAYOUT } from '../../src/config/constants';
 import { AvatarColorPicker } from '../../src/components/ui/AvatarColorPicker';
 import { AnimatedSaveButton } from '../../src/components/ui/AnimatedSaveButton';
 import { isEmailVerified } from '../../src/utils/emailVerification';
+import { typography } from '../../src/config/typography';
 
 export default function SettingsScreen() {
   const colors = useThemeColors();
@@ -344,12 +345,9 @@ const createStyles = (colors: ThemeColors) =>
       marginBottom: 32,
     },
     label: {
-      fontSize: 14,
-      fontWeight: '600',
+      ...typography.sectionLabel,
       color: colors.textSecondary,
       marginBottom: 8,
-      textTransform: 'uppercase',
-      letterSpacing: 0.5,
     },
     input: {
       backgroundColor: colors.backgroundLight,

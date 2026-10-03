@@ -12,6 +12,7 @@ import { RADIUS, SPACING } from '../../config/constants';
 import { useStartGame } from '../../api/queries/useGames';
 import { usePrefetchGame } from '../../api/queries/useGame';
 import type { GameListItem, GameListPlayer } from '../../types';
+import { typography } from '../../config/typography';
 
 interface GameCardProps {
   game: GameListItem;
@@ -372,8 +373,7 @@ const createStyles = (colors: ThemeColors) =>
       marginBottom: 4,
     },
     opponentName: {
-      fontSize: 18,
-      fontWeight: '600',
+      ...typography.headline,
       color: colors.textPrimary,
       flexShrink: 1,
     },
@@ -409,7 +409,7 @@ const createStyles = (colors: ThemeColors) =>
       letterSpacing: 0.5,
     },
     lastMove: {
-      fontSize: 14,
+      ...typography.subhead,
       color: colors.primary,
     },
     scoreContainer: {
@@ -418,10 +418,10 @@ const createStyles = (colors: ThemeColors) =>
       paddingTop: 2,
     },
     scoreText: {
-      fontSize: 17,
+      ...typography.headline,
+      ...typography.number,
       fontWeight: '400',
       color: colors.textMuted,
-      fontVariant: ['tabular-nums'],
     },
     scoreMine: {
       fontWeight: '700',
@@ -446,7 +446,7 @@ const createStyles = (colors: ThemeColors) =>
       alignItems: 'center',
     },
     languageBadge: {
-      fontSize: 11,
+      ...typography.caption,
       color: colors.textMuted,
       fontWeight: '600',
     },
@@ -456,7 +456,7 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: 13,
     },
     timeText: {
-      fontSize: 13,
+      ...typography.footnote,
       color: colors.textSecondary,
     },
     timerSeparator: {

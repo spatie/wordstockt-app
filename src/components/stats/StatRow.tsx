@@ -2,6 +2,7 @@ import type { ThemeColors } from '../../config/theme';
 import { useThemedStyles } from '../../hooks/useThemeColors';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { typography } from '../../config/typography';
 
 interface StatRowProps {
   label: string;
@@ -36,7 +37,7 @@ const createStyles = (colors: ThemeColors) =>
       borderBottomColor: colors.border,
     },
     label: {
-      fontSize: 14,
+      ...typography.callout,
       color: colors.textSecondary,
       flex: 1,
     },
@@ -45,15 +46,15 @@ const createStyles = (colors: ThemeColors) =>
       alignItems: 'baseline',
     },
     value: {
-      fontSize: 16,
-      fontWeight: '600',
+      ...typography.headline,
+      ...typography.number,
       color: colors.textPrimary,
     },
     valueHighlight: {
       color: colors.primary,
     },
     suffix: {
-      fontSize: 12,
+      ...typography.caption,
       color: colors.textMuted,
       marginLeft: 4,
     },

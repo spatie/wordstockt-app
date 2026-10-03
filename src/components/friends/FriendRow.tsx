@@ -6,6 +6,7 @@ import { GroupedRow } from '../ui/GroupedRow';
 import { SmartAvatar } from '../ui/SmartAvatar';
 import { SPACING } from '../../config/constants';
 import type { Friend } from '../../types';
+import { typography } from '../../config/typography';
 
 const AVATAR_SIZE = 44;
 
@@ -56,12 +57,12 @@ const createStyles = (colors: ThemeColors) =>
       marginLeft: SPACING.md,
     },
     username: {
-      fontSize: 16,
-      fontWeight: '600',
+      ...typography.headline,
       color: colors.textPrimary,
     },
     rating: {
-      fontSize: 14,
+      ...typography.subhead,
+      ...typography.number,
       color: colors.textSecondary,
       marginTop: 2,
     },

@@ -64,6 +64,7 @@ import { GameCardSkeleton } from '../../src/components/ui/Skeleton';
 import { getApiError } from '../../src/api/client';
 import { SPACING, RADIUS, LAYOUT } from '../../src/config/constants';
 import { ROUTES } from '../../src/config/routes';
+import { typography } from '../../src/config/typography';
 
 type TabValue = 'active' | 'public' | 'completed';
 
@@ -640,10 +641,8 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: '#4CAF50',
     },
     sectionTitle: {
-      fontSize: 13,
-      fontWeight: '600',
+      ...typography.sectionLabel,
       color: colors.textSecondary,
-      letterSpacing: 0.5,
     },
     waitingBadge: {
       backgroundColor: colors.border,

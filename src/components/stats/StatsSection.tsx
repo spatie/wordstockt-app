@@ -2,6 +2,7 @@ import type { ThemeColors } from '../../config/theme';
 import { useThemedStyles } from '../../hooks/useThemeColors';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { typography } from '../../config/typography';
 
 interface StatsSectionProps {
   title: string;
@@ -27,11 +28,8 @@ const createStyles = (colors: ThemeColors) =>
       overflow: 'hidden',
     },
     title: {
-      fontSize: 14,
-      fontWeight: '600',
+      ...typography.sectionLabel,
       color: colors.textSecondary,
-      textTransform: 'uppercase',
-      letterSpacing: 0.5,
       padding: 16,
       paddingBottom: 8,
     },
