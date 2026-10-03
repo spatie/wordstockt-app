@@ -28,11 +28,7 @@ interface AddFriendModalProps {
 }
 
 type SearchState =
-  | 'empty'
-  | 'searching'
-  | 'found'
-  | 'not_found'
-  | 'already_friend';
+  'empty' | 'searching' | 'found' | 'not_found' | 'already_friend';
 
 export function AddFriendModal({
   visible,

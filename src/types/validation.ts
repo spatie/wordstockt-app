@@ -24,7 +24,4 @@ export interface ValidationResponse {
 }
 
 export type TileValidationState =
-  | 'valid'
-  | 'invalid'
-  | 'placement_error'
-  | null;
+  'valid' | 'invalid' | 'placement_error' | null;

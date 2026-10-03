@@ -71,8 +71,7 @@ import type { Tile as TileType, PendingTile } from '../types';
 // ============================================================================
 
 type DragSource =
-  | { type: 'rack'; rackIndex: number }
-  | { type: 'board'; x: number; y: number };
+  { type: 'rack'; rackIndex: number } | { type: 'board'; x: number; y: number };
 
 type DropTarget =
   | { type: 'board'; x: number; y: number }
@@ -938,8 +937,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     (tiles: (TileType | null)[]) => {
       // Update shared values for worklet hit testing
       const newRackTilesShared = new Array(7).fill(null) as (
-        | [string, number, boolean]
-        | null
+        [string, number, boolean] | null
       )[];
       tiles.forEach((tile, index) => {
         if (tile) {

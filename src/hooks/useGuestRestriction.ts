@@ -5,11 +5,7 @@ import { useAuthStore } from '../stores/authStore';
 import { ROUTES } from '../config/routes';
 
 type RestrictedFeature =
-  | 'friends'
-  | 'leaderboard'
-  | 'achievements'
-  | 'stats'
-  | 'invite';
+  'friends' | 'leaderboard' | 'achievements' | 'stats' | 'invite';
 
 const FEATURE_MESSAGES: Record<RestrictedFeature, string> = {
   friends: 'see your friends',
