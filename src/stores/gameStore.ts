@@ -363,6 +363,16 @@ export const usePendingTileAt = (x: number, y: number) =>
     getCurrentGameState(state).pendingTiles.find((t) => t.x === x && t.y === y)
   );
 
+// Rack indices whose tile is currently placed on the board, as a stable
+// string so subscribers only re-render when the set actually changes
+export const useUsedRackIndicesKey = () =>
+  useGameStore((state) =>
+    getCurrentGameState(state)
+      .pendingTiles.map((t) => t.rackIndex)
+      .sort((a, b) => a - b)
+      .join(',')
+  );
+
 export const useRackTileUsed = (actualRackIndex: number) =>
   useGameStore((state) =>
     getCurrentGameState(state).pendingTiles.some(

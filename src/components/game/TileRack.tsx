@@ -25,6 +25,7 @@ import { DraggableTile } from './DraggableTile';
 import { SelectableTile } from './SelectableTile';
 import {
   useRackTileUsed,
+  useUsedRackIndicesKey,
   useIsSwapMode,
   useIsSwapSelected,
   useSwapCompleted,
@@ -282,10 +283,18 @@ export function TileRack({ tiles, disabled, onTileDrop }: TileRackProps) {
   const measureTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sync tiles to shared values for worklet-based hit testing
-  // Use useLayoutEffect to ensure tiles are synced before paint
+  // Use useLayoutEffect to ensure tiles are synced before paint. Tiles placed
+  // on the board leave an empty slot, so they must not be draggable from here.
+  const usedRackIndicesKey = useUsedRackIndicesKey();
   useLayoutEffect(() => {
-    updateRackTiles(tiles);
-  }, [tiles, updateRackTiles]);
+    const usedRackIndices = new Set(
+      usedRackIndicesKey ? usedRackIndicesKey.split(',').map(Number) : []
+    );
+
+    updateRackTiles(
+      tiles.map((tile, index) => (usedRackIndices.has(index) ? null : tile))
+    );
+  }, [tiles, usedRackIndicesKey, updateRackTiles]);
 
   const measureRack = useCallback(() => {
     rackRef.current?.measureInWindow((x, y, width, height) => {
