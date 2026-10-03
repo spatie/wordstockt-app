@@ -223,8 +223,8 @@ function debugLog(...args: unknown[]) {
 // ============================================================================
 
 const DRAG_ACTIVATION_DISTANCE = 0;
-const SETTLE_DURATION = 360;
-const SETTLE_EASING = Easing.out(Easing.quad);
+const SETTLE_DURATION = 220;
+const SETTLE_EASING = Easing.out(Easing.cubic);
 const RECALL_DURATION = 500;
 // No cooldown - allows immediate consecutive drags
 const DRAG_COOLDOWN_MS = 0;
@@ -815,6 +815,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   // Container offset from screen (to convert absolute coordinates to container-relative)
   const containerRef = useRef<View>(null);
   const containerOffsetRef = useRef({ x: 0, y: 0 });
+  // The same offset for the UI thread (drop animations run as worklets)
+  const containerOffsetX = useSharedValue(0);
+  const containerOffsetY = useSharedValue(0);
 
   // Handler refs for worklet callbacks (needed because scheduleOnRN requires stable refs)
   const handleGestureStartRef = useRef<(x: number, y: number) => void>(
@@ -960,8 +963,12 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       const statusBarOffset =
         Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0;
       containerOffsetRef.current = { x, y: y + statusBarOffset };
+      // Keep the worklet copy in step with every measurement, otherwise drop
+      // animations aim at a stale position and the tile jumps when it lands
+      containerOffsetX.value = x;
+      containerOffsetY.value = y + statusBarOffset;
     });
-  }, []);
+  }, [containerOffsetX, containerOffsetY]);
 
   const handleContainerLayout = useCallback(
     (_event: LayoutChangeEvent) => {
@@ -1283,6 +1290,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       dragId?: string,
       onDragEnd?: (target: DropTarget, wasDragged: boolean) => boolean
     ) => {
+      measureContainerOffset();
       isDraggingRef.current = true;
       isDraggingShared.value = true;
       currentPositionRef.current = { x, y };
@@ -1312,6 +1320,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       }
     },
     [
+      measureContainerOffset,
       positionX,
       positionY,
       scale,
@@ -2149,6 +2158,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       source: DragSource,
       tile: TileType | (TileType & { x: number; y: number; rackIndex: number })
     ) => {
+      // Measure where the board sits right now, so the drop animation aims
+      // at the right spot even if the screen moved since the last measurement
+      measureContainerOffset();
+
       // Update React state for UI re-renders
       setDragTile(tile);
       setDragSource(source);
@@ -2188,6 +2201,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       }
     },
     [
+      measureContainerOffset,
       setDragTile,
       setDragSource,
       setDragStatus,
@@ -2241,42 +2255,20 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   // reliable window-relative coordinates that match measureInWindow on all devices.
   // See: https://github.com/facebook/react-native/issues/48425
 
-  // Shared values for container offset (accessed in worklet)
-  const containerOffsetX = useSharedValue(0);
-  const containerOffsetY = useSharedValue(0);
-
-  // Sync container offset to shared values
-  // Re-run when currentGameUlid changes (navigation may have changed container position)
+  // Re-measure the container when the game changes, with a few delays to
+  // catch its position after navigation animations
   useEffect(() => {
-    const syncValues = () => {
-      containerOffsetX.value = containerOffsetRef.current.x;
-      containerOffsetY.value = containerOffsetRef.current.y;
-    };
-
-    // Re-measure the container when game changes
-    // Use multiple delays to catch position after navigation animations
-    if (currentGameUlid) {
-      measureContainerOffset();
-      setTimeout(measureContainerOffset, 100);
-      setTimeout(measureContainerOffset, 300);
-      setTimeout(measureContainerOffset, 500);
+    if (!currentGameUlid) {
+      return;
     }
 
-    // Sync immediately and keep syncing for longer to catch navigation animations
-    syncValues();
-    const timer = setInterval(syncValues, 50);
-    // Sync for 1 second to ensure we catch all layout changes
-    const stopTimer = setTimeout(() => clearInterval(timer), 1000);
-    return () => {
-      clearInterval(timer);
-      clearTimeout(stopTimer);
-    };
-  }, [
-    containerOffsetX,
-    containerOffsetY,
-    currentGameUlid,
-    measureContainerOffset,
-  ]);
+    measureContainerOffset();
+    const timers = [100, 300, 500].map((delay) =>
+      setTimeout(measureContainerOffset, delay)
+    );
+
+    return () => timers.forEach(clearTimeout);
+  }, [currentGameUlid, measureContainerOffset]);
 
   // Edge threshold for iOS swipe-back gesture (in pixels from left edge)
   const EDGE_THRESHOLD = 20;
@@ -2637,10 +2629,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
             { duration: SETTLE_DURATION, easing: SETTLE_EASING },
             () => {
               'worklet';
-              // Hide floating tile and show board tile immediately on UI thread
-              settlingTargetShared.value = null;
-              draggingRackIndexShared.value = -1;
-              boardFloatingOpacity.value = 0;
+              // Let the JS side swap the floating tile for the board tile: it
+              // runs after React has rendered the placed tile, so the cell
+              // never shows empty while the board is still re-rendering
               scheduleOnRN(onSettleComplete);
             }
           );
