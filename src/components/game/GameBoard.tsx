@@ -34,6 +34,9 @@ import type { DropTarget } from '../../context/DragDropContext';
 const BOARD_PADDING = 0; // no padding - use full width
 const SPINNER_DELAY = 1500; // ms before showing spinner
 const FADE_IN_DURATION = 150; // ms for board fade-in
+const BOARD_BORDER = 1;
+const GRID_PADDING = 8;
+const BOARD_INSET = BOARD_BORDER + GRID_PADDING; // board edge to grid edge
 
 interface GameBoardProps {
   game: Game;
@@ -65,7 +68,7 @@ export function GameBoard({
   const blurTint = useThemeBlurTint();
   const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
-  const boardRef = useRef<View>(null);
+  const gridRef = useRef<View>(null);
   const { setBoardLayout, isDragging } = useDragDrop();
   const pendingTiles = usePendingTiles();
   const currentGameUlid = useGameStore((state) => state.currentGameUlid);
@@ -127,23 +130,16 @@ export function GameBoard({
   }, []);
 
   const measureBoard = useCallback(() => {
-    boardRef.current?.measureInWindow((x, y, width, height) => {
-      // Board has 8px padding AND 2px border, so cells start (8+2)px inside
-      // and the cell area is (8+2)*2 = 20px smaller
-      const boardPadding = 8;
-      const boardBorder = 2;
-      const inset = boardPadding + boardBorder;
-      const innerWidth = width - inset * 2;
-      const cellSize = innerWidth / BOARD_SIZE;
+    gridRef.current?.measureInWindow((x, y, width) => {
       // On Android, measureInWindow may not include status bar height, but touch events do
       const statusBarOffset =
         Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0;
       setBoardLayout({
-        x: x + inset,
-        y: y + statusBarOffset + inset,
-        width: innerWidth,
-        height: innerWidth, // Board is square
-        cellSize,
+        x,
+        y: y + statusBarOffset,
+        width,
+        height: width, // Board is square
+        cellSize: width / BOARD_SIZE,
       });
     });
   }, [setBoardLayout]);
@@ -174,8 +170,7 @@ export function GameBoard({
   const lastMoveTiles = game.lastMove?.tiles;
 
   // Calculate cell size for score bubble positioning and cell text sizing
-  // Board has 8px padding + 2px border = 10px inset on each side
-  const cellSize = (boardSize - 20) / BOARD_SIZE;
+  const cellSize = (boardSize - BOARD_INSET * 2) / BOARD_SIZE;
 
   // The game screen recreates these handlers whenever placed tiles change.
   // Stable wrappers keep the 225 memoized cells from all re-rendering.
@@ -248,8 +243,8 @@ export function GameBoard({
         >
           <View style={styles.boardClip}>
             <BlurView intensity={80} tint={blurTint} style={styles.boardBlur}>
-              <View ref={boardRef} style={styles.board}>
-                <View style={styles.grid}>
+              <View style={styles.board}>
+                <View ref={gridRef} style={styles.grid}>
                   {Array.from({ length: BOARD_SIZE }, (_, y) => (
                     <View key={y} style={styles.row}>
                       {Array.from({ length: BOARD_SIZE }, (_, x) =>
@@ -299,7 +294,7 @@ const createStyles = (colors: ThemeColors) =>
       flex: 1,
       borderRadius: 16,
       overflow: 'hidden',
-      borderWidth: 1,
+      borderWidth: BOARD_BORDER,
       borderColor: colors.boardOutline,
     },
     boardBlur: {
@@ -308,7 +303,7 @@ const createStyles = (colors: ThemeColors) =>
     },
     board: {
       flex: 1,
-      padding: 8,
+      padding: GRID_PADDING,
     },
     grid: {
       flex: 1,
