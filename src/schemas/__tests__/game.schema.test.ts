@@ -1,4 +1,8 @@
-import { transformGame, transformGameListItem } from '../game.schema';
+import {
+  PublicGameSchema,
+  transformGame,
+  transformGameListItem,
+} from '../game.schema';
 
 const baseListPayload = {
   ulid: 'g1',
@@ -105,4 +109,18 @@ it('transforms game detail players with left state and turn order', () => {
   expect(game.players[1]!.hasLeft).toBe(true);
   expect(game.players[1]!.leftReason).toBe('removed');
   expect(game.players[0]!.turnOrder).toBe(1);
+});
+
+describe('PublicGameSchema', () => {
+  it('accepts a game whose creator deleted their account', () => {
+    const result = PublicGameSchema.safeParse({
+      ulid: 'g1',
+      language: 'en',
+      board_template: [],
+      creator: null,
+      created_at: '2026-10-03T14:40:26.000000Z',
+    });
+
+    expect(result.success).toBe(true);
+  });
 });

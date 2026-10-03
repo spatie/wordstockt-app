@@ -35,7 +35,9 @@ export const PublicGameCard = memo(function PublicGameCard({
           <Ionicons name="globe-outline" size={18} color={colors.primary} />
         </View>
         <View style={styles.cardInfo}>
-          <Text style={styles.creatorName}>{game.creator}</Text>
+          <Text style={styles.creatorName}>
+            {game.creator ?? 'Deleted player'}
+          </Text>
           <Text style={styles.subtitle}>
             {hasCustomBoard ? 'Custom board' : 'Standard board'}
           </Text>

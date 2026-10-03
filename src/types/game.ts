@@ -154,6 +154,6 @@ export interface PublicGame {
   ulid: string;
   language: string;
   boardTemplate: SquareType[][];
-  creator: string;
+  creator: string | null;
   createdAt: string;
 }

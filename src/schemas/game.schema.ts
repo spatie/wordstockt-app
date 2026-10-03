@@ -326,7 +326,8 @@ export const PublicGameSchema = z
     ulid: z.string(),
     language: z.string(),
     board_template: z.array(z.array(SquareTypeSchema)),
-    creator: z.string(),
+    // Null when the creator has deleted their account
+    creator: z.string().nullable(),
     created_at: z.string(),
   })
   .passthrough();
