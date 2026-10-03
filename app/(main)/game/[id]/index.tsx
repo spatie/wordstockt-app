@@ -53,6 +53,11 @@ import { BlankTileModal } from '../../../../src/components/game/BlankTileModal';
 import { WordInfoModal } from '../../../../src/components/game/WordInfoModal';
 import { DictionaryLookupModal } from '../../../../src/components/game/DictionaryLookupModal';
 import { LoadingView } from '../../../../src/components/ui/LoadingView';
+import {
+  MoveCelebration,
+  celebrationFor,
+  type Celebration,
+} from '../../../../src/components/game/MoveCelebration';
 import { FeedbackModal } from '../../../../src/components/ui/FeedbackModal';
 import { AchievementModal } from '../../../../src/components/ui/AchievementModal';
 import { RematchModal } from '../../../../src/components/ui/RematchModal';
@@ -166,6 +171,9 @@ function GameScreenContent() {
     new Animated.Value(hasCachedGame ? 0 : 20)
   ).current;
   const hasAnimatedEntry = useRef(hasCachedGame);
+
+  const [celebration, setCelebration] = useState<Celebration | null>(null);
+  const clearCelebration = useCallback(() => setCelebration(null), []);
 
   // Loading transition state - keep spinner visible until we're ready to show content
   const [isTransitioning, setIsTransitioning] = useState(!hasCachedGame);
@@ -362,6 +370,16 @@ function GameScreenContent() {
     );
   };
 
+  // Count the tiles before playing: a successful play clears them
+  const playAndCelebrate = async () => {
+    const tilesPlayed = pendingTiles.length;
+    const result = await handlePlay();
+
+    if (result.success) {
+      setCelebration(celebrationFor(tilesPlayed, result.score, Date.now()));
+    }
+  };
+
   const confirmPlay = () => {
     const words = validationResult?.words;
     const score = validationResult?.potential_score;
@@ -371,7 +389,7 @@ function GameScreenContent() {
     showConfirm(
       'Play Word',
       `Are you sure you want to play ${wordList} for ${score} points?`,
-      handlePlay,
+      playAndCelebrate,
       'Play'
     );
   };
@@ -798,6 +816,7 @@ function GameScreenContent() {
           />
         </>
       )}
+      <MoveCelebration celebration={celebration} onDone={clearCelebration} />
       {/* Loading spinner overlay - fades out when content is ready */}
       <LoadingView
         visible={showSpinner}
