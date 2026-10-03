@@ -22,6 +22,7 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { BoardCell } from './BoardCell';
+import { useStableCallback } from '../../hooks/useStableCallback';
 import { ScoreBubble } from './ScoreBubble';
 import { useDragDrop } from '../../context/DragDropContext';
 import { usePendingTiles, useGameStore } from '../../stores/gameStore';
@@ -175,6 +176,17 @@ export function GameBoard({
   // Board has 8px padding + 2px border = 10px inset on each side
   const cellSize = (boardSize - 20) / BOARD_SIZE;
 
+  // The game screen recreates these handlers whenever placed tiles change.
+  // Stable wrappers keep the 225 memoized cells from all re-rendering.
+  const handleCellPress = useStableCallback(onCellPress);
+  const handlePendingTileDrag = useStableCallback(onPendingTileDrag);
+  const handleBlankTileTap = useStableCallback((x: number, y: number) =>
+    onBlankTileTap?.(x, y)
+  );
+  const handlePlacedTileTap = useStableCallback((x: number, y: number) =>
+    onPlacedTileTap?.(x, y)
+  );
+
   const renderCell = useCallback(
     (x: number, y: number) => (
       <BoardCell
@@ -183,10 +195,10 @@ export function GameBoard({
         y={y}
         placedTile={game.board[y]?.[x] ?? null}
         squareType={game.boardTemplate[y]?.[x] ?? null}
-        onCellPress={onCellPress}
-        onPendingTileDrag={onPendingTileDrag}
-        onBlankTileTap={onBlankTileTap}
-        onPlacedTileTap={onPlacedTileTap}
+        onCellPress={handleCellPress}
+        onPendingTileDrag={handlePendingTileDrag}
+        onBlankTileTap={onBlankTileTap ? handleBlankTileTap : undefined}
+        onPlacedTileTap={onPlacedTileTap ? handlePlacedTileTap : undefined}
         disabled={!isGameActive}
         isLastMove={isLastMoveTile(x, y, lastMoveTiles)}
         cellSize={cellSize}
@@ -195,8 +207,10 @@ export function GameBoard({
     [
       game.board,
       game.boardTemplate,
-      onCellPress,
-      onPendingTileDrag,
+      handleCellPress,
+      handlePendingTileDrag,
+      handleBlankTileTap,
+      handlePlacedTileTap,
       onBlankTileTap,
       onPlacedTileTap,
       isGameActive,

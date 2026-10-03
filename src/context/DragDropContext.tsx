@@ -55,6 +55,7 @@ import {
   SPRING_CONFIG_FAST,
 } from '../config/constants';
 import { Tile } from '../components/game/Tile';
+import { create } from 'zustand';
 import { useGameStore, useIsSwapMode } from '../stores/gameStore';
 import {
   getBoardCellCenter,
@@ -128,7 +129,12 @@ interface DragDropContextType {
   setRackLayout: (layout: RackLayout) => void;
 
   // Tile data sync (for external components to update shared values)
-  updateRackTiles: (tiles: (TileType | null)[]) => void;
+  // hiddenRackIndices: tiles placed on the board. They stay available for
+  // drawing the floating tile but can't be picked up from their empty slot.
+  updateRackTiles: (
+    tiles: (TileType | null)[],
+    hiddenRackIndices?: ReadonlySet<number>
+  ) => void;
 
   // Draggable registration (for hit testing)
   registerDraggable: (
@@ -223,8 +229,12 @@ function debugLog(...args: unknown[]) {
 // ============================================================================
 
 const DRAG_ACTIVATION_DISTANCE = 0;
-const SETTLE_DURATION = 220;
-const SETTLE_EASING = Easing.out(Easing.cubic);
+const SETTLE_DURATION = 180;
+const SETTLE_EASING = Easing.out(Easing.quad);
+// Picking up a tile: it grows a little and glides its center under the finger
+const LIFT_SCALE = 1.1;
+const LIFT_SPRING = { damping: 18, stiffness: 320 };
+const LIFT_DURATION = 120;
 const RECALL_DURATION = 500;
 // No cooldown - allows immediate consecutive drags
 const DRAG_COOLDOWN_MS = 0;
@@ -258,7 +268,10 @@ interface RackFloatingTileProps {
   rackIndex: number;
   positionX: SharedValue<number>;
   positionY: SharedValue<number>;
+  grabOffsetX: SharedValue<number>;
+  grabOffsetY: SharedValue<number>;
   scale: SharedValue<number>;
+  liftProgress: SharedValue<number>;
   draggingRackIndex: SharedValue<number>;
 }
 
@@ -267,7 +280,10 @@ function RackFloatingTile({
   rackIndex,
   positionX,
   positionY,
+  grabOffsetX,
+  grabOffsetY,
   scale,
+  liftProgress,
   draggingRackIndex,
 }: RackFloatingTileProps) {
   // Track whether this tile is currently being dragged (via React state for re-render)
@@ -310,8 +326,8 @@ function RackFloatingTile({
     'worklet';
     return {
       transform: [
-        { translateX: positionX.value - TILE_SIZE / 2 },
-        { translateY: positionY.value - TILE_SIZE / 2 },
+        { translateX: positionX.value + grabOffsetX.value - TILE_SIZE / 2 },
+        { translateY: positionY.value + grabOffsetY.value - TILE_SIZE / 2 },
         { scale: scale.value },
       ],
       opacity: isVisible.value,
@@ -328,6 +344,7 @@ function RackFloatingTile({
           letter={displayTile.letter}
           points={displayTile.points}
           isBlank={displayTile.isBlank}
+          liftProgress={liftProgress}
         />
       )}
     </Animated.View>
@@ -340,7 +357,10 @@ interface BoardFloatingTileProps {
   tile: TileType | null;
   positionX: SharedValue<number>;
   positionY: SharedValue<number>;
+  grabOffsetX: SharedValue<number>;
+  grabOffsetY: SharedValue<number>;
   scale: SharedValue<number>;
+  liftProgress: SharedValue<number>;
   opacity: SharedValue<number>;
   shouldShow: boolean;
   draggingBoardPosition: SharedValue<{ x: number; y: number } | null>;
@@ -354,7 +374,10 @@ function BoardFloatingTile({
   tile,
   positionX,
   positionY,
+  grabOffsetX,
+  grabOffsetY,
   scale,
+  liftProgress,
   opacity,
   shouldShow,
   draggingBoardPosition,
@@ -408,8 +431,8 @@ function BoardFloatingTile({
     'worklet';
     return {
       transform: [
-        { translateX: positionX.value - TILE_SIZE / 2 },
-        { translateY: positionY.value - TILE_SIZE / 2 },
+        { translateX: positionX.value + grabOffsetX.value - TILE_SIZE / 2 },
+        { translateY: positionY.value + grabOffsetY.value - TILE_SIZE / 2 },
         { scale: scale.value },
       ],
       opacity: opacity.value,
@@ -429,6 +452,7 @@ function BoardFloatingTile({
           letter={displayTile.letter}
           points={displayTile.points}
           isBlank={displayTile.isBlank}
+          liftProgress={liftProgress}
         />
       )}
     </Animated.View>
@@ -545,6 +569,43 @@ const RecallingTileItem = React.memo(function RecallingTileItem({
 
 const DragDropContext = createContext<DragDropContextType | null>(null);
 
+// ----------------------------------------------------------------------------
+// Board cell access
+// ----------------------------------------------------------------------------
+// The board has 225 cells. If each one read the full context, every change in
+// drag state (dragging, settling, idle) would re-render all of them, which
+// blocked the JS thread for ~300ms per drop. Cells instead get a context that
+// never changes and subscribe to a small store for just their own drag state.
+
+interface BoardDragState {
+  dragStatus: DragStatus;
+  dragSource: DragSource | null;
+  settlingTarget: DropTarget;
+  recallingBoardPositions: { x: number; y: number }[];
+  boardLayout: BoardLayout | null;
+}
+
+const useBoardDragStore = create<BoardDragState>()(() => ({
+  dragStatus: 'idle',
+  dragSource: null,
+  settlingTarget: null,
+  recallingBoardPositions: [],
+  boardLayout: null,
+}));
+
+interface BoardCellDragApi {
+  startDragFromBoard: DragDropContextType['startDragFromBoard'];
+  updateDrag: DragDropContextType['updateDrag'];
+  endDrag: DragDropContextType['endDrag'];
+  registerDraggable: DragDropContextType['registerDraggable'];
+  unregisterDraggable: DragDropContextType['unregisterDraggable'];
+  recallingBoardPositionsShared: DragDropContextType['recallingBoardPositionsShared'];
+  draggingBoardPositionShared: DragDropContextType['draggingBoardPositionShared'];
+  settlingTargetShared: DragDropContextType['settlingTargetShared'];
+}
+
+const BoardCellDragContext = createContext<BoardCellDragApi | null>(null);
+
 export function DragDropProvider({ children }: { children: React.ReactNode }) {
   // -------------------------------------------------------------------------
   // React State (for re-renders)
@@ -586,6 +647,12 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const positionX = useSharedValue(0);
   const positionY = useSharedValue(0);
   const scale = useSharedValue(1);
+  // Offset from the finger to the tile center at pickup, animated to zero so
+  // the tile doesn't jump under the finger on the first move
+  const grabOffsetX = useSharedValue(0);
+  const grabOffsetY = useSharedValue(0);
+  // 0 = rack tile look, 1 = pending board tile look (see Tile liftProgress)
+  const liftProgress = useSharedValue(0);
   const recallProgress = useSharedValue(0);
   const isDraggingShared = useSharedValue(false); // For worklet access
   const isSwapModeShared = useSharedValue(false); // For worklet access
@@ -621,6 +688,19 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
   // Flag to indicate animation was started in worklet (skip JS-side animation)
   const animationStartedInWorklet = useSharedValue(false);
+
+  // Shrink a floating tile back to rack size and look while it returns, so
+  // the rack tile takes over without a jump
+  const animateToRackLook = useCallback(() => {
+    scale.value = withTiming(1, {
+      duration: SETTLE_DURATION,
+      easing: SETTLE_EASING,
+    });
+    liftProgress.value = withTiming(0, {
+      duration: SETTLE_DURATION,
+      easing: SETTLE_EASING,
+    });
+  }, [scale, liftProgress]);
 
   // Shared values for rack layout (accessed in worklet for gesture decisions)
   const rackTopShared = useSharedValue(0);
@@ -869,6 +949,15 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const isDragging = dragStatus === 'dragging';
   const isSettling = dragStatus === 'settling';
 
+  useLayoutEffect(() => {
+    useBoardDragStore.setState({
+      dragStatus,
+      dragSource,
+      settlingTarget,
+      recallingBoardPositions,
+    });
+  }, [dragStatus, dragSource, settlingTarget, recallingBoardPositions]);
+
   // Reset store drag state when drag completes
   useEffect(() => {
     if (dragStatus === 'idle') {
@@ -902,6 +991,17 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   const setBoardLayout = useCallback(
     (layout: BoardLayout) => {
       boardLayoutRef.current = layout;
+      // Board cells subscribe to the layout; only notify them when it moved
+      const current = useBoardDragStore.getState().boardLayout;
+      if (
+        !current ||
+        current.x !== layout.x ||
+        current.y !== layout.y ||
+        current.width !== layout.width ||
+        current.cellSize !== layout.cellSize
+      ) {
+        useBoardDragStore.setState({ boardLayout: layout });
+      }
       // Sync to shared values for worklet access (hit testing)
       boardLeftShared.value = layout.x;
       boardTopShared.value = layout.y;
@@ -937,13 +1037,13 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
   // Update rack tiles in shared values AND React state (called by external components)
   const updateRackTiles = useCallback(
-    (tiles: (TileType | null)[]) => {
+    (tiles: (TileType | null)[], hiddenRackIndices?: ReadonlySet<number>) => {
       // Update shared values for worklet hit testing
       const newRackTilesShared = new Array(7).fill(null) as (
         [string, number, boolean] | null
       )[];
       tiles.forEach((tile, index) => {
-        if (tile) {
+        if (tile && !hiddenRackIndices?.has(index)) {
           newRackTilesShared[index] = [tile.letter, tile.points, tile.isBlank];
         }
       });
@@ -1579,6 +1679,24 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
               );
               const targetPos = toRelative(slotCenter);
 
+              if (animationStartedInWorklet.value) {
+                // The worklet already animates the tile home. Move it back to
+                // the rack in state now; the rack tile stays hidden until the
+                // settle completes, then takes over in the same frame.
+                onComplete?.(target);
+                dragCallback?.(target, true);
+                pendingSettleRef.current = {
+                  target,
+                  source: source!,
+                  tile: tile!,
+                  onComplete: undefined,
+                  dragCallback: undefined,
+                  sessionId: dragSessionIdShared.value,
+                };
+                finishDrag(target, true);
+                return target;
+              }
+
               pendingSettleRef.current = {
                 target,
                 source: source!,
@@ -1588,6 +1706,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
                 sessionId: dragSessionIdShared.value,
               };
 
+              animateToRackLook();
               positionX.value = withTiming(targetPos.x, {
                 duration: SETTLE_DURATION,
                 easing: SETTLE_EASING,
@@ -1638,6 +1757,22 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
             );
             const targetPos = toRelative(slotCenter);
 
+            if (animationStartedInWorklet.value) {
+              // Already animating home on the UI thread
+              onComplete?.(null);
+              dragCallback?.(null, true);
+              pendingSettleRef.current = {
+                target: null,
+                source: source!,
+                tile: tile!,
+                onComplete: undefined,
+                dragCallback: undefined,
+                sessionId: dragSessionIdShared.value,
+              };
+              finishDrag(null, true);
+              return null;
+            }
+
             pendingSettleRef.current = {
               target: null,
               source: source!,
@@ -1647,6 +1782,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
               sessionId: dragSessionIdShared.value,
             };
 
+            animateToRackLook();
             positionX.value = withTiming(targetPos.x, {
               duration: SETTLE_DURATION,
               easing: SETTLE_EASING,
@@ -1731,6 +1867,11 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         easing: SETTLE_EASING,
       });
       scale.value = withTiming(1, {
+        duration: SETTLE_DURATION,
+        easing: SETTLE_EASING,
+      });
+      // Back to the rack look, so the rack tile takes over seamlessly
+      liftProgress.value = withTiming(0, {
         duration: SETTLE_DURATION,
         easing: SETTLE_EASING,
       });
@@ -2400,6 +2541,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // A new drag owns all animations from here on
+      animationStartedInWorklet.value = false;
+
       // Use stored touch coordinates from onTouchesDown for hit testing
       // This ensures we test against where the user originally touched, not where
       // their finger is now (which may have moved before onStart fired, especially
@@ -2466,11 +2610,18 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         // Use container-relative coords (event.x/y) with offset from touch to tile center
         const tileCenterX = rackHit.hitArea.x + TILE_SIZE / 2;
         const tileCenterY = rackHit.hitArea.y + TILE_SIZE / 2;
-        const offsetX = tileCenterX - screenX;
-        const offsetY = tileCenterY - screenY;
-        positionX.value = event.x + offsetX;
-        positionY.value = event.y + offsetY;
+        positionX.value = event.x;
+        positionY.value = event.y;
+        // Start where the tile is, then glide its center under the finger
+        grabOffsetX.value = tileCenterX - screenX;
+        grabOffsetY.value = tileCenterY - screenY;
+        grabOffsetX.value = withTiming(0, { duration: LIFT_DURATION });
+        grabOffsetY.value = withTiming(0, { duration: LIFT_DURATION });
+        // Lift it straight away so the pickup is visible before any movement
         scale.value = 1;
+        scale.value = withSpring(LIFT_SCALE, LIFT_SPRING);
+        liftProgress.value = 0;
+        liftProgress.value = withTiming(1, { duration: LIFT_DURATION });
 
         // Hide rack tile immediately AND show floating tile
         draggingRackIndexShared.value = rackHit.rackIndex;
@@ -2526,11 +2677,17 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         const cellSize = boardCellSizeShared.value;
         const cellCenterX = boardHit.hitArea.x + cellSize / 2;
         const cellCenterY = boardHit.hitArea.y + cellSize / 2;
-        const offsetX = cellCenterX - screenX;
-        const offsetY = cellCenterY - screenY;
-        positionX.value = event.x + offsetX;
-        positionY.value = event.y + offsetY;
-        scale.value = 1;
+        positionX.value = event.x;
+        positionY.value = event.y;
+        // Start exactly on the cell, then glide under the finger and grow
+        grabOffsetX.value = cellCenterX - screenX;
+        grabOffsetY.value = cellCenterY - screenY;
+        grabOffsetX.value = withTiming(0, { duration: LIFT_DURATION });
+        grabOffsetY.value = withTiming(0, { duration: LIFT_DURATION });
+        scale.value = cellSize / TILE_SIZE;
+        scale.value = withSpring(LIFT_SCALE, LIFT_SPRING);
+        // Already a pending tile, so it keeps that look
+        liftProgress.value = 1;
 
         // Hide board tile AND show floating tile immediately on UI thread
         // Use RackFloatingTile (which is pre-rendered with content) via the tile's rackIndex
@@ -2568,6 +2725,16 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
       // Update shared drag end time for cooldown
       lastDragEndTimeShared.value = Date.now();
+
+      // A very quick drop can happen before the pickup glide finished
+      grabOffsetX.value = withTiming(0, {
+        duration: SETTLE_DURATION,
+        easing: SETTLE_EASING,
+      });
+      grabOffsetY.value = withTiming(0, {
+        duration: SETTLE_DURATION,
+        easing: SETTLE_EASING,
+      });
 
       // Use absoluteX/absoluteY for reliable screen coordinates on real devices
       const screenX = event.absoluteX;
@@ -2680,6 +2847,11 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           }
 
           // Start animation immediately (no bridge delay!)
+          scale.value = withSpring(1, SPRING_CONFIG_FAST);
+          liftProgress.value = withTiming(0, {
+            duration: SETTLE_DURATION,
+            easing: SETTLE_EASING,
+          });
           positionX.value = withSpring(targetCenterX, SPRING_CONFIG_FAST);
           positionY.value = withSpring(
             targetCenterY,
@@ -2695,6 +2867,48 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
+      // Board tile dropped on the rack: send it home to its own slot right
+      // away on the UI thread, shrinking back to the rack look
+      if (sourceType === 'board') {
+        const rackLeft = rackLeftShared.value;
+        const rackTop = rackTopShared.value;
+        const rackBottom = rackBottomShared.value;
+        const rackWidth = rackWidthShared.value;
+        const visualSlot = rackPermutationShared.value.indexOf(
+          draggingRackIndexShared.value
+        );
+
+        if (
+          visualSlot !== -1 &&
+          screenX >= rackLeft - TOUCH_TOLERANCE_PX &&
+          screenX <= rackLeft + rackWidth + TOUCH_TOLERANCE_PX &&
+          screenY >= rackTop - TOUCH_TOLERANCE_PX &&
+          screenY <= rackBottom + TOUCH_TOLERANCE_PX
+        ) {
+          const slotWidth = TILE_SIZE + GAP;
+          const targetCenterX =
+            rackLeft +
+            visualSlot * slotWidth +
+            TILE_SIZE / 2 -
+            containerOffsetX.value;
+          const targetCenterY =
+            rackTop + (rackBottom - rackTop) / 2 - containerOffsetY.value;
+
+          animationStartedInWorklet.value = true;
+          const timing = { duration: SETTLE_DURATION, easing: SETTLE_EASING };
+          scale.value = withTiming(1, timing);
+          liftProgress.value = withTiming(0, timing);
+          positionX.value = withTiming(targetCenterX, timing);
+          positionY.value = withTiming(targetCenterY, timing, (finished) => {
+            'worklet';
+            if (finished) {
+              animationStartedInWorklet.value = false;
+              scheduleOnRN(onSettleComplete);
+            }
+          });
+        }
+      }
+
       // Let JS handle state updates and callbacks
       scheduleOnRN(onGestureEndWithPosition, screenX, screenY);
     })
@@ -2706,6 +2920,8 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       // Handle cancelled gestures (only if onEnd didn't already handle it)
       if (isDraggingShared.value) {
         isDraggingShared.value = false;
+        grabOffsetX.value = 0;
+        grabOffsetY.value = 0;
         draggingRackIndexShared.value = -1;
         draggingBoardPositionShared.value = null;
         lastDragEndTimeShared.value = Date.now();
@@ -2902,7 +3118,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
           rackIndex={rackIndex}
           positionX={positionX}
           positionY={positionY}
+          grabOffsetX={grabOffsetX}
+          grabOffsetY={grabOffsetY}
           scale={scale}
+          liftProgress={liftProgress}
           draggingRackIndex={draggingRackIndexShared}
         />
       ))}
@@ -2911,7 +3130,10 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         tile={boardFloatingTile}
         positionX={positionX}
         positionY={positionY}
+        grabOffsetX={grabOffsetX}
+        grabOffsetY={grabOffsetY}
         scale={scale}
+        liftProgress={liftProgress}
         opacity={boardFloatingOpacity}
         shouldShow={boardFloatingShouldShow}
         draggingBoardPosition={draggingBoardPositionShared}
@@ -2922,27 +3144,52 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
     </View>
   );
 
+  const boardCellDragApi = useMemo<BoardCellDragApi>(
+    () => ({
+      startDragFromBoard,
+      updateDrag,
+      endDrag,
+      registerDraggable,
+      unregisterDraggable,
+      recallingBoardPositionsShared,
+      draggingBoardPositionShared,
+      settlingTargetShared,
+    }),
+    [
+      startDragFromBoard,
+      updateDrag,
+      endDrag,
+      registerDraggable,
+      unregisterDraggable,
+      recallingBoardPositionsShared,
+      draggingBoardPositionShared,
+      settlingTargetShared,
+    ]
+  );
+
   return (
-    <DragDropContext.Provider value={contextValue}>
-      {Platform.OS === 'web' ? (
-        <>
-          {children}
-          {floatingTiles}
-        </>
-      ) : (
-        <View
-          ref={containerRef}
-          style={styles.container}
-          onLayout={handleContainerLayout}
-        >
-          <GestureDetector gesture={panGesture}>
-            <Animated.View style={styles.container}>{children}</Animated.View>
-          </GestureDetector>
-          {floatingTiles}
-          {debugOverlay}
-        </View>
-      )}
-    </DragDropContext.Provider>
+    <BoardCellDragContext.Provider value={boardCellDragApi}>
+      <DragDropContext.Provider value={contextValue}>
+        {Platform.OS === 'web' ? (
+          <>
+            {children}
+            {floatingTiles}
+          </>
+        ) : (
+          <View
+            ref={containerRef}
+            style={styles.container}
+            onLayout={handleContainerLayout}
+          >
+            <GestureDetector gesture={panGesture}>
+              <Animated.View style={styles.container}>{children}</Animated.View>
+            </GestureDetector>
+            {floatingTiles}
+            {debugOverlay}
+          </View>
+        )}
+      </DragDropContext.Provider>
+    </BoardCellDragContext.Provider>
   );
 }
 
@@ -3075,6 +3322,44 @@ export function useDragDrop() {
     throw new Error('useDragDrop must be used within a DragDropProvider');
   }
   return context;
+}
+
+// Stable drag API for board cells; its identity never changes
+export function useBoardCellDrag() {
+  const context = useContext(BoardCellDragContext);
+  if (!context) {
+    throw new Error('useBoardCellDrag must be used within a DragDropProvider');
+  }
+  return context;
+}
+
+// Drag state for a single board cell. Each value is a primitive, so a cell
+// only re-renders when its own state changes.
+export function useBoardCellDragState(x: number, y: number) {
+  const isAtCell = (target: { type: string; x?: number; y?: number } | null) =>
+    target?.type === 'board' && target.x === x && target.y === y;
+
+  const isThisDragging = useBoardDragStore(
+    (s) => s.dragStatus === 'dragging' && isAtCell(s.dragSource)
+  );
+  const isSettlingToThis = useBoardDragStore(
+    (s) => s.dragStatus === 'settling' && isAtCell(s.settlingTarget)
+  );
+  const isSettlingFromThis = useBoardDragStore(
+    (s) => s.dragStatus === 'settling' && isAtCell(s.dragSource)
+  );
+  const isBeingRecalled = useBoardDragStore((s) =>
+    s.recallingBoardPositions.some((pos) => pos.x === x && pos.y === y)
+  );
+  const boardLayout = useBoardDragStore((s) => s.boardLayout);
+
+  return {
+    isThisDragging,
+    isSettlingToThis,
+    isSettlingFromThis,
+    isBeingRecalled,
+    boardLayout,
+  };
 }
 
 // ============================================================================

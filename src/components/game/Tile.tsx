@@ -1,5 +1,5 @@
 import type { ThemeColors } from '../../config/theme';
-import { useThemedStyles } from '../../hooks/useThemeColors';
+import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Pressable, Platform } from 'react-native';
 import Animated, {
@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
   withRepeat,
   interpolateColor,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { VALIDATION_COLORS } from '../../config/theme';
 import { TILE_SIZE } from '../../config/constants';
@@ -27,6 +28,12 @@ const POINTS_FONT_SIZE = Math.round(TILE_SIZE * POINTS_SIZE_RATIO); // ~20px
 const BORDER_WIDTH = 2;
 const BORDER_RADIUS = 5;
 
+// Look of a pending tile (placed on the board but not played yet) before it
+// gets a valid/invalid tint
+const PENDING_BACKGROUND = '#FFFFF0';
+const PENDING_EDGE_LIGHT = '#FFFFF8';
+const PENDING_EDGE_DARK = '#E0E0D0';
+
 interface TileProps {
   letter: string;
   points: number;
@@ -37,6 +44,10 @@ interface TileProps {
   validationState?: TileValidationState;
   onPress?: () => void;
   disabled?: boolean;
+  // For a tile being dragged: 0 looks like a rack tile, 1 like a pending tile
+  // on the board. Animating it on the UI thread lets a dropped tile already
+  // look placed, so nothing changes when the board tile takes over.
+  liftProgress?: SharedValue<number>;
 }
 
 /**
@@ -60,8 +71,10 @@ export function Tile({
   validationState = null,
   onPress,
   disabled = false,
+  liftProgress,
 }: TileProps) {
   const styles = useThemedStyles(createStyles);
+  const colors = useThemeColors();
   // Animated color transition
   const getColorValue = (state: TileValidationState) =>
     state === 'valid'
@@ -144,12 +157,12 @@ export function Tile({
     const baseColor = interpolateColor(
       colorProgress.value,
       [-1, 0, 1],
-      ['#FFE0E0', '#FFFFF0', '#E0FFE0']
+      ['#FFE0E0', PENDING_BACKGROUND, '#E0FFE0']
     );
     const pulseColor = interpolateColor(
       colorProgress.value,
       [-1, 0, 1],
-      ['#FFC0C0', '#FFFFF0', '#90EE90']
+      ['#FFC0C0', PENDING_BACKGROUND, '#90EE90']
     );
     const backgroundColor = interpolateColor(
       pulseProgress.value,
@@ -160,12 +173,12 @@ export function Tile({
     const baseBorderLight = interpolateColor(
       colorProgress.value,
       [-1, 0, 1],
-      ['#FFE8E8', '#FFFFF8', '#E8FFE8']
+      ['#FFE8E8', PENDING_EDGE_LIGHT, '#E8FFE8']
     );
     const baseBorderDark = interpolateColor(
       colorProgress.value,
       [-1, 0, 1],
-      ['#E8B8B8', '#E0E0D0', '#B8E8B8']
+      ['#E8B8B8', PENDING_EDGE_DARK, '#B8E8B8']
     );
     const pulseBorderLight = interpolateColor(
       colorProgress.value,
@@ -195,6 +208,41 @@ export function Tile({
       borderLeftColor: borderTopColor,
       borderBottomColor,
       borderRightColor: borderBottomColor,
+    };
+  });
+
+  // Rack look blending into the pending look while a tile is lifted
+  const liftStyle = useAnimatedStyle(() => {
+    'worklet';
+    if (!liftProgress) {
+      return {};
+    }
+
+    const progress = liftProgress.value;
+    const edgeLight = interpolateColor(
+      progress,
+      [0, 1],
+      [colors.tileEdgeLight, PENDING_EDGE_LIGHT]
+    );
+    const edgeDark = interpolateColor(
+      progress,
+      [0, 1],
+      [colors.tileEdgeDark, PENDING_EDGE_DARK]
+    );
+
+    return {
+      backgroundColor: interpolateColor(
+        progress,
+        [0, 1],
+        [colors.tileClassicBackground, PENDING_BACKGROUND]
+      ),
+      borderTopColor: edgeLight,
+      borderLeftColor: edgeLight,
+      borderBottomColor: edgeDark,
+      borderRightColor: edgeDark,
+      shadowColor: colors.tileShadow,
+      shadowOpacity: progress * 0.4,
+      shadowRadius: 4,
     };
   });
 
@@ -259,9 +307,9 @@ export function Tile({
       return [tileStyles, animatedPendingBackgroundStyle];
     }
     if (showAnimatedBorder) {
-      return [tileStyles, animatedBorderStyle];
+      return [tileStyles, liftStyle, animatedBorderStyle];
     }
-    return tileStyles;
+    return [tileStyles, liftStyle];
   };
 
   if (onPress) {

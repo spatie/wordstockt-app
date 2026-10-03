@@ -14,7 +14,10 @@ import {
   useTileValidationState,
   useBoardTileHighlight,
 } from '../../stores/gameStore';
-import { useDragDrop } from '../../context/DragDropContext';
+import {
+  useBoardCellDrag,
+  useBoardCellDragState,
+} from '../../context/DragDropContext';
 import { usePointerDrag } from '../../hooks/usePointerDrag';
 import {
   MULTIPLIER_COLORS,
@@ -58,22 +61,25 @@ function BoardCellComponent({
     onCellPress(x, y);
   }, [onCellPress, x, y]);
   const pendingTile = usePendingTileAt(x, y);
+  // Stable drag API plus this cell's own drag state, so a drag only
+  // re-renders the cells it actually affects
   const {
     startDragFromBoard,
     updateDrag,
     endDrag,
-    isDragging,
-    dragSource,
-    isSettling,
-    settlingTarget,
     registerDraggable,
     unregisterDraggable,
-    recallingBoardPositions,
     recallingBoardPositionsShared,
     draggingBoardPositionShared,
     settlingTargetShared,
+  } = useBoardCellDrag();
+  const {
+    isThisDragging,
+    isSettlingToThis,
+    isSettlingFromThis,
+    isBeingRecalled: isRecallingThis,
     boardLayout,
-  } = useDragDrop();
+  } = useBoardCellDragState(x, y);
 
   // Immediate hiding based on shared values (prevents visual glitch during fast drags/settles)
   // Uses shared values instead of React state for frame-perfect synchronization
@@ -102,33 +108,10 @@ function BoardCellComponent({
 
   const registrationId = `board-${x}-${y}`;
 
-  const isThisDragging =
-    isDragging &&
-    dragSource?.type === 'board' &&
-    dragSource.x === x &&
-    dragSource.y === y;
-
-  // Hide tile when FloatingTile is settling TO this cell
-  const isSettlingToThis =
-    isSettling &&
-    settlingTarget?.type === 'board' &&
-    settlingTarget.x === x &&
-    settlingTarget.y === y;
-
-  // Hide tile when FloatingTile is settling FROM this cell (to rack or elsewhere)
-  const isSettlingFromThis =
-    isSettling &&
-    dragSource?.type === 'board' &&
-    dragSource.x === x &&
-    dragSource.y === y;
-
   // Hide tile when it's being recalled (animated back to rack)
   // On native, use false here - the worklet immediateHideStyle handles hiding via shared value
   // This prevents re-render cascades when recallingBoardPositions changes
-  const isBeingRecalled =
-    Platform.OS === 'web'
-      ? recallingBoardPositions.some((pos) => pos.x === x && pos.y === y)
-      : false;
+  const isBeingRecalled = Platform.OS === 'web' ? isRecallingThis : false;
 
   // Callback for when drag ends (called from DragDropContext on native)
   const handleNativeDragEnd = useCallback(

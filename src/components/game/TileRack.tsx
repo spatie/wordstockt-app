@@ -291,9 +291,7 @@ export function TileRack({ tiles, disabled, onTileDrop }: TileRackProps) {
       usedRackIndicesKey ? usedRackIndicesKey.split(',').map(Number) : []
     );
 
-    updateRackTiles(
-      tiles.map((tile, index) => (usedRackIndices.has(index) ? null : tile))
-    );
+    updateRackTiles(tiles, usedRackIndices);
   }, [tiles, usedRackIndicesKey, updateRackTiles]);
 
   const measureRack = useCallback(() => {
