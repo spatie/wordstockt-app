@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { StyleSheet } from 'react-native';
-import { palettes, type ThemeColors } from '../config/theme';
+import { isLightAppearance, palettes, type ThemeColors } from '../config/theme';
 import { useAppearanceStore } from '../stores/appearanceStore';
 
 const stylesheetCache = new WeakMap<
@@ -35,10 +35,14 @@ export function useThemeColors(): ThemeColors {
   return palettes[appearance];
 }
 
-export function useThemeBlurTint(): 'light' | 'dark' {
+export function useIsLightAppearance(): boolean {
   const appearance = useAppearanceStore((state) => state.appearance);
 
-  return appearance === 'paper' ? 'light' : 'dark';
+  return isLightAppearance(appearance);
+}
+
+export function useThemeBlurTint(): 'light' | 'dark' {
+  return useIsLightAppearance() ? 'light' : 'dark';
 }
 
 export function useThemedStyles<T extends StyleSheet.NamedStyles<T>>(

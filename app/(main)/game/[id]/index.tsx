@@ -17,7 +17,9 @@ import {
 } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useGame } from '../../../../src/api/queries/useGame';
+import { gameKeys } from '../../../../src/api/queries/queryKeys';
 import { useValidation } from '../../../../src/api/queries/useValidation';
 import { useWordInfo } from '../../../../src/api/queries/useWordInfo';
 import {
@@ -60,8 +62,6 @@ import { SPACING, RADIUS, LAYOUT } from '../../../../src/config/constants';
 import { ROUTES } from '../../../../src/config/routes';
 import { mockGame } from '../../../../src/config/mockData';
 
-// Removed BACK_DESTINATION - let AppHeader use router.back() for correct animation
-
 // Set to true to use mock data for UI testing
 const USE_MOCK_DATA = false;
 
@@ -91,12 +91,17 @@ function GameScreenContent() {
     }
   }, [gameUlid, setCurrentGame]);
 
-  // Track this game as the last visited screen for app resume
+  // Track this game as the last visited screen for app resume. Leaving the
+  // game clears it; a killed app never runs the cleanup, so resume still works.
   useEffect(() => {
-    if (gameUlid) {
-      setLastGameUlid(gameUlid);
+    if (!gameUlid) {
+      return;
     }
-  }, [gameUlid, setLastGameUlid]);
+
+    setLastGameUlid(gameUlid);
+
+    return () => clearLastGameUlid();
+  }, [gameUlid, setLastGameUlid, clearLastGameUlid]);
 
   // Track currently viewed game for notification suppression
   useEffect(() => {
@@ -146,13 +151,24 @@ function GameScreenContent() {
   const actionButtonsOpacity = useRef(new Animated.Value(1)).current;
   const swapButtonsOpacity = useRef(new Animated.Value(0)).current;
 
+  // A game that's already cached (prefetched or visited before) renders
+  // straight away with the push animation, without a spinner and fade-in.
+  const queryClient = useQueryClient();
+  const [hasCachedGame] = useState(
+    () => queryClient.getQueryData(gameKeys.detail(gameUlid)) !== undefined
+  );
+
   // Animation values for UI entry
-  const uiEntryOpacity = useRef(new Animated.Value(0)).current;
-  const uiEntryTranslate = useRef(new Animated.Value(20)).current;
-  const hasAnimatedEntry = useRef(false);
+  const uiEntryOpacity = useRef(
+    new Animated.Value(hasCachedGame ? 1 : 0)
+  ).current;
+  const uiEntryTranslate = useRef(
+    new Animated.Value(hasCachedGame ? 0 : 20)
+  ).current;
+  const hasAnimatedEntry = useRef(hasCachedGame);
 
   // Loading transition state - keep spinner visible until we're ready to show content
-  const [isTransitioning, setIsTransitioning] = useState(true);
+  const [isTransitioning, setIsTransitioning] = useState(!hasCachedGame);
 
   const { data: apiGame, isLoading, error, refetch } = useGame(gameUlid);
   const setValidationResult = useGameStore((s) => s.setValidationResult);

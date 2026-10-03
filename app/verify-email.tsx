@@ -1,8 +1,5 @@
-import type { ThemeColors } from '../../src/config/theme';
-import {
-  useThemeColors,
-  useThemedStyles,
-} from '../../src/hooks/useThemeColors';
+import type { ThemeColors } from '../src/config/theme';
+import { useThemeColors, useThemedStyles } from '../src/hooks/useThemeColors';
 import React from 'react';
 import {
   View,
@@ -12,14 +9,11 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import {
-  useResendVerification,
-  useLogout,
-} from '../../src/api/queries/useAuth';
-import { useAuthStore } from '../../src/stores/authStore';
-import { MainLogo } from '../../src/components/ui/MainLogo';
-import { FloatingTiles } from '../../src/components/ui/FloatingTiles';
-import { SPACING, RADIUS, DIMENSIONS } from '../../src/config/constants';
+import { useResendVerification, useLogout } from '../src/api/queries/useAuth';
+import { useAuthStore } from '../src/stores/authStore';
+import { MainLogo } from '../src/components/ui/MainLogo';
+import { FloatingTiles } from '../src/components/ui/FloatingTiles';
+import { SPACING, RADIUS, DIMENSIONS } from '../src/config/constants';
 
 export default function VerifyEmailScreen() {
   const colors = useThemeColors();

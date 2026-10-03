@@ -168,7 +168,7 @@ export default function RegisterScreen() {
             {/* Sign In Link */}
             <View style={styles.signInContainer}>
               <Text style={styles.signInText}>Already have an account? </Text>
-              <Link href={ROUTES.LOGIN} asChild>
+              <Link href={ROUTES.LOGIN} dismissTo asChild>
                 <Pressable
                   style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
                 >

@@ -81,7 +81,7 @@ const createStyles = (colors: ThemeColors) =>
     },
     colorSwatchSelected: {
       borderWidth: 3,
-      borderColor: '#FFF',
+      borderColor: colors.textPrimary,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.3,

@@ -9,6 +9,7 @@ import { useAuthStore } from '../stores/authStore';
 import { useNavigationStore } from '../stores/navigationStore';
 import { useNotificationStore } from '../stores/notificationStore';
 import { syncFromPush } from '../api/syncFromPush';
+import { ROUTES } from '../config/routes';
 
 if (Platform.OS !== 'web') {
   Notifications.setNotificationHandler({
@@ -93,7 +94,6 @@ export function usePushNotifications() {
     if (!isAuthenticated) return;
 
     let isActive = true;
-    let navigationTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const checkAndRegister = () => {
       registerForPushNotificationsAsync()
@@ -158,31 +158,20 @@ export function usePushNotifications() {
     responseListener.current =
       Notifications.addNotificationResponseReceivedListener((response) => {
         const data = response.notification.request.content.data;
+        // The notification decides where to go, not the app resume state
+        useNavigationStore.getState().clearLastGameUlid();
+
         if (data?.type === 'invitation') {
-          useNavigationStore.getState().clearLastGameUlid();
-          routerRef.current.replace('/(main)');
-        } else if (data?.game_ulid) {
-          // Clear app resume state to prevent race condition with HomeScreen's
-          // app resume logic (both use 50ms setTimeout to navigate to a game)
-          useNavigationStore.getState().clearLastGameUlid();
-          // Navigate to games list first, then push to game
-          // This ensures back button is always available
-          routerRef.current.replace('/(main)');
-          if (navigationTimeout) {
-            clearTimeout(navigationTimeout);
-          }
-          navigationTimeout = setTimeout(() => {
-            routerRef.current.push(`/(main)/game/${data.game_ulid}`);
-          }, 50);
+          routerRef.current.dismissTo(ROUTES.HOME);
+        } else if (typeof data?.game_ulid === 'string') {
+          // The games list is always the initial route underneath, so back
+          // works. `navigate` reuses the game screen if it's already open.
+          routerRef.current.navigate(ROUTES.GAME(data.game_ulid));
         }
       });
 
     return () => {
       isActive = false;
-      if (navigationTimeout) {
-        clearTimeout(navigationTimeout);
-        navigationTimeout = null;
-      }
       appStateSubscription.remove();
       notificationListener.current?.remove();
       responseListener.current?.remove();

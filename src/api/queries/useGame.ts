@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../client';
 import {
@@ -32,11 +32,8 @@ export function isWaitingOnOthers(
   return game.status === 'active' && game.currentTurnUserUlid !== userUlid;
 }
 
-export function useGame(gameUlid: string) {
-  const queryClient = useQueryClient();
-  const userUlid = useAuthStore((s) => s.user?.ulid);
-
-  const query = useQuery({
+function gameQueryOptions(gameUlid: string) {
+  return {
     queryKey: gameKeys.detail(gameUlid),
     queryFn: async (): Promise<Game> => {
       const { data } = await apiClient.get(`/games/${gameUlid}`);
@@ -44,6 +41,15 @@ export function useGame(gameUlid: string) {
       return transformGame(validated);
     },
     staleTime: 30_000,
+  };
+}
+
+export function useGame(gameUlid: string) {
+  const queryClient = useQueryClient();
+  const userUlid = useAuthStore((s) => s.user?.ulid);
+
+  const query = useQuery({
+    ...gameQueryOptions(gameUlid),
     enabled: gameUlid.length > 0,
     refetchInterval: (query) =>
       isWaitingOnOthers(query.state.data, userUlid)
@@ -71,6 +77,19 @@ export function useGame(gameUlid: string) {
   }, [lastMoveUlid, gameUlid, queryClient]);
 
   return query;
+}
+
+// Start loading a game before navigating to it (e.g. on press in), so the
+// game screen can often render straight away.
+export function usePrefetchGame() {
+  const queryClient = useQueryClient();
+
+  return useCallback(
+    (gameUlid: string) => {
+      queryClient.prefetchQuery(gameQueryOptions(gameUlid));
+    },
+    [queryClient]
+  );
 }
 
 interface SubmitMoveParams {

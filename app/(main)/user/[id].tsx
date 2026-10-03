@@ -157,7 +157,7 @@ export default function UserProfileScreen() {
               <View style={styles.buttonContent}>
                 {isButtonLoading ? (
                   <ActivityIndicator
-                    color={isFriend ? colors.textPrimary : '#FFF'}
+                    color={isFriend ? colors.textPrimary : colors.onPrimary}
                     size="small"
                   />
                 ) : (

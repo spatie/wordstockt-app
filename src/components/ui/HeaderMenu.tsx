@@ -18,28 +18,28 @@ export function HeaderMenu() {
   const handleMenuAction = (actionId: string) => {
     switch (actionId) {
       case 'profile':
-        router.push(ROUTES.PROFILE);
+        router.navigate(ROUTES.PROFILE);
         break;
       case 'leaderboard':
-        router.push(ROUTES.LEADERBOARD);
+        router.navigate(ROUTES.LEADERBOARD);
         break;
       case 'friends':
-        router.push(ROUTES.FRIENDS);
+        router.navigate(ROUTES.FRIENDS);
         break;
       case 'achievements':
-        router.push(ROUTES.ACHIEVEMENTS as Href);
+        router.navigate(ROUTES.ACHIEVEMENTS as Href);
         break;
       case 'change-password':
-        router.push(ROUTES.CHANGE_PASSWORD);
+        router.navigate(ROUTES.CHANGE_PASSWORD);
         break;
       case 'create-account':
-        router.push(ROUTES.CONVERT_ACCOUNT);
+        router.navigate(ROUTES.CONVERT_ACCOUNT);
         break;
       case 'rules':
-        router.push(ROUTES.RULES);
+        router.navigate(ROUTES.RULES);
         break;
       case 'about':
-        router.push(ROUTES.ABOUT);
+        router.navigate(ROUTES.ABOUT);
         break;
       case 'logout':
         showConfirm(

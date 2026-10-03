@@ -10,12 +10,9 @@ export function LogoutOverlay() {
   const styles = useThemedStyles(createStyles);
   const isLoggingOut = useAuthStore((s) => s.isLoggingOut);
 
-  if (!isLoggingOut) {
-    return null;
-  }
-
+  // Stay mounted so the overlay fades out instead of disappearing
   return (
-    <Modal transparent visible animationType="fade">
+    <Modal transparent visible={isLoggingOut} animationType="fade">
       <View style={styles.overlay}>
         <View style={styles.content}>
           <ActivityIndicator size="large" color={colors.primary} />

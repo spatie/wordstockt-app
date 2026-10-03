@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   View,
   Pressable,
@@ -7,11 +7,16 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { shadows } from '../../config/theme';
-import { useThemeColors } from '../../hooks/useThemeColors';
-import { useAppearanceStore } from '../../stores/appearanceStore';
+import {
+  useIsLightAppearance,
+  useThemeBlurTint,
+  useThemeColors,
+} from '../../hooks/useThemeColors';
 import { RADIUS, SPACING } from '../../config/constants';
+import { withAlpha } from '../../utils/color';
 
 type SpacingKey = keyof typeof SPACING;
 type RadiusKey = keyof typeof RADIUS;
@@ -19,6 +24,7 @@ type RadiusKey = keyof typeof RADIUS;
 interface CardProps {
   children: React.ReactNode;
   onPress?: () => void;
+  onPressIn?: () => void;
   padding?: SpacingKey;
   borderRadius?: RadiusKey;
   marginBottom?: SpacingKey;
@@ -67,34 +73,46 @@ function splitStyles(style: StyleProp<ViewStyle>): {
   return { wrapperStyles, contentStyles };
 }
 
-function AccentBar({
-  color,
-  borderRadius,
-}: {
-  color: string;
-  borderRadius: number;
-}) {
-  // Memoize style to prevent re-renders in list items
-  const accentStyle = useMemo(
-    () => ({
-      position: 'absolute' as const,
-      left: 0,
-      top: 0,
-      bottom: 0,
-      width: 4,
-      backgroundColor: color,
-      borderTopLeftRadius: borderRadius,
-      borderBottomLeftRadius: borderRadius,
-    }),
-    [color, borderRadius]
+// A soft wash of the accent color fading down from the top edge
+function AccentWash({ color }: { color: string }) {
+  return (
+    <LinearGradient
+      pointerEvents="none"
+      colors={[withAlpha(color, 0.18), withAlpha(color, 0)]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 0.7 }}
+      style={StyleSheet.absoluteFill}
+    />
   );
-
-  return <View style={accentStyle} />;
 }
+
+// Light catching the top edge of the glass, giving dark cards depth
+// without an outline
+function GlassSheen() {
+  return (
+    <LinearGradient
+      pointerEvents="none"
+      colors={['rgba(255, 255, 255, 0.07)', 'rgba(255, 255, 255, 0)']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 0.5 }}
+      style={StyleSheet.absoluteFill}
+    />
+  );
+}
+
+// Light surfaces read best on a wide, faint shadow instead of a border
+const lightShadow: ViewStyle = {
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.07,
+  shadowRadius: 14,
+  elevation: 2,
+};
 
 export function Card({
   children,
   onPress,
+  onPressIn,
   padding = 'lg',
   borderRadius = 'xl',
   marginBottom = 'md',
@@ -105,61 +123,60 @@ export function Card({
   testID,
 }: CardProps) {
   const colors = useThemeColors();
-  const appearance = useAppearanceStore((state) => state.appearance);
+  const tint = useThemeBlurTint();
+  const isLight = useIsLightAppearance();
   const { wrapperStyles, contentStyles } = splitStyles(style);
-  const tint = appearance === 'paper' ? 'light' : 'dark';
+  const accent = showAccent ? (accentColor ?? colors.primary) : null;
+  const radius = RADIUS[borderRadius];
 
-  const radiusValue = RADIUS[borderRadius];
-
-  const baseWrapperStyle: ViewStyle = {
-    borderRadius: radiusValue,
+  // The shadow lives on an outer view: iOS doesn't draw shadows on a view
+  // that clips its content.
+  const shadowStyle: ViewStyle = {
+    borderRadius: radius,
     marginBottom: SPACING[marginBottom],
+    ...(elevated && (isLight ? lightShadow : shadows.md)),
+  };
+
+  const clipStyle: ViewStyle = {
+    borderRadius: radius,
     overflow: 'hidden',
-    ...(elevated && shadows.md),
   };
 
   const blurContentStyle: ViewStyle = {
     padding: SPACING[padding],
-    backgroundColor:
-      appearance === 'navy' ? 'rgba(27, 40, 56, 0.5)' : colors.backgroundLight,
+    backgroundColor: colors.cardSurface,
     ...contentStyles,
   };
+
+  const surface = (
+    <View style={[clipStyle, wrapperStyles]}>
+      <BlurView intensity={40} tint={tint} style={blurContentStyle}>
+        {!isLight && <GlassSheen />}
+        {accent && <AccentWash color={accent} />}
+        {children}
+      </BlurView>
+    </View>
+  );
 
   if (onPress) {
     return (
       <Pressable
         style={({ pressed }) => [
-          baseWrapperStyle,
-          wrapperStyles,
-          { opacity: pressed ? 0.7 : 1 },
+          shadowStyle,
+          pressed && { opacity: 0.85, transform: [{ scale: 0.985 }] },
         ]}
         onPress={onPress}
+        onPressIn={onPressIn}
         testID={testID}
       >
-        <BlurView intensity={40} tint={tint} style={blurContentStyle}>
-          {children}
-        </BlurView>
-        {showAccent && (
-          <AccentBar
-            color={accentColor ?? colors.primary}
-            borderRadius={radiusValue}
-          />
-        )}
+        {surface}
       </Pressable>
     );
   }
 
   return (
-    <View style={[baseWrapperStyle, wrapperStyles]} testID={testID}>
-      <BlurView intensity={40} tint={tint} style={blurContentStyle}>
-        {children}
-      </BlurView>
-      {showAccent && (
-        <AccentBar
-          color={accentColor ?? colors.primary}
-          borderRadius={radiusValue}
-        />
-      )}
+    <View style={shadowStyle} testID={testID}>
+      {surface}
     </View>
   );
 }

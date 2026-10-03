@@ -46,6 +46,7 @@
       },
       "backgroundColor": "#0D1B2A",
       "package": "com.wordstockt.app",
+      "predictiveBackGestureEnabled": true,
       "intentFilters": [
         {
           "action": "VIEW",
@@ -95,7 +96,7 @@
         {
           "image": "./assets/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#1B2838"
+          "backgroundColor": "#0D1B2A"
         }
       ],
       "expo-status-bar",

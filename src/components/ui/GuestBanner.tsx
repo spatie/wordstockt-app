@@ -81,7 +81,7 @@ const createStyles = (colors: ThemeColors) =>
       marginRight: SPACING.sm,
     },
     buttonText: {
-      color: '#fff',
+      color: colors.onPrimary,
       fontWeight: '600',
       fontSize: 13,
     },

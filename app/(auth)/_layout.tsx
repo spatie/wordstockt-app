@@ -1,7 +1,10 @@
 import { Stack } from 'expo-router';
-import { Platform } from 'react-native';
 import { HeaderLogo } from '../../src/components/ui/HeaderLogo';
 import { useThemeColors } from '../../src/hooks/useThemeColors';
+
+export const unstable_settings = {
+  initialRouteName: 'login',
+};
 
 export default function AuthLayout() {
   const colors = useThemeColors();
@@ -10,53 +13,25 @@ export default function AuthLayout() {
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: colors.background },
+        headerStyle: {
+          backgroundColor: colors.background,
+        },
+        headerTintColor: colors.textPrimary,
+        headerTitle: () => <HeaderLogo />,
+        headerBackButtonDisplayMode: 'minimal',
+        headerShadowVisible: false,
+        animation: 'default',
+        gestureEnabled: true,
       }}
     >
-      <Stack.Screen name="login" />
+      <Stack.Screen name="login" options={{ title: 'Log in' }} />
       <Stack.Screen
         name="register"
-        options={{
-          headerShown: true,
-          headerStyle: {
-            backgroundColor: colors.background,
-          },
-          headerTintColor: colors.textPrimary,
-          animation: Platform.OS === 'ios' ? 'default' : 'slide_from_right',
-          gestureEnabled: true,
-          gestureDirection: 'horizontal',
-          headerTitle: () => <HeaderLogo />,
-          headerBackButtonDisplayMode: 'minimal',
-          headerShadowVisible: false,
-        }}
+        options={{ title: 'Create account', headerShown: true }}
       />
       <Stack.Screen
         name="forgot-password"
-        options={{
-          headerShown: true,
-          headerStyle: {
-            backgroundColor: colors.background,
-          },
-          headerTintColor: colors.textPrimary,
-          animation: Platform.OS === 'ios' ? 'default' : 'slide_from_right',
-          gestureEnabled: true,
-          gestureDirection: 'horizontal',
-          headerTitle: () => <HeaderLogo />,
-          headerBackButtonDisplayMode: 'minimal',
-          headerShadowVisible: false,
-        }}
-      />
-      <Stack.Screen
-        name="verify-email"
-        options={{
-          headerShown: true,
-          headerStyle: {
-            backgroundColor: colors.background,
-          },
-          headerTintColor: colors.textPrimary,
-          headerTitle: () => <HeaderLogo />,
-          headerBackVisible: false,
-          headerShadowVisible: false,
-        }}
+        options={{ title: 'Reset password', headerShown: true }}
       />
     </Stack>
   );

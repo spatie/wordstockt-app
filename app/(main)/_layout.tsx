@@ -1,12 +1,18 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { Platform, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useThemeColors } from '../../src/hooks/useThemeColors';
 import { useInvitationStore } from '../../src/stores/invitationStore';
 import { HeaderLogo } from '../../src/components/ui/HeaderLogo';
 import { HeaderMenu } from '../../src/components/ui/HeaderMenu';
 import { InvitationDialog } from '../../src/components/game/InvitationDialog';
-import { GlowingBackground } from '../../src/components/ui/GlowingBackground';
+import { ScreenBackground } from '../../src/components/ui/ScreenBackground';
+
+// Screens opened from a deep link or notification always get the games list
+// underneath, so back and swipe-back keep working.
+export const unstable_settings = {
+  initialRouteName: 'index',
+};
 
 export default function MainLayout() {
   const colors = useThemeColors();
@@ -18,46 +24,59 @@ export default function MainLayout() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <GlowingBackground />
       <InvitationDialog
         invitation={pendingInvitation}
         onClose={clearPendingInvitation}
       />
       <Stack
+        screenLayout={({ children }) => (
+          <ScreenBackground>{children}</ScreenBackground>
+        )}
+        // Titles are for VoiceOver and the back button's history menu;
+        // the logo is what's shown in the bar
         screenOptions={{
-          headerStyle: {
-            backgroundColor: colors.background,
-          },
+          headerTransparent: true,
           headerTintColor: colors.textPrimary,
-          contentStyle: {
-            backgroundColor: 'transparent',
-          },
-          // Use platform-appropriate animations
-          animation: Platform.OS === 'ios' ? 'default' : 'slide_from_right',
-          gestureEnabled: true,
-          gestureDirection: 'horizontal',
-          // Native header configuration
           headerTitle: () => <HeaderLogo />,
           headerRight: () => <HeaderMenu />,
           headerBackButtonDisplayMode: 'minimal',
           headerShadowVisible: false,
+          contentStyle: {
+            backgroundColor: colors.background,
+          },
+          animation: 'default',
+          gestureEnabled: true,
         }}
       >
         <Stack.Screen
           name="index"
-          options={{
-            headerBackVisible: false,
-          }}
+          options={{ title: 'Games', headerBackVisible: false }}
         />
-        <Stack.Screen name="game/[id]" />
-        <Stack.Screen name="profile" />
-        <Stack.Screen name="leaderboard" />
-        <Stack.Screen name="friends" />
-        <Stack.Screen name="rules" />
-        <Stack.Screen name="user/[id]" />
-        <Stack.Screen name="change-password" />
-        <Stack.Screen name="invite/[code]" />
-        <Stack.Screen name="achievements" />
+        <Stack.Screen name="game/[id]/index" options={{ title: 'Game' }} />
+        <Stack.Screen
+          name="game/[id]/history"
+          options={{ title: 'Move history' }}
+        />
+        <Stack.Screen name="profile" options={{ title: 'Profile' }} />
+        <Stack.Screen name="leaderboard" options={{ title: 'Leaderboard' }} />
+        <Stack.Screen name="friends" options={{ title: 'Friends' }} />
+        <Stack.Screen name="achievements" options={{ title: 'Achievements' }} />
+        <Stack.Screen name="rules" options={{ title: 'Rules' }} />
+        <Stack.Screen name="about" options={{ title: 'About' }} />
+        <Stack.Screen name="user/[id]" options={{ title: 'Player' }} />
+        <Stack.Screen
+          name="change-password"
+          options={{ title: 'Change password' }}
+        />
+        <Stack.Screen
+          name="convert-account"
+          options={{ title: 'Create account' }}
+        />
+        <Stack.Screen
+          name="delete-account"
+          options={{ title: 'Delete account' }}
+        />
+        <Stack.Screen name="invite/[code]" options={{ title: 'Invite' }} />
       </Stack>
     </View>
   );

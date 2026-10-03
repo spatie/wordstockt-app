@@ -1,5 +1,6 @@
 import type { ThemeColors } from '../../src/config/theme';
 import { useThemedStyles } from '../../src/hooks/useThemeColors';
+import { Card } from '../../src/components/ui/Card';
 import React from 'react';
 import {
   View,
@@ -20,10 +21,10 @@ function InfoCard({
 }) {
   const styles = useThemedStyles(createStyles);
   return (
-    <View style={styles.card}>
+    <Card padding="xl" marginBottom="lg">
       <Text style={styles.cardTitle}>{title}</Text>
       {children}
-    </View>
+    </Card>
   );
 }
 
@@ -165,14 +166,6 @@ const createStyles = (colors: ThemeColors) =>
       width: 120,
       height: 120,
       borderRadius: 16,
-    },
-    card: {
-      backgroundColor: colors.backgroundLight,
-      borderRadius: 16,
-      padding: 20,
-      marginBottom: 16,
-      borderLeftWidth: 4,
-      borderLeftColor: colors.border,
     },
     cardTitle: {
       fontSize: 18,

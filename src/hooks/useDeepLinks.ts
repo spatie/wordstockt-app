@@ -2,68 +2,43 @@ import { useEffect, useRef } from 'react';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../stores/authStore';
+import { usePendingInviteStore } from '../stores/pendingInviteStore';
 import { useVerifyEmail } from '../api/queries/useAuth';
+import { ROUTES } from '../config/routes';
 
-// Store pending invite code for after authentication
-let pendingInviteCode: string | null = null;
-
+/**
+ * Handles the parts of deep links that are actions rather than screens.
+ * Routing itself happens in `app/+native-intent.tsx`.
+ */
 export function useDeepLinks() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const pendingInviteCode = usePendingInviteStore((s) => s.code);
   const { mutate: verifyEmail } = useVerifyEmail();
-  const wasAuthenticatedRef = useRef(isAuthenticated);
 
-  // Keep the latest values in refs so the deep link subscription can read them
+  // Keep the latest mutate in a ref so the link subscription can use it
   // without re-subscribing (which would re-process the initial URL).
-  const isAuthenticatedRef = useRef(isAuthenticated);
   const verifyEmailRef = useRef(verifyEmail);
-  const routerRef = useRef(router);
-  isAuthenticatedRef.current = isAuthenticated;
   verifyEmailRef.current = verifyEmail;
-  routerRef.current = router;
 
-  // Handle redirect to invite screen after authentication
+  // Open a parked invite as soon as the user is signed in
   useEffect(() => {
-    if (isAuthenticated && !wasAuthenticatedRef.current && pendingInviteCode) {
-      const code = pendingInviteCode;
-      pendingInviteCode = null;
-      router.push({
-        pathname: '/(main)/invite/[code]',
-        params: { code },
-      });
+    if (!isAuthenticated || !pendingInviteCode) {
+      return;
     }
-    wasAuthenticatedRef.current = isAuthenticated;
-  }, [isAuthenticated, router]);
 
+    usePendingInviteStore.getState().clear();
+    router.push(ROUTES.INVITE(pendingInviteCode));
+  }, [isAuthenticated, pendingInviteCode, router]);
+
+  // Verify email links. Once verified, the root navigator's guards move the
+  // user out of the verify screen on their own.
   useEffect(() => {
     const handleDeepLink = (url: string) => {
       const parsed = Linking.parse(url);
 
-      // Handle email verification links
       if (parsed.path === 'verify' && parsed.queryParams?.url) {
-        const verificationUrl = parsed.queryParams.url as string;
-        verifyEmailRef.current(verificationUrl);
-
-        if (isAuthenticatedRef.current) {
-          routerRef.current.replace('/(main)');
-        }
-        return;
-      }
-
-      // Handle invite links: /invite/{code} or wordstockt://invite/{code}
-      const inviteMatch = parsed.path?.match(/^invite\/([^/]+)$/);
-      if (inviteMatch && inviteMatch[1]) {
-        const code = inviteMatch[1];
-        if (isAuthenticatedRef.current) {
-          routerRef.current.push({
-            pathname: '/(main)/invite/[code]',
-            params: { code },
-          });
-        } else {
-          // Store for after login
-          pendingInviteCode = code;
-        }
-        return;
+        verifyEmailRef.current(parsed.queryParams.url as string);
       }
     };
 

@@ -1,8 +1,8 @@
 import type { ThemeColors } from '../../config/theme';
 import { useThemedStyles } from '../../hooks/useThemeColors';
-import React from 'react';
+import React, { useRef } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { BaseModal } from '../ui/BaseModal';
 import { SmartAvatar } from '../ui/SmartAvatar';
 import { Button } from '../ui/Button';
@@ -25,12 +25,23 @@ export function InvitationDialog({
   const router = useRouter();
   const declineMutation = useDeclineInvitation();
 
+  // Navigate once the dialog has finished closing, so the push doesn't
+  // animate underneath a fading modal
+  const pendingNavigation = useRef<string | null>(null);
+
   const handleView = () => {
     if (!invitation) return;
+    pendingNavigation.current = `${ROUTES.GAME(invitation.game.ulid)}?invitation=${invitation.ulid}`;
     onClose();
-    router.push(
-      `${ROUTES.GAME(invitation.game.ulid)}?invitation=${invitation.ulid}`
-    );
+  };
+
+  const handleClosed = () => {
+    const target = pendingNavigation.current;
+    pendingNavigation.current = null;
+
+    if (target) {
+      router.push(target as Href);
+    }
   };
 
   const handleDecline = async () => {
@@ -53,7 +64,12 @@ export function InvitationDialog({
   if (!invitation) return null;
 
   return (
-    <BaseModal visible={!!invitation} onClose={onClose} backdropBlur>
+    <BaseModal
+      visible={!!invitation}
+      onClose={onClose}
+      onClosed={handleClosed}
+      backdropBlur
+    >
       <View style={styles.container}>
         <View style={styles.avatarContainer}>
           <SmartAvatar

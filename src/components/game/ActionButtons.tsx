@@ -288,6 +288,7 @@ const createStyles = (colors: ThemeColors) =>
     },
     playScore: {
       color: colors.onPrimary,
+      opacity: 0.75,
       fontSize: 11,
       fontWeight: '600',
       marginTop: 1,

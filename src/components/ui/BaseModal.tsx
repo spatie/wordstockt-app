@@ -2,6 +2,7 @@ import type { ThemeColors } from '../../config/theme';
 import { useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  KeyboardAvoidingView,
   Modal,
   View,
   Pressable,
@@ -20,6 +21,8 @@ type OverlayOpacity = 0.5 | 0.7;
 interface BaseModalProps {
   visible: boolean;
   onClose: () => void;
+  // Called once the close animation has finished and the modal is gone
+  onClosed?: () => void;
   children: React.ReactNode;
   overlayOpacity?: OverlayOpacity;
   backdropBlur?: boolean;
@@ -41,6 +44,7 @@ interface BaseModalProps {
 export function BaseModal({
   visible,
   onClose,
+  onClosed,
   children,
   overlayOpacity = 0.5,
   backdropBlur = false,
@@ -58,6 +62,8 @@ export function BaseModal({
   // close animation when the modal was never opened, while keeping the effect
   // driven solely by the external `visible` prop.
   const isShownRef = useRef(visible);
+  const onClosedRef = useRef(onClosed);
+  onClosedRef.current = onClosed;
 
   useEffect(() => {
     if (visible) {
@@ -103,6 +109,7 @@ export function BaseModal({
         }),
       ]).start(() => {
         setModalVisible(false);
+        onClosedRef.current?.();
       });
     }
   }, [visible, backdropBlur, blurAnim, scaleAnim, opacityAnim]);
@@ -120,20 +127,27 @@ export function BaseModal({
     opacity: opacityAnim,
   };
 
+  // Keyboard-aware so modals with inputs keep their buttons above the keyboard
   const modalContent = (
-    <View
-      style={[
-        styles.overlay,
-        { justifyContent: centered ? 'center' : 'flex-start' },
-      ]}
+    <KeyboardAvoidingView
+      style={styles.keyboardAvoider}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       pointerEvents="box-none"
     >
-      <Animated.View
-        style={[styles.content, contentStyle, animatedContentStyle]}
+      <View
+        style={[
+          styles.overlay,
+          { justifyContent: centered ? 'center' : 'flex-start' },
+        ]}
+        pointerEvents="box-none"
       >
-        {children}
-      </Animated.View>
-    </View>
+        <Animated.View
+          style={[styles.content, contentStyle, animatedContentStyle]}
+        >
+          {children}
+        </Animated.View>
+      </View>
+    </KeyboardAvoidingView>
   );
 
   // Web: create static blur style (no animation to avoid flicker)
@@ -179,6 +193,9 @@ export function BaseModal({
 
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
+    keyboardAvoider: {
+      flex: 1,
+    },
     overlay: {
       flex: 1,
       alignItems: 'center',

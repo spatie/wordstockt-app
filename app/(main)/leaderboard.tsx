@@ -14,7 +14,6 @@ import {
 import { FlashList } from '@shopify/flash-list';
 import { ActivityIndicator } from 'react-native-paper';
 import Animated, {
-  FadeInDown,
   useSharedValue,
   useAnimatedStyle,
   withTiming,
@@ -192,13 +191,11 @@ export default function LeaderboardScreen() {
 
   const renderEntry = useCallback(
     ({ item, index }: { item: LeaderboardEntry; index: number }) => (
-      <Animated.View entering={FadeInDown.duration(300).delay(index * 50)}>
-        <LeaderboardEntryCard
-          entry={item}
-          rank={index + 1}
-          isTimeBased={isTimeBased}
-        />
-      </Animated.View>
+      <LeaderboardEntryCard
+        entry={item}
+        rank={index + 1}
+        isTimeBased={isTimeBased}
+      />
     ),
     [isTimeBased]
   );

@@ -23,13 +23,18 @@ import Animated, {
   FadeIn,
   FadeInDown,
   FadeOut,
+  LinearTransition,
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withRepeat,
   Easing,
 } from 'react-native-reanimated';
-import { useRouter, useFocusEffect } from 'expo-router';
+import {
+  useRouter,
+  useNavigation,
+  type NativeStackNavigationProp,
+} from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
   useGames,
@@ -117,6 +122,9 @@ function SectionHeader({
   );
 }
 
+// Later cards appear together instead of trailing seconds behind
+const MAX_STAGGERED_CARDS = 8;
+
 export default function HomeScreen() {
   const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
@@ -135,15 +143,51 @@ export default function HomeScreen() {
   const declineInvitation = useDeclineInvitation();
   const clearLastGameUlid = useNavigationStore((s) => s.clearLastGameUlid);
 
-  // Refetch when screen gains focus (e.g., returning from game board)
-  useFocusEffect(
-    useCallback(() => {
+  // Refetch when returning to this screen (e.g. from the game board). Wait for
+  // the pop animation to finish so cards don't reshuffle mid-transition.
+  const navigation =
+    useNavigation<
+      NativeStackNavigationProp<Record<string, object | undefined>>
+    >();
+  useEffect(() => {
+    let hasAppeared = false;
+
+    return navigation.addListener('transitionEnd', (event) => {
+      if (event.data.closing) {
+        return;
+      }
+
+      // The first appearance is the initial load, which already fetches
+      if (!hasAppeared) {
+        hasAppeared = true;
+        return;
+      }
+
       refetch();
       if (!isGuest) {
         refetchInvitations();
       }
       refetchPublicGames();
-    }, [refetch, refetchInvitations, refetchPublicGames, isGuest])
+    });
+  }, [navigation, refetch, refetchInvitations, refetchPublicGames, isGuest]);
+
+  // Cards stagger in on the first load only. Afterwards new cards fade in
+  // quickly and existing cards glide to their new position.
+  const [hasShownList, setHasShownList] = useState(false);
+  useEffect(() => {
+    if (!isLoading && !invitationsLoading) {
+      setHasShownList(true);
+    }
+  }, [isLoading, invitationsLoading]);
+
+  const cardEntering = useCallback(
+    (index: number) =>
+      hasShownList
+        ? FadeIn.duration(200)
+        : FadeInDown.duration(300).delay(
+            Math.min(index, MAX_STAGGERED_CARDS) * 50
+          ),
+    [hasShownList]
   );
 
   // Track which invitation is being declined
@@ -163,12 +207,7 @@ export default function HomeScreen() {
     }
     hasNavigatedToLastGame.current = true;
     clearLastGameUlid();
-    // Small delay to ensure index is in navigation stack before pushing
-    // This ensures router.canGoBack() works correctly on game screen
-    const timeout = setTimeout(() => {
-      push(ROUTES.GAME(initialLastGameUlid));
-    }, 50);
-    return () => clearTimeout(timeout);
+    push(ROUTES.GAME(initialLastGameUlid));
   }, [initialLastGameUlid, clearLastGameUlid, push]);
 
   const [refreshing, setRefreshing] = useState(false);
@@ -336,13 +375,14 @@ export default function HomeScreen() {
           >
             <SectionHeader title="AWAITING OPPONENT" />
             {awaitingOpponentGames.map((game) => {
-              const delay = cardIndex * 50;
+              const position = cardIndex;
               cardIndex++;
               return (
                 <Animated.View
                   key={game.ulid}
-                  entering={FadeInDown.duration(300).delay(delay)}
+                  entering={cardEntering(position)}
                   exiting={FadeOut.duration(200)}
+                  layout={LinearTransition.duration(250)}
                 >
                   <GameCard
                     game={game}
@@ -360,16 +400,20 @@ export default function HomeScreen() {
         {pendingInvitations.length > 0 && (
           <>
             <Animated.View
-              entering={FadeIn.duration(200).delay(cardIndex * 50)}
+              entering={FadeIn.duration(200).delay(
+                hasShownList ? 0 : Math.min(cardIndex, MAX_STAGGERED_CARDS) * 50
+              )}
+              layout={LinearTransition.duration(250)}
             >
               <SectionHeader title="GAME INVITATIONS" />
             </Animated.View>
             {pendingInvitations.map((invitation, index) => {
-              const delay = cardIndex * 50 + index * 50;
+              const position = cardIndex + index;
               return (
                 <Animated.View
                   key={invitation.ulid || invitation.game.ulid}
-                  entering={FadeInDown.duration(300).delay(delay)}
+                  entering={cardEntering(position)}
+                  layout={LinearTransition.duration(250)}
                 >
                   <InvitationCard
                     invitation={invitation}
@@ -386,17 +430,21 @@ export default function HomeScreen() {
         {yourTurnGames.length > 0 && (
           <>
             <Animated.View
-              entering={FadeIn.duration(200).delay(cardIndex * 50)}
+              entering={FadeIn.duration(200).delay(
+                hasShownList ? 0 : Math.min(cardIndex, MAX_STAGGERED_CARDS) * 50
+              )}
+              layout={LinearTransition.duration(250)}
             >
               <SectionHeader title="YOUR TURN" isYourTurn />
             </Animated.View>
             {yourTurnGames.map((game) => {
-              const delay = cardIndex * 50;
+              const position = cardIndex;
               cardIndex++;
               return (
                 <Animated.View
                   key={game.ulid}
-                  entering={FadeInDown.duration(300).delay(delay)}
+                  entering={cardEntering(position)}
+                  layout={LinearTransition.duration(250)}
                 >
                   <GameCard
                     game={game}
@@ -411,17 +459,21 @@ export default function HomeScreen() {
         {opponentTurnGames.length > 0 && (
           <>
             <Animated.View
-              entering={FadeIn.duration(200).delay(cardIndex * 50)}
+              entering={FadeIn.duration(200).delay(
+                hasShownList ? 0 : Math.min(cardIndex, MAX_STAGGERED_CARDS) * 50
+              )}
+              layout={LinearTransition.duration(250)}
             >
               <SectionHeader title="OPPONENT'S TURN" />
             </Animated.View>
             {opponentTurnGames.map((game) => {
-              const delay = cardIndex * 50;
+              const position = cardIndex;
               cardIndex++;
               return (
                 <Animated.View
                   key={game.ulid}
-                  entering={FadeInDown.duration(300).delay(delay)}
+                  entering={cardEntering(position)}
+                  layout={LinearTransition.duration(250)}
                 >
                   <GameCard
                     game={game}
@@ -454,7 +506,8 @@ export default function HomeScreen() {
         publicGames.map((game, index) => (
           <Animated.View
             key={game.ulid}
-            entering={FadeInDown.duration(300).delay(index * 50)}
+            entering={cardEntering(index)}
+            layout={LinearTransition.duration(250)}
           >
             <PublicGameCard game={game} onPress={handlePublicGamePress} />
           </Animated.View>
@@ -479,7 +532,8 @@ export default function HomeScreen() {
         completedGames.map((game, index) => (
           <Animated.View
             key={game.ulid}
-            entering={FadeInDown.duration(300).delay(index * 50)}
+            entering={cardEntering(index)}
+            layout={LinearTransition.duration(250)}
           >
             <GameCard
               game={game}

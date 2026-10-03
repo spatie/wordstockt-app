@@ -56,7 +56,7 @@ const createStyles = (colors: ThemeColors) =>
     containerOuter: {
       borderRadius: RADIUS.lg,
       borderWidth: 1,
-      borderColor: 'rgba(255, 255, 255, 0.25)',
+      borderColor: colors.controlBorder,
       overflow: 'hidden',
     },
     blur: {

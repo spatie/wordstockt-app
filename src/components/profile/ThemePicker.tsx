@@ -1,17 +1,11 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { palettes } from '../../config/theme';
+import { appearances, palettes } from '../../config/theme';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import {
+  APPEARANCE_NAMES,
   useAppearanceStore,
-  type AppearanceName,
 } from '../../stores/appearanceStore';
-
-const choices: { name: AppearanceName; label: string }[] = [
-  { name: 'navy', label: 'Navy' },
-  { name: 'paper', label: 'Paper' },
-  { name: 'contrast', label: 'Contrast' },
-];
 
 export function ThemePicker() {
   const appearance = useAppearanceStore((state) => state.appearance);
@@ -28,8 +22,16 @@ export function ThemePicker() {
       <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
         Choose how the app looks on this device.
       </Text>
-      <View style={{ flexDirection: 'row', gap: 10 }}>
-        {choices.map(({ name, label }) => {
+      <View
+        style={{
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          rowGap: 14,
+          marginHorizontal: -5,
+        }}
+      >
+        {APPEARANCE_NAMES.map((name) => {
+          const { label } = appearances[name];
           const preview = palettes[name];
           const selected = appearance === name;
 
@@ -40,7 +42,7 @@ export function ThemePicker() {
               accessibilityLabel={`${label} theme`}
               accessibilityState={{ checked: selected }}
               onPress={() => setAppearance(name)}
-              style={{ flex: 1, gap: 7 }}
+              style={{ width: '33.333%', paddingHorizontal: 5, gap: 7 }}
             >
               <View
                 style={{

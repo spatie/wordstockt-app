@@ -1,14 +1,17 @@
-import type { ThemeColors } from '../../config/theme';
+import { isLightAppearance, type ThemeColors } from '../../config/theme';
 import { useThemedStyles } from '../../hooks/useThemeColors';
 import { useAppearanceStore } from '../../stores/appearanceStore';
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { shuffle as shuffleArray } from 'lodash-es';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  cancelAnimation,
   withRepeat,
+  withSequence,
   withTiming,
+  type SharedValue,
   Easing,
   interpolate,
 } from 'react-native-reanimated';
@@ -61,6 +64,20 @@ interface OrbProps {
   gradientIdPrefix: string;
   initialDelay?: number;
   startProgress?: number;
+  paused?: boolean;
+}
+
+// Run from the current value to 1, then bounce between 0 and 1 forever.
+// Starting from the current value lets a paused orb resume where it stopped.
+function loopFromCurrent(progress: SharedValue<number>, duration: number) {
+  const easing = Easing.inOut(Easing.ease);
+
+  progress.set(
+    withSequence(
+      withTiming(1, { duration: duration * (1 - progress.get()), easing }),
+      withRepeat(withTiming(0, { duration, easing }), -1, true)
+    )
+  );
 }
 
 function GlowOrb({
@@ -79,6 +96,7 @@ function GlowOrb({
   gradientIdPrefix,
   initialDelay = 0,
   startProgress = 0,
+  paused = false,
 }: OrbProps) {
   const styles = useThemedStyles(createStyles);
   const moveProgress = useSharedValue(startProgress);
@@ -86,39 +104,17 @@ function GlowOrb({
   const colorProgress = useSharedValue(startProgress);
 
   useEffect(() => {
+    if (paused) {
+      cancelAnimation(moveProgress);
+      cancelAnimation(scaleProgress);
+      cancelAnimation(colorProgress);
+      return;
+    }
+
     const startAnimation = () => {
-      moveProgress.set(
-        withRepeat(
-          withTiming(1, {
-            duration: moveDuration,
-            easing: Easing.inOut(Easing.ease),
-          }),
-          -1,
-          true
-        )
-      );
-
-      scaleProgress.set(
-        withRepeat(
-          withTiming(1, {
-            duration: scaleDuration,
-            easing: Easing.inOut(Easing.ease),
-          }),
-          -1,
-          true
-        )
-      );
-
-      colorProgress.set(
-        withRepeat(
-          withTiming(1, {
-            duration: colorDuration,
-            easing: Easing.inOut(Easing.ease),
-          }),
-          -1,
-          true
-        )
-      );
+      loopFromCurrent(moveProgress, moveDuration);
+      loopFromCurrent(scaleProgress, scaleDuration);
+      loopFromCurrent(colorProgress, colorDuration);
     };
 
     if (initialDelay > 0) {
@@ -128,6 +124,7 @@ function GlowOrb({
 
     startAnimation();
   }, [
+    paused,
     moveDuration,
     scaleDuration,
     colorDuration,
@@ -224,13 +221,17 @@ const COLOR_PAIRS = [
   ['#8B5CF6', '#EC4899'], // Purple/Pink
 ];
 
-export function GlowingBackground() {
-  const appearance = useAppearanceStore((state) => state.appearance);
-  const styles = useThemedStyles(createStyles);
-  // Randomize on mount - useMemo ensures values persist during component lifetime
-  const randomValues = useMemo(() => {
+// Randomized once per app session so every screen shows the same glow
+let sessionRandomValues: {
+  colors: string[][];
+  startProgress: number[];
+  positionOffsets: { x: number; y: number }[];
+} | null = null;
+
+function getSessionRandomValues() {
+  if (!sessionRandomValues) {
     const shuffledColors = shuffleArray(COLOR_PAIRS);
-    return {
+    sessionRandomValues = {
       colors: [...shuffledColors, ...shuffleArray(COLOR_PAIRS)].slice(0, 7),
       startProgress: Array.from({ length: 7 }, () => Math.random()),
       positionOffsets: Array.from({ length: 7 }, () => ({
@@ -238,7 +239,15 @@ export function GlowingBackground() {
         y: (Math.random() - 0.5) * 100,
       })),
     };
-  }, []);
+  }
+
+  return sessionRandomValues;
+}
+
+export function GlowingBackground({ paused = false }: { paused?: boolean }) {
+  const appearance = useAppearanceStore((state) => state.appearance);
+  const styles = useThemedStyles(createStyles);
+  const randomValues = getSessionRandomValues();
 
   const orbSize1 = Math.min(SCREEN_WIDTH * 1.6, 620);
   const orbSize2 = Math.min(SCREEN_WIDTH * 1.2, 460);
@@ -248,7 +257,7 @@ export function GlowingBackground() {
   const orbSize6 = Math.min(SCREEN_WIDTH * 0.9, 340);
   const orbSize7 = Math.min(SCREEN_WIDTH * 1.3, 500);
 
-  if (appearance !== 'navy') {
+  if (isLightAppearance(appearance)) {
     return null;
   }
 
@@ -272,6 +281,7 @@ export function GlowingBackground() {
         colorDuration={12000}
         gradientIdPrefix="orb1"
         startProgress={randomValues.startProgress[0]}
+        paused={paused}
       />
 
       {/* Orb 2 - left side */}
@@ -290,6 +300,7 @@ export function GlowingBackground() {
         colorDuration={14000}
         gradientIdPrefix="orb2"
         startProgress={randomValues.startProgress[1]}
+        paused={paused}
       />
 
       {/* Orb 3 - bottom area */}
@@ -310,6 +321,7 @@ export function GlowingBackground() {
         colorDuration={10000}
         gradientIdPrefix="orb3"
         startProgress={randomValues.startProgress[2]}
+        paused={paused}
       />
 
       {/* Orb 4 - center */}
@@ -328,6 +340,7 @@ export function GlowingBackground() {
         colorDuration={15000}
         gradientIdPrefix="orb4"
         startProgress={randomValues.startProgress[3]}
+        paused={paused}
       />
 
       {/* Orb 5 - top left area */}
@@ -346,6 +359,7 @@ export function GlowingBackground() {
         colorDuration={13000}
         gradientIdPrefix="orb5"
         startProgress={randomValues.startProgress[4]}
+        paused={paused}
       />
 
       {/* Orb 6 - right side middle */}
@@ -366,6 +380,7 @@ export function GlowingBackground() {
         colorDuration={11000}
         gradientIdPrefix="orb6"
         startProgress={randomValues.startProgress[5]}
+        paused={paused}
       />
 
       {/* Orb 7 - bottom right area */}
@@ -386,6 +401,7 @@ export function GlowingBackground() {
         colorDuration={12000}
         gradientIdPrefix="orb7"
         startProgress={randomValues.startProgress[6]}
+        paused={paused}
       />
     </View>
   );

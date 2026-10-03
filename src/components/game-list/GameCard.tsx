@@ -10,6 +10,7 @@ import { TurnTimer } from '../game/TurnTimer';
 import { timeAgo } from '../../utils/timeAgo';
 import { RADIUS, SPACING } from '../../config/constants';
 import { useStartGame } from '../../api/queries/useGames';
+import { usePrefetchGame } from '../../api/queries/useGame';
 import type { GameListItem, GameListPlayer } from '../../types';
 
 interface GameCardProps {
@@ -130,9 +131,15 @@ export const GameCard = memo(function GameCard({
     ? computePlacement(game.players, userUlid)
     : null;
 
+  const prefetchGame = usePrefetchGame();
+
   const handlePress = useCallback(() => {
     onPress(game.ulid);
   }, [onPress, game.ulid]);
+
+  const handlePressIn = useCallback(() => {
+    prefetchGame(game.ulid);
+  }, [prefetchGame, game.ulid]);
 
   const handleDelete = useCallback(() => {
     onDelete?.(game.ulid);
@@ -184,11 +191,7 @@ export const GameCard = memo(function GameCard({
         : formatLastMove(game.lastMoveDescription, game.status, game.isMyTurn);
 
   return (
-    <Card
-      onPress={handlePress}
-      showAccent={!isCompleted && game.isMyTurn}
-      style={[!game.isMyTurn && styles.opponentTurnCard]}
-    >
+    <Card onPress={handlePress} onPressIn={handlePressIn}>
       <View style={styles.cardTop}>
         {emptyState ? (
           emptyState.showPublicIcon ? (
@@ -251,30 +254,24 @@ export const GameCard = memo(function GameCard({
         </View>
         {!isAwaitingPlayers && (
           <View style={styles.scoreContainer}>
-            <Text style={styles.scoreLabel}>SCORES</Text>
-            <View style={styles.scoreBox}>
-              <Text style={styles.scoreText}>
-                {game.players.map((player, index) => (
-                  <Text key={player.ulid}>
-                    {index > 0 && (
-                      <Text style={styles.scoreSeparator}> · </Text>
-                    )}
-                    <Text
-                      style={[
-                        player.isMe && styles.scoreMine,
-                        player.hasLeft && styles.scoreLeft,
-                      ]}
-                    >
-                      {player.score}
-                    </Text>
+            <Text style={styles.scoreText}>
+              {game.players.map((player, index) => (
+                <Text key={player.ulid}>
+                  {index > 0 && <Text style={styles.scoreSeparator}> · </Text>}
+                  <Text
+                    style={[
+                      player.isMe && styles.scoreMine,
+                      player.hasLeft && styles.scoreLeft,
+                    ]}
+                  >
+                    {player.score}
                   </Text>
-                ))}
-              </Text>
-            </View>
+                </Text>
+              ))}
+            </Text>
           </View>
         )}
       </View>
-      <View style={styles.cardDivider} />
       <View style={styles.cardBottom}>
         <View style={styles.timeContainer}>
           <Text style={styles.languageBadge}>
@@ -417,22 +414,14 @@ const createStyles = (colors: ThemeColors) =>
     },
     scoreContainer: {
       alignItems: 'flex-end',
-    },
-    scoreLabel: {
-      fontSize: 11,
-      color: colors.textSecondary,
-      marginBottom: 4,
-    },
-    scoreBox: {
-      backgroundColor: colors.border,
-      paddingHorizontal: SPACING.md,
-      paddingVertical: 6,
-      borderRadius: RADIUS.md,
+      marginLeft: SPACING.md,
+      paddingTop: 2,
     },
     scoreText: {
-      fontSize: 16,
+      fontSize: 17,
       fontWeight: '400',
-      color: colors.textSecondary,
+      color: colors.textMuted,
+      fontVariant: ['tabular-nums'],
     },
     scoreMine: {
       fontWeight: '700',
@@ -446,12 +435,8 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.textMuted,
       fontWeight: '400',
     },
-    cardDivider: {
-      height: 1,
-      backgroundColor: colors.border,
-      marginVertical: SPACING.md,
-    },
     cardBottom: {
+      marginTop: SPACING.md,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -514,10 +499,6 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: 14,
       fontWeight: '600',
       color: colors.onResult,
-    },
-    opponentTurnCard: {
-      borderWidth: 1,
-      borderColor: colors.border,
     },
     viewButton: {
       backgroundColor: colors.backgroundLight,

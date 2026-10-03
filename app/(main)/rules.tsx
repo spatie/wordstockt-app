@@ -3,6 +3,13 @@ import { useThemedStyles } from '../../src/hooks/useThemeColors';
 import React from 'react';
 import { View, StyleSheet, ScrollView, Text } from 'react-native';
 import { MULTIPLIER_COLORS } from '../../src/config/theme';
+import { Card } from '../../src/components/ui/Card';
+import { withAlpha } from '../../src/utils/color';
+
+const HIGHLIGHT_COLORS = {
+  red: '#FF6B6B',
+  blue: '#4A90D9',
+} as const;
 
 function RuleCard({
   title,
@@ -15,16 +22,15 @@ function RuleCard({
 }) {
   const styles = useThemedStyles(createStyles);
   return (
-    <View
-      style={[
-        styles.card,
-        highlight === 'red' && styles.cardHighlightRed,
-        highlight === 'blue' && styles.cardHighlightBlue,
-      ]}
+    <Card
+      padding="xl"
+      marginBottom="lg"
+      showAccent={highlight !== undefined}
+      accentColor={highlight && HIGHLIGHT_COLORS[highlight]}
     >
       <Text style={styles.cardTitle}>{title}</Text>
       {children}
-    </View>
+    </Card>
   );
 }
 
@@ -341,20 +347,6 @@ const createStyles = (colors: ThemeColors) =>
       lineHeight: 22,
       marginBottom: 24,
     },
-    card: {
-      backgroundColor: colors.backgroundLight,
-      borderRadius: 16,
-      padding: 20,
-      marginBottom: 16,
-      borderLeftWidth: 4,
-      borderLeftColor: colors.border,
-    },
-    cardHighlightRed: {
-      borderLeftColor: '#FF6B6B',
-    },
-    cardHighlightBlue: {
-      borderLeftColor: '#4A90D9',
-    },
     cardTitle: {
       fontSize: 18,
       fontWeight: '700',
@@ -509,11 +501,9 @@ const createStyles = (colors: ThemeColors) =>
     },
     exampleBox: {
       marginTop: 16,
-      backgroundColor: colors.background,
-      borderRadius: 8,
+      backgroundColor: withAlpha(colors.primary, 0.12),
+      borderRadius: 12,
       padding: 12,
-      borderLeftWidth: 3,
-      borderLeftColor: colors.primary,
     },
     exampleTitle: {
       fontSize: 13,
