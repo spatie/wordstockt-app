@@ -29,8 +29,8 @@ export function HeaderMenu() {
       case 'achievements':
         router.navigate(ROUTES.ACHIEVEMENTS as Href);
         break;
-      case 'change-password':
-        router.navigate(ROUTES.CHANGE_PASSWORD);
+      case 'settings':
+        router.navigate(ROUTES.SETTINGS);
         break;
       case 'create-account':
         router.navigate(ROUTES.CONVERT_ACCOUNT);
@@ -60,11 +60,7 @@ export function HeaderMenu() {
     achievements: { id: 'achievements', title: 'Achievements', image: 'star' },
     friends: { id: 'friends', title: 'Friends', image: 'person.2' },
     profile: { id: 'profile', title: 'Profile', image: 'person.circle' },
-    changePassword: {
-      id: 'change-password',
-      title: 'Change Password',
-      image: 'key',
-    },
+    settings: { id: 'settings', title: 'Settings', image: 'gearshape' },
     createAccount: {
       id: 'create-account',
       title: 'Create Free Account',
@@ -92,8 +88,8 @@ export function HeaderMenu() {
     : [menuItems.leaderboard, menuItems.achievements, menuItems.friends];
 
   const accountItems = isGuest
-    ? [menuItems.profile, menuItems.createAccount]
-    : [menuItems.profile, menuItems.changePassword];
+    ? [menuItems.profile, menuItems.settings, menuItems.createAccount]
+    : [menuItems.profile, menuItems.settings];
 
   const actions: MenuAction[] = [
     ...(socialItems.length > 0

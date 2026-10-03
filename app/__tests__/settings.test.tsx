@@ -1,6 +1,11 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
-import ProfileScreen from '../(main)/profile';
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+} from '@testing-library/react-native';
+import SettingsScreen from '../(main)/settings';
 import { useAuthStore } from '../../src/stores/authStore';
 
 // Mock expo-router
@@ -107,7 +112,7 @@ const mockUser = {
   isGuest: false,
 };
 
-describe('ProfileScreen', () => {
+describe('SettingsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseAuthStore.mockImplementation((selector: any) =>
@@ -115,27 +120,86 @@ describe('ProfileScreen', () => {
     );
   });
 
-  it('renders the user and a link to edit the profile', async () => {
-    await render(<ProfileScreen />);
+  it('renders the account form', async () => {
+    await render(<SettingsScreen />);
 
-    expect(screen.getByText('TE')).toBeTruthy(); // Avatar initials
-    expect(screen.getByText('testuser')).toBeTruthy();
-    expect(screen.getByText('Edit profile')).toBeTruthy();
+    // Email is in a TextInput, so use getByDisplayValue
+    expect(screen.getByDisplayValue('test@example.com')).toBeTruthy();
+    expect(screen.getByDisplayValue('testuser')).toBeTruthy();
   });
 
-  it('displays user statistics', async () => {
-    await render(<ProfileScreen />);
+  it('save button is initially disabled when username is unchanged', async () => {
+    await render(<SettingsScreen />);
 
-    expect(screen.getByText('Word & Move Records')).toBeTruthy();
-    expect(screen.getByText('Game Performance')).toBeTruthy();
+    // Button should exist and be disabled (opacity style applied)
+    const saveButton = screen.getByText('Save Changes');
+    expect(saveButton).toBeTruthy();
+  });
+
+  it('enables save button when username is changed to valid value', async () => {
+    await render(<SettingsScreen />);
+
+    const usernameInput = screen.getByDisplayValue('testuser');
+    await fireEvent.changeText(usernameInput, 'newusername');
+
+    // Save button should be pressable after valid change
+    const saveButton = screen.getByText('Save Changes');
+    expect(saveButton).toBeTruthy();
+  });
+
+  it('keeps save button disabled when username is too short', async () => {
+    await render(<SettingsScreen />);
+
+    const usernameInput = screen.getByDisplayValue('testuser');
+    await fireEvent.changeText(usernameInput, 'ab'); // Too short
+
+    // Button should still exist
+    const saveButton = screen.getByText('Save Changes');
+    expect(saveButton).toBeTruthy();
+  });
+
+  it('keeps save button disabled when username contains invalid characters', async () => {
+    await render(<SettingsScreen />);
+
+    const usernameInput = screen.getByDisplayValue('testuser');
+    await fireEvent.changeText(usernameInput, 'invalid user!'); // Invalid characters
+
+    // Button should still exist
+    const saveButton = screen.getByText('Save Changes');
+    expect(saveButton).toBeTruthy();
+  });
+
+  it('calls updateProfile when save is pressed', async () => {
+    mockMutateAsync.mockResolvedValue({});
+    await render(<SettingsScreen />);
+
+    const usernameInput = screen.getByDisplayValue('testuser');
+    await fireEvent.changeText(usernameInput, 'newusername');
+
+    const saveButton = screen.getByText('Save Changes').parent;
+    await fireEvent.press(saveButton!);
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith({ username: 'newusername' });
+    });
   });
 
   it('returns null when no user is present', async () => {
     mockUseAuthStore.mockImplementation((selector: any) =>
       selector({ user: null })
     );
-    const { toJSON } = await render(<ProfileScreen />);
+    const { toJSON } = await render(<SettingsScreen />);
 
     expect(toJSON()).toBeNull();
+  });
+
+  it('shows username validation hint', async () => {
+    await render(<SettingsScreen />);
+
+    expect(
+      screen.getByText(
+        '3-20 characters, letters, numbers, and underscores only'
+      )
+    ).toBeTruthy();
   });
 });

@@ -7,6 +7,7 @@ export const ROUTES = {
   // Main routes
   HOME: '/(main)',
   PROFILE: '/(main)/profile',
+  SETTINGS: '/(main)/settings',
   LEADERBOARD: '/(main)/leaderboard',
   FRIENDS: '/(main)/friends',
   ACHIEVEMENTS: '/(main)/achievements',

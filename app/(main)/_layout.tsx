@@ -65,6 +65,7 @@ export default function MainLayout() {
           options={{ title: 'Move history' }}
         />
         <Stack.Screen name="profile" options={{ title: 'Profile' }} />
+        <Stack.Screen name="settings" options={{ title: 'Settings' }} />
         <Stack.Screen name="leaderboard" options={{ title: 'Leaderboard' }} />
         <Stack.Screen name="friends" options={{ title: 'Friends' }} />
         <Stack.Screen name="achievements" options={{ title: 'Achievements' }} />
