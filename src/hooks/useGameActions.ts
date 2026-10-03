@@ -9,6 +9,7 @@ import {
 import { useApiError } from './useApiError';
 import { isTimeoutError } from '../api/client';
 import type { PendingTile, Tile } from '../types';
+import { haptics } from '../utils/haptics';
 
 interface UseGameActionsOptions {
   gameUlid: string;
@@ -52,6 +53,7 @@ export function useGameActions({
         tiles: pendingTiles,
       });
       clearPendingTiles();
+      haptics.success();
       const words = result.move.words?.join(', ') ?? '';
       return {
         success: true,
@@ -59,6 +61,7 @@ export function useGameActions({
         words,
       };
     } catch (err) {
+      haptics.error();
       if (isTimeoutError(err)) {
         setErrorMessage(
           "Your move couldn't be submitted right now. Please check your connection and try again."
@@ -106,6 +109,7 @@ export function useGameActions({
 
       // Mark swap as completed (will show "Ok" button and trigger animations)
       completeSwap();
+      haptics.success();
       clearPendingTiles();
     } catch (err) {
       setError(err);

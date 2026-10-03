@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useGameStore } from '../stores/gameStore';
 import { useDragDrop } from '../context/DragDropContext';
 import type { Game, PendingTile } from '../types';
+import { haptics } from '../utils/haptics';
 
 interface UseRackActionsOptions {
   game: Game | undefined;
@@ -48,6 +49,8 @@ export function useRackActions({ game, pendingTiles }: UseRackActionsOptions) {
   // Updates shared value for instant animation, syncs to Zustand for persistence
   const handleMix = useCallback(() => {
     if (!game) return;
+
+    haptics.tick();
 
     // Get current permutation from shared value
     const currentPerm = [...rackPermutationShared.value];

@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useGameStore } from '../stores/gameStore';
 import type { Game, PendingTile } from '../types';
 import type { DropTarget } from '../context/DragDropContext';
+import { haptics } from '../utils/haptics';
 
 interface UseTilePlacementOptions {
   game: Game | undefined;
@@ -58,6 +59,7 @@ export function useTilePlacement({
         const tile = game.myRack[actualRackIndex];
         if (tile) {
           placeTile(tile, target.x, target.y, actualRackIndex);
+          haptics.place();
 
           // If it's a blank tile (letter is '*'), open the letter selection modal
           if (tile.isBlank && tile.letter === '*') {
@@ -68,6 +70,7 @@ export function useTilePlacement({
         return false;
       } else if (target.type === 'rack') {
         insertByActualIndex(actualRackIndex, target.slotIndex);
+        haptics.tick();
         return true;
       }
       return false;
