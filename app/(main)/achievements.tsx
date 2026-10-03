@@ -14,6 +14,7 @@ import {
 import { ActivityIndicator } from 'react-native-paper';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useAchievements } from '../../src/api/queries/useAchievements';
+import { EmptyState } from '../../src/components/ui/EmptyState';
 import { ErrorView } from '../../src/components/ui/ErrorView';
 import { Card } from '../../src/components/ui/Card';
 import { SPACING, LAYOUT } from '../../src/config/constants';
@@ -179,12 +180,11 @@ export default function AchievementsScreen() {
           />
         }
         ListEmptyComponent={
-          <Animated.View
-            style={styles.emptyContainer}
-            entering={FadeIn.duration(300)}
-          >
-            <Text style={styles.emptyText}>No achievements available</Text>
-          </Animated.View>
+          <EmptyState
+            icon="ribbon-outline"
+            title="No achievements yet"
+            message="Play games to start unlocking achievements."
+          />
         }
       />
     </View>
@@ -312,13 +312,5 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.textPrimary,
       fontSize: 16,
       fontWeight: 'bold',
-    },
-    emptyContainer: {
-      alignItems: 'center',
-      padding: 32,
-    },
-    emptyText: {
-      fontSize: 16,
-      color: colors.textSecondary,
     },
   });

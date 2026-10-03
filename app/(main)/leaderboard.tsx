@@ -15,6 +15,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useLeaderboard } from '../../src/api/queries/useUsers';
 import { ErrorView } from '../../src/components/ui/ErrorView';
+import { EmptyState } from '../../src/components/ui/EmptyState';
 import { Card } from '../../src/components/ui/Card';
 import { GroupedRow } from '../../src/components/ui/GroupedRow';
 import { useAuthStore } from '../../src/stores/authStore';
@@ -274,11 +275,11 @@ export default function LeaderboardScreen() {
             />
           }
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
-                No players on the leaderboard yet
-              </Text>
-            </View>
+            <EmptyState
+              icon="podium-outline"
+              title="No one here yet"
+              message="Win a game this period to be the first on the leaderboard."
+            />
           }
         />
       </Animated.View>
@@ -363,14 +364,6 @@ const createStyles = (colors: ThemeColors) =>
     },
     metricLabel: {
       fontSize: 11,
-      color: colors.textSecondary,
-    },
-    emptyContainer: {
-      alignItems: 'center',
-      padding: 32,
-    },
-    emptyText: {
-      fontSize: 16,
       color: colors.textSecondary,
     },
     currentUserFooter: {

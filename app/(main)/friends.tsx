@@ -17,6 +17,7 @@ import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useFriends } from '../../src/api/queries/useFriends';
 import { ErrorView } from '../../src/components/ui/ErrorView';
+import { EmptyState } from '../../src/components/ui/EmptyState';
 import { FriendRow } from '../../src/components/friends/FriendRow';
 import { HeaderMenu } from '../../src/components/ui/HeaderMenu';
 import { AddFriendModal } from '../../src/components/friends/AddFriendModal';
@@ -133,13 +134,13 @@ export default function FriendsScreen() {
           />
         }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle}>No friends yet</Text>
-            <Text style={styles.emptyText}>
-              Tap the add friend button at the top to add someone by username,
-              or open their profile from a game or the leaderboard.
-            </Text>
-          </View>
+          <EmptyState
+            icon="people-outline"
+            title="No friends yet"
+            message="Add someone by username, or from their profile in a game or the leaderboard."
+            actionLabel="Add friend"
+            onAction={() => setShowAddModal(true)}
+          />
         }
       />
 
@@ -177,22 +178,6 @@ const createStyles = (colors: ThemeColors) =>
     list: {
       padding: 16,
       paddingTop: 0,
-    },
-    emptyContainer: {
-      alignItems: 'center',
-      padding: 32,
-    },
-    emptyTitle: {
-      fontSize: 18,
-      fontWeight: '600',
-      color: colors.textPrimary,
-      marginBottom: 8,
-    },
-    emptyText: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      textAlign: 'center',
-      lineHeight: 20,
     },
     headerButtons: {
       flexDirection: 'row',

@@ -60,6 +60,7 @@ import {
   type CreateGameParams,
 } from '../../src/components/game-list';
 import { TabBar } from '../../src/components/ui/TabBar';
+import { EmptyState } from '../../src/components/ui/EmptyState';
 import { getApiError } from '../../src/api/client';
 import { SPACING, RADIUS, LAYOUT } from '../../src/config/constants';
 import { ROUTES } from '../../src/config/routes';
@@ -330,6 +331,14 @@ export default function HomeScreen() {
     [push]
   );
 
+  const openCreateGame = () => {
+    if (isGuest && activeGames.length >= 3) {
+      showGameLimitPrompt();
+      return;
+    }
+    setShowCreateModal(true);
+  };
+
   const handleCreateGame = async (params: CreateGameParams) => {
     try {
       const result = await createGame.mutateAsync(params);
@@ -486,15 +495,13 @@ export default function HomeScreen() {
           </>
         )}
         {activeGames.length === 0 && (
-          <Animated.View
-            style={styles.emptyContainer}
-            entering={FadeIn.duration(300)}
-          >
-            <Text style={styles.emptyText}>No active games</Text>
-            <Text style={styles.emptySubtext}>
-              Create a new game or join a public one to get started!
-            </Text>
-          </Animated.View>
+          <EmptyState
+            icon="grid-outline"
+            title="No games yet"
+            message="Start a game with a friend, or join a public game."
+            actionLabel="New game"
+            onAction={openCreateGame}
+          />
         )}
       </>
     );
@@ -513,15 +520,13 @@ export default function HomeScreen() {
           </Animated.View>
         ))
       ) : (
-        <Animated.View
-          style={styles.emptyContainer}
-          entering={FadeIn.duration(300)}
-        >
-          <Text style={styles.emptyText}>No public games</Text>
-          <Text style={styles.emptySubtext}>
-            Create a public game and let others join!
-          </Text>
-        </Animated.View>
+        <EmptyState
+          icon="globe-outline"
+          title="No open games"
+          message="Nobody is looking for players right now. Start a public game and anyone can join."
+          actionLabel="New game"
+          onAction={openCreateGame}
+        />
       )}
     </>
   );
@@ -543,15 +548,11 @@ export default function HomeScreen() {
           </Animated.View>
         ))
       ) : (
-        <Animated.View
-          style={styles.emptyContainer}
-          entering={FadeIn.duration(300)}
-        >
-          <Text style={styles.emptyText}>No completed games</Text>
-          <Text style={styles.emptySubtext}>
-            Your finished games will appear here.
-          </Text>
-        </Animated.View>
+        <EmptyState
+          icon="trophy-outline"
+          title="No finished games yet"
+          message="Games you've won or lost show up here."
+        />
       )}
     </>
   );
@@ -582,13 +583,7 @@ export default function HomeScreen() {
 
       <Animated.View style={styles.fabContainer}>
         <Pressable
-          onPress={() => {
-            if (isGuest && activeGames.length >= 3) {
-              showGameLimitPrompt();
-              return;
-            }
-            setShowCreateModal(true);
-          }}
+          onPress={openCreateGame}
           style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
         >
           <View style={styles.fabInner}>
@@ -655,20 +650,6 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: 12,
       color: colors.primary,
       fontWeight: '500',
-    },
-    emptyContainer: {
-      alignItems: 'center',
-      padding: 48,
-    },
-    emptyText: {
-      fontSize: 18,
-      color: colors.textSecondary,
-      marginBottom: SPACING.sm,
-    },
-    emptySubtext: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      opacity: 0.7,
     },
     fabContainer: {
       position: 'absolute',
