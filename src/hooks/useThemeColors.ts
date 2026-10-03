@@ -1,7 +1,10 @@
 import { useMemo } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, useColorScheme } from 'react-native';
 import { isLightAppearance, palettes, type ThemeColors } from '../config/theme';
-import { useAppearanceStore } from '../stores/appearanceStore';
+import {
+  useAppearanceStore,
+  type AppearanceName,
+} from '../stores/appearanceStore';
 
 const stylesheetCache = new WeakMap<
   (colors: ThemeColors) => object,
@@ -29,16 +32,25 @@ function getThemedStyles<T extends StyleSheet.NamedStyles<T>>(
   return styles as T;
 }
 
-export function useThemeColors(): ThemeColors {
+// The theme in use: the chosen one, or Paper/Navy when following the system
+export function useAppearance(): AppearanceName {
   const appearance = useAppearanceStore((state) => state.appearance);
+  const followSystem = useAppearanceStore((state) => state.followSystem);
+  const systemScheme = useColorScheme();
 
-  return palettes[appearance];
+  if (!followSystem) {
+    return appearance;
+  }
+
+  return systemScheme === 'light' ? 'paper' : 'navy';
+}
+
+export function useThemeColors(): ThemeColors {
+  return palettes[useAppearance()];
 }
 
 export function useIsLightAppearance(): boolean {
-  const appearance = useAppearanceStore((state) => state.appearance);
-
-  return isLightAppearance(appearance);
+  return isLightAppearance(useAppearance());
 }
 
 export function useThemeBlurTint(): 'light' | 'dark' {

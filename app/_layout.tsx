@@ -17,6 +17,7 @@ import {
 import { useAuthStore } from '../src/stores/authStore';
 import { useNavigationStore } from '../src/stores/navigationStore';
 import { useAppearanceStore } from '../src/stores/appearanceStore';
+import { useAppearance } from '../src/hooks/useThemeColors';
 import { LogoutOverlay } from '../src/components/ui/LogoutOverlay';
 import { SnackbarProvider } from '../src/components/ui/SnackbarProvider';
 import {
@@ -41,7 +42,7 @@ SplashScreen.setOptions({ duration: 300, fade: true });
 let hasBeenReady = false;
 
 function RootLayoutNav() {
-  const appearance = useAppearanceStore((s) => s.appearance);
+  const appearance = useAppearance();
   const colors = palettes[appearance];
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const user = useAuthStore((s) => s.user);
@@ -86,7 +87,8 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  const appearance = useAppearanceStore((s) => s.appearance);
+  const appearance = useAppearance();
+  const followSystem = useAppearanceStore((s) => s.followSystem);
   const isAppearanceHydrated = useAppearanceStore((s) => s.isHydrated);
   const colors = palettes[appearance];
   const isLoading = useAuthStore((s) => s.isLoading);
@@ -102,14 +104,21 @@ export default function RootLayout() {
     }
   }, [isAppReady]);
 
-  // Native UI (menus, alerts, keyboard) follows the app's theme, not the system's
+  // Native UI (menus, alerts, keyboard) follows the app's theme. When the
+  // app follows the system, hand the color scheme back to the system so it
+  // can be observed.
   useEffect(() => {
-    if (Platform.OS !== 'web') {
-      Appearance.setColorScheme(
-        isLightAppearance(appearance) ? 'light' : 'dark'
-      );
+    if (Platform.OS === 'web') {
+      return;
     }
-  }, [appearance]);
+
+    if (followSystem) {
+      Appearance.setColorScheme('unspecified');
+      return;
+    }
+
+    Appearance.setColorScheme(isLightAppearance(appearance) ? 'light' : 'dark');
+  }, [appearance, followSystem]);
 
   return (
     <GestureHandlerRootView

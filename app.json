@@ -5,7 +5,7 @@
     "version": "1.8.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "backgroundColor": "#0D1B2A",
     "scheme": "wordstockt",
     "runtimeVersion": {

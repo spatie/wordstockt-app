@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Switch, Text, View } from 'react-native';
 import { appearances, palettes } from '../../config/theme';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import {
@@ -10,6 +10,8 @@ import {
 export function ThemePicker() {
   const appearance = useAppearanceStore((state) => state.appearance);
   const setAppearance = useAppearanceStore((state) => state.setAppearance);
+  const followSystem = useAppearanceStore((state) => state.followSystem);
+  const setFollowSystem = useAppearanceStore((state) => state.setFollowSystem);
   const colors = useThemeColors();
 
   return (
@@ -25,6 +27,32 @@ export function ThemePicker() {
       <View
         style={{
           flexDirection: 'row',
+          alignItems: 'center',
+          gap: 12,
+          backgroundColor: colors.backgroundLight,
+          borderRadius: 12,
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+        }}
+      >
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={{ color: colors.textPrimary, fontSize: 16 }}>
+            Match system
+          </Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+            Paper in light mode, Navy in dark mode
+          </Text>
+        </View>
+        <Switch
+          accessibilityLabel="Match system appearance"
+          value={followSystem}
+          onValueChange={setFollowSystem}
+          trackColor={{ true: colors.primary }}
+        />
+      </View>
+      <View
+        style={{
+          flexDirection: 'row',
           flexWrap: 'wrap',
           rowGap: 14,
           marginHorizontal: -5,
@@ -33,7 +61,7 @@ export function ThemePicker() {
         {APPEARANCE_NAMES.map((name) => {
           const { label } = appearances[name];
           const preview = palettes[name];
-          const selected = appearance === name;
+          const selected = !followSystem && appearance === name;
 
           return (
             <Pressable

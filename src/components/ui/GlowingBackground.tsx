@@ -1,6 +1,5 @@
 import { isLightAppearance, type ThemeColors } from '../../config/theme';
-import { useThemedStyles } from '../../hooks/useThemeColors';
-import { useAppearanceStore } from '../../stores/appearanceStore';
+import { useAppearance, useThemedStyles } from '../../hooks/useThemeColors';
 import React, { useEffect } from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { shuffle as shuffleArray } from 'lodash-es';
@@ -245,7 +244,7 @@ function getSessionRandomValues() {
 }
 
 export function GlowingBackground({ paused = false }: { paused?: boolean }) {
-  const appearance = useAppearanceStore((state) => state.appearance);
+  const appearance = useAppearance();
   const styles = useThemedStyles(createStyles);
   const randomValues = getSessionRandomValues();
 
