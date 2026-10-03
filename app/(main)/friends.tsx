@@ -13,15 +13,15 @@ import {
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { ActivityIndicator } from 'react-native-paper';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Animated from 'react-native-reanimated';
 import { useFriends } from '../../src/api/queries/useFriends';
 import { ErrorView } from '../../src/components/ui/ErrorView';
-import { FriendCard } from '../../src/components/friends/FriendCard';
+import { FriendRow } from '../../src/components/friends/FriendRow';
+import { HeaderMenu } from '../../src/components/ui/HeaderMenu';
 import { AddFriendModal } from '../../src/components/friends/AddFriendModal';
 import { useSnackbar } from '../../src/components/ui/SnackbarProvider';
-import { SPACING, LAYOUT } from '../../src/config/constants';
+import { LAYOUT } from '../../src/config/constants';
 import { ROUTES } from '../../src/config/routes';
 import type { Friend } from '../../src/types';
 
@@ -59,10 +59,15 @@ export default function FriendsScreen() {
   }, [showSnackbar]);
 
   const renderFriend = useCallback(
-    ({ item }: { item: Friend }) => (
-      <FriendCard friend={item} onPress={handleFriendPress} />
+    ({ item, index }: { item: Friend; index: number }) => (
+      <FriendRow
+        friend={item}
+        isFirst={index === 0}
+        isLast={index === sortedFriends.length - 1}
+        onPress={handleFriendPress}
+      />
     ),
-    [handleFriendPress]
+    [handleFriendPress, sortedFriends.length]
   );
 
   if (isLoading) {
@@ -85,6 +90,31 @@ export default function FriendsScreen() {
 
   return (
     <View style={styles.container}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <View style={styles.headerButtons}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Add friend"
+                onPress={() => setShowAddModal(true)}
+                hitSlop={4}
+                style={({ pressed }) => [
+                  styles.headerButton,
+                  pressed && styles.headerButtonPressed,
+                ]}
+              >
+                <Ionicons
+                  name="person-add-outline"
+                  size={22}
+                  color={colors.textPrimary}
+                />
+              </Pressable>
+              <HeaderMenu />
+            </View>
+          ),
+        }}
+      />
       <View style={styles.headerSection}>
         <Text style={styles.subtitle}>
           {friends?.length ?? 0} {friends?.length === 1 ? 'friend' : 'friends'}
@@ -106,23 +136,12 @@ export default function FriendsScreen() {
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyTitle}>No friends yet</Text>
             <Text style={styles.emptyText}>
-              Tap the + button to add a friend by username, or view their
-              profile from the game list or leaderboard.
+              Tap the add friend button at the top to add someone by username,
+              or open their profile from a game or the leaderboard.
             </Text>
           </View>
         }
       />
-
-      <Animated.View style={styles.fabContainer}>
-        <Pressable
-          onPress={() => setShowAddModal(true)}
-          style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
-        >
-          <View style={styles.fabInner}>
-            <Ionicons name="person-add" size={26} color={colors.onPrimary} />
-          </View>
-        </Pressable>
-      </Animated.View>
 
       <AddFriendModal
         visible={showAddModal}
@@ -175,32 +194,17 @@ const createStyles = (colors: ThemeColors) =>
       textAlign: 'center',
       lineHeight: 20,
     },
-    fabContainer: {
-      position: 'absolute',
-      right: SPACING.xl,
-      bottom: SPACING.xl,
-    },
-    fab: {
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      backgroundColor: colors.primary,
-      shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.4,
-      shadowRadius: 8,
-      elevation: 8,
-    },
-    fabPressed: {
-      transform: [{ scale: 0.92 }],
-      shadowOpacity: 0.2,
-    },
-    fabInner: {
-      flex: 1,
-      justifyContent: 'center',
+    headerButtons: {
+      flexDirection: 'row',
       alignItems: 'center',
-      borderRadius: 30,
-      borderWidth: 2,
-      borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    headerButton: {
+      width: 44,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerButtonPressed: {
+      opacity: 0.6,
     },
   });

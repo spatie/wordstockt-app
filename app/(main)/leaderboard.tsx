@@ -12,6 +12,7 @@ import {
   Pressable,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
+import { useRouter } from 'expo-router';
 import { ActivityIndicator } from 'react-native-paper';
 import Animated, {
   useSharedValue,
@@ -21,25 +22,53 @@ import Animated, {
 import { useLeaderboard } from '../../src/api/queries/useUsers';
 import { ErrorView } from '../../src/components/ui/ErrorView';
 import { Card } from '../../src/components/ui/Card';
+import { GroupedRow } from '../../src/components/ui/GroupedRow';
+import { useAuthStore } from '../../src/stores/authStore';
+import { ROUTES } from '../../src/config/routes';
 import { TabBar } from '../../src/components/ui/TabBar';
 import { SmartAvatar } from '../../src/components/ui/SmartAvatar';
 import { SPACING, LAYOUT } from '../../src/config/constants';
 import type { LeaderboardEntry, LeaderboardType } from '../../src/types';
 
-interface LeaderboardEntryCardProps {
+const RANK_WIDTH = 24;
+const AVATAR_SIZE = 40;
+
+interface LeaderboardEntryRowProps {
   entry: LeaderboardEntry;
   rank: number;
   isTimeBased: boolean;
+  isFirst: boolean;
+  isLast: boolean;
 }
 
-const LeaderboardEntryCard = memo(function LeaderboardEntryCard({
+const LeaderboardEntryRow = memo(function LeaderboardEntryRow({
   entry,
   rank,
   isTimeBased,
-}: LeaderboardEntryCardProps) {
+  isFirst,
+  isLast,
+}: LeaderboardEntryRowProps) {
   const styles = useThemedStyles(createStyles);
+  const router = useRouter();
+  const currentUserUlid = useAuthStore((s) => s.user?.ulid);
+
+  const handlePress = useCallback(() => {
+    router.push(
+      entry.ulid === currentUserUlid
+        ? ROUTES.PROFILE
+        : ROUTES.USER_PROFILE(entry.ulid)
+    );
+  }, [router, entry.ulid, currentUserUlid]);
+
   return (
-    <Card padding="md" marginBottom="sm">
+    <GroupedRow
+      isFirst={isFirst}
+      isLast={isLast}
+      onPress={handlePress}
+      showChevron={false}
+      // Line up the separator with the names: padding, rank, avatar and gaps
+      separatorInset={16 + RANK_WIDTH + 12 + AVATAR_SIZE + 12}
+    >
       <View style={styles.cardContent}>
         <Text style={styles.rank} numberOfLines={1}>
           {rank}
@@ -49,7 +78,7 @@ const LeaderboardEntryCard = memo(function LeaderboardEntryCard({
           userUlid={entry.ulid}
           uri={entry.avatar}
           name={entry.username}
-          size={40}
+          size={AVATAR_SIZE}
           backgroundColor={entry.avatarColor ?? undefined}
         />
 
@@ -67,7 +96,7 @@ const LeaderboardEntryCard = memo(function LeaderboardEntryCard({
           <Text style={styles.metricLabel}>{isTimeBased ? 'wins' : 'ELO'}</Text>
         </View>
       </View>
-    </Card>
+    </GroupedRow>
   );
 });
 
@@ -189,15 +218,19 @@ export default function LeaderboardScreen() {
 
   const isTimeBased = mainType === 'wins';
 
+  const entryCount = data?.data?.length ?? 0;
+
   const renderEntry = useCallback(
     ({ item, index }: { item: LeaderboardEntry; index: number }) => (
-      <LeaderboardEntryCard
+      <LeaderboardEntryRow
         entry={item}
         rank={index + 1}
         isTimeBased={isTimeBased}
+        isFirst={index === 0}
+        isLast={index === entryCount - 1}
       />
     ),
-    [isTimeBased]
+    [isTimeBased, entryCount]
   );
 
   const keyExtractor = useCallback((item: LeaderboardEntry) => item.ulid, []);
@@ -376,6 +409,7 @@ const createStyles = (colors: ThemeColors) =>
       paddingBottom: 120,
     },
     cardContent: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
@@ -384,7 +418,7 @@ const createStyles = (colors: ThemeColors) =>
       fontSize: 16,
       fontWeight: 'bold',
       color: colors.textPrimary,
-      minWidth: 24,
+      minWidth: RANK_WIDTH,
       textAlign: 'center',
     },
     info: {

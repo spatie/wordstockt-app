@@ -2,54 +2,55 @@ import type { ThemeColors } from '../../config/theme';
 import { useThemedStyles } from '../../hooks/useThemeColors';
 import React, { memo, useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Card } from '../ui/Card';
+import { GroupedRow } from '../ui/GroupedRow';
 import { SmartAvatar } from '../ui/SmartAvatar';
 import { SPACING } from '../../config/constants';
 import type { Friend } from '../../types';
 
-interface FriendCardProps {
+const AVATAR_SIZE = 44;
+
+interface FriendRowProps {
   friend: Friend;
+  isFirst: boolean;
+  isLast: boolean;
   onPress: (friendUlid: string) => void;
 }
 
-export const FriendCard = memo(function FriendCard({
+export const FriendRow = memo(function FriendRow({
   friend,
+  isFirst,
+  isLast,
   onPress,
-}: FriendCardProps) {
+}: FriendRowProps) {
   const styles = useThemedStyles(createStyles);
   const handlePress = useCallback(() => {
     onPress(friend.friendUlid);
   }, [onPress, friend.friendUlid]);
 
   return (
-    <Card
+    <GroupedRow
+      isFirst={isFirst}
+      isLast={isLast}
       onPress={handlePress}
-      padding="md"
-      borderRadius="lg"
-      marginBottom="sm"
-      style={styles.card}
+      separatorInset={16 + AVATAR_SIZE + SPACING.md}
     >
       <SmartAvatar
         userUlid={friend.friendUlid}
         uri={friend.avatar}
         name={friend.username}
-        size={48}
+        size={AVATAR_SIZE}
         backgroundColor={friend.avatarColor ?? undefined}
       />
       <View style={styles.info}>
         <Text style={styles.username}>{friend.username}</Text>
-        <Text style={styles.rating}>ELO: {friend.eloRating}</Text>
+        <Text style={styles.rating}>{friend.eloRating} ELO</Text>
       </View>
-    </Card>
+    </GroupedRow>
   );
 });
 
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    card: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
     info: {
       flex: 1,
       marginLeft: SPACING.md,
