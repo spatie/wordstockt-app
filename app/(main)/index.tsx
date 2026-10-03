@@ -50,7 +50,6 @@ import { useAuthStore } from '../../src/stores/authStore';
 import { useNavigationStore } from '../../src/stores/navigationStore';
 import { useFilteredGames, useGuestRestriction } from '../../src/hooks';
 import { ErrorView } from '../../src/components/ui/ErrorView';
-import { LoadingView } from '../../src/components/ui/LoadingView';
 import { GuestBanner } from '../../src/components/ui/GuestBanner';
 import {
   GameCard,
@@ -61,6 +60,7 @@ import {
 } from '../../src/components/game-list';
 import { TabBar } from '../../src/components/ui/TabBar';
 import { EmptyState } from '../../src/components/ui/EmptyState';
+import { GameCardSkeleton } from '../../src/components/ui/Skeleton';
 import { getApiError } from '../../src/api/client';
 import { SPACING, RADIUS, LAYOUT } from '../../src/config/constants';
 import { ROUTES } from '../../src/config/routes';
@@ -354,7 +354,12 @@ export default function HomeScreen() {
   if (isLoading || invitationsLoading) {
     return (
       <View style={styles.container}>
-        <LoadingView />
+        {listHeader}
+        <View style={styles.content}>
+          <GameCardSkeleton />
+          <GameCardSkeleton />
+          <GameCardSkeleton />
+        </View>
       </View>
     );
   }

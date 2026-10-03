@@ -7,7 +7,6 @@ import React, { memo, useState, useCallback } from 'react';
 import { View, StyleSheet, RefreshControl, Text } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator } from 'react-native-paper';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -16,6 +15,7 @@ import Animated, {
 import { useLeaderboard } from '../../src/api/queries/useUsers';
 import { ErrorView } from '../../src/components/ui/ErrorView';
 import { EmptyState } from '../../src/components/ui/EmptyState';
+import { ListRowSkeletons } from '../../src/components/ui/Skeleton';
 import { Card } from '../../src/components/ui/Card';
 import { GroupedRow } from '../../src/components/ui/GroupedRow';
 import { useAuthStore } from '../../src/stores/authStore';
@@ -231,8 +231,8 @@ export default function LeaderboardScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" />
+      <View style={styles.container}>
+        <ListRowSkeletons />
       </View>
     );
   }
@@ -304,11 +304,6 @@ const createStyles = (colors: ThemeColors) =>
     },
     contentContainer: {
       flex: 1,
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
     },
     titleRow: {
       flexDirection: 'row',

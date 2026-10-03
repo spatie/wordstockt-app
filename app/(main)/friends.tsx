@@ -12,12 +12,12 @@ import {
   Pressable,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { ActivityIndicator } from 'react-native-paper';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useFriends } from '../../src/api/queries/useFriends';
 import { ErrorView } from '../../src/components/ui/ErrorView';
 import { EmptyState } from '../../src/components/ui/EmptyState';
+import { ListRowSkeletons } from '../../src/components/ui/Skeleton';
 import { FriendRow } from '../../src/components/friends/FriendRow';
 import { HeaderMenu } from '../../src/components/ui/HeaderMenu';
 import { AddFriendModal } from '../../src/components/friends/AddFriendModal';
@@ -74,9 +74,7 @@ export default function FriendsScreen() {
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <ListRowSkeletons />
       </View>
     );
   }
@@ -160,11 +158,6 @@ const createStyles = (colors: ThemeColors) =>
       maxWidth: LAYOUT.contentMaxWidth,
       width: '100%',
       alignSelf: 'center' as const,
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
     },
     headerSection: {
       paddingHorizontal: 16,
