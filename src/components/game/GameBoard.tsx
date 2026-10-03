@@ -22,6 +22,7 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { BoardCell } from './BoardCell';
+import { BoardGrid } from './BoardGrid';
 import { useStableCallback } from '../../hooks/useStableCallback';
 import { ScoreBubble } from './ScoreBubble';
 import { useDragDrop } from '../../context/DragDropContext';
@@ -248,13 +249,16 @@ export function GameBoard({
           <View style={styles.boardClip}>
             <BlurView intensity={80} tint={blurTint} style={styles.boardBlur}>
               <View ref={boardRef} style={styles.board}>
-                {Array.from({ length: BOARD_SIZE }, (_, y) => (
-                  <View key={y} style={styles.row}>
-                    {Array.from({ length: BOARD_SIZE }, (_, x) =>
-                      renderCell(x, y)
-                    )}
-                  </View>
-                ))}
+                <View style={styles.grid}>
+                  {Array.from({ length: BOARD_SIZE }, (_, y) => (
+                    <View key={y} style={styles.row}>
+                      {Array.from({ length: BOARD_SIZE }, (_, x) =>
+                        renderCell(x, y)
+                      )}
+                    </View>
+                  ))}
+                  <BoardGrid />
+                </View>
                 {/* Score bubble positioned at top-left of the top-left pending tile */}
                 {/* Always render if we have a position so fade-out animation can complete */}
                 {lastScoreBubblePosition.current && (
@@ -305,6 +309,9 @@ const createStyles = (colors: ThemeColors) =>
     board: {
       flex: 1,
       padding: 8,
+    },
+    grid: {
+      flex: 1,
     },
     row: {
       flex: 1,

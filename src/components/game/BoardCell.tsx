@@ -9,6 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { ScaledTile } from './Tile';
+import { GRID_LINE_WIDTH } from './BoardGrid';
 import {
   usePendingTileAt,
   useTileValidationState,
@@ -579,17 +580,14 @@ function CellContent({
   );
 }
 
-// Android renders hairline borders with artifacts at intersections, so use 1px instead
-const gridLineWidth = Platform.OS === 'android' ? 1 : StyleSheet.hairlineWidth;
-
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     cellWrapper: {
       flex: 1,
       aspectRatio: 1,
-      borderRightWidth: gridLineWidth,
-      borderBottomWidth: gridLineWidth,
-      borderColor: colors.gridLine,
+      // Room for the grid line BoardGrid draws on the right and bottom edge
+      paddingRight: GRID_LINE_WIDTH,
+      paddingBottom: GRID_LINE_WIDTH,
     },
     cell: {
       flex: 1,
