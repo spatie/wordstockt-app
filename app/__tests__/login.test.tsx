@@ -39,8 +39,8 @@ describe('LoginScreen', () => {
     jest.clearAllMocks();
   });
 
-  it('renders the login form', () => {
-    render(<LoginScreen />);
+  it('renders the login form', async () => {
+    await render(<LoginScreen />);
 
     expect(screen.getByText('WordStockt')).toBeTruthy();
     expect(screen.getByPlaceholderText('Email or Username')).toBeTruthy();
@@ -48,8 +48,8 @@ describe('LoginScreen', () => {
     expect(screen.getByText('Log In')).toBeTruthy();
   });
 
-  it('disables login button when fields are empty', () => {
-    render(<LoginScreen />);
+  it('disables login button when fields are empty', async () => {
+    await render(<LoginScreen />);
 
     // Find the button by accessibility role (Pressable renders as accessible button)
     // The login button text's grandparent (Pressable) has the accessibilityState
@@ -62,30 +62,30 @@ describe('LoginScreen', () => {
     expect(element?.props.accessibilityState?.disabled).toBe(true);
   });
 
-  it('enables login button when fields are filled', () => {
-    render(<LoginScreen />);
+  it('enables login button when fields are filled', async () => {
+    await render(<LoginScreen />);
 
     const emailInput = screen.getByPlaceholderText('Email or Username');
     const passwordInput = screen.getByPlaceholderText('Password');
 
-    fireEvent.changeText(emailInput, 'test@example.com');
-    fireEvent.changeText(passwordInput, 'password123');
+    await fireEvent.changeText(emailInput, 'test@example.com');
+    await fireEvent.changeText(passwordInput, 'password123');
 
     const loginButton = screen.getByText('Log In').parent?.parent;
     expect(loginButton?.props.accessibilityState?.disabled).toBeFalsy();
   });
 
-  it('calls login mutation when form is submitted', () => {
-    render(<LoginScreen />);
+  it('calls login mutation when form is submitted', async () => {
+    await render(<LoginScreen />);
 
     const emailInput = screen.getByPlaceholderText('Email or Username');
     const passwordInput = screen.getByPlaceholderText('Password');
 
-    fireEvent.changeText(emailInput, 'test@example.com');
-    fireEvent.changeText(passwordInput, 'password123');
+    await fireEvent.changeText(emailInput, 'test@example.com');
+    await fireEvent.changeText(passwordInput, 'password123');
 
     const loginButton = screen.getByText('Log In').parent?.parent;
-    fireEvent.press(loginButton!);
+    await fireEvent.press(loginButton!);
 
     expect(mockMutate).toHaveBeenCalledWith({
       email: 'test@example.com',
@@ -93,15 +93,15 @@ describe('LoginScreen', () => {
     });
   });
 
-  it('shows sign up link', () => {
-    render(<LoginScreen />);
+  it('shows sign up link', async () => {
+    await render(<LoginScreen />);
 
     expect(screen.getByText("Don't have an account?")).toBeTruthy();
     expect(screen.getByText('Sign Up')).toBeTruthy();
   });
 
-  it('shows forgot password link', () => {
-    render(<LoginScreen />);
+  it('shows forgot password link', async () => {
+    await render(<LoginScreen />);
 
     expect(screen.getByText('Forgot Password?')).toBeTruthy();
   });

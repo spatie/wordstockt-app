@@ -96,11 +96,6 @@ jest.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-// Mock AppHeader
-jest.mock('../../src/components/ui/AppHeader', () => ({
-  AppHeader: () => null,
-}));
-
 // Mock SnackbarProvider
 jest.mock('../../src/components/ui/SnackbarProvider', () => ({
   useSnackbar: () => ({
@@ -125,8 +120,8 @@ describe('ProfileScreen', () => {
     );
   });
 
-  it('renders user profile information', () => {
-    render(<ProfileScreen />);
+  it('renders user profile information', async () => {
+    await render(<ProfileScreen />);
 
     expect(screen.getByText('TE')).toBeTruthy(); // Avatar initials
     // Email is in a TextInput, so use getByDisplayValue
@@ -134,49 +129,49 @@ describe('ProfileScreen', () => {
     expect(screen.getByDisplayValue('testuser')).toBeTruthy();
   });
 
-  it('displays user statistics', () => {
-    render(<ProfileScreen />);
+  it('displays user statistics', async () => {
+    await render(<ProfileScreen />);
 
     // Check for actual section titles in the profile
     expect(screen.getByText('Word & Move Records')).toBeTruthy();
     expect(screen.getByText('Game Performance')).toBeTruthy();
   });
 
-  it('save button is initially disabled when username is unchanged', () => {
-    render(<ProfileScreen />);
+  it('save button is initially disabled when username is unchanged', async () => {
+    await render(<ProfileScreen />);
 
     // Button should exist and be disabled (opacity style applied)
     const saveButton = screen.getByText('Save Changes');
     expect(saveButton).toBeTruthy();
   });
 
-  it('enables save button when username is changed to valid value', () => {
-    render(<ProfileScreen />);
+  it('enables save button when username is changed to valid value', async () => {
+    await render(<ProfileScreen />);
 
     const usernameInput = screen.getByDisplayValue('testuser');
-    fireEvent.changeText(usernameInput, 'newusername');
+    await fireEvent.changeText(usernameInput, 'newusername');
 
     // Save button should be pressable after valid change
     const saveButton = screen.getByText('Save Changes');
     expect(saveButton).toBeTruthy();
   });
 
-  it('keeps save button disabled when username is too short', () => {
-    render(<ProfileScreen />);
+  it('keeps save button disabled when username is too short', async () => {
+    await render(<ProfileScreen />);
 
     const usernameInput = screen.getByDisplayValue('testuser');
-    fireEvent.changeText(usernameInput, 'ab'); // Too short
+    await fireEvent.changeText(usernameInput, 'ab'); // Too short
 
     // Button should still exist
     const saveButton = screen.getByText('Save Changes');
     expect(saveButton).toBeTruthy();
   });
 
-  it('keeps save button disabled when username contains invalid characters', () => {
-    render(<ProfileScreen />);
+  it('keeps save button disabled when username contains invalid characters', async () => {
+    await render(<ProfileScreen />);
 
     const usernameInput = screen.getByDisplayValue('testuser');
-    fireEvent.changeText(usernameInput, 'invalid user!'); // Invalid characters
+    await fireEvent.changeText(usernameInput, 'invalid user!'); // Invalid characters
 
     // Button should still exist
     const saveButton = screen.getByText('Save Changes');
@@ -185,30 +180,30 @@ describe('ProfileScreen', () => {
 
   it('calls updateProfile when save is pressed', async () => {
     mockMutateAsync.mockResolvedValue({});
-    render(<ProfileScreen />);
+    await render(<ProfileScreen />);
 
     const usernameInput = screen.getByDisplayValue('testuser');
-    fireEvent.changeText(usernameInput, 'newusername');
+    await fireEvent.changeText(usernameInput, 'newusername');
 
     const saveButton = screen.getByText('Save Changes').parent;
-    fireEvent.press(saveButton!);
+    await fireEvent.press(saveButton!);
 
     await waitFor(() => {
       expect(mockMutateAsync).toHaveBeenCalledWith({ username: 'newusername' });
     });
   });
 
-  it('returns null when no user is present', () => {
+  it('returns null when no user is present', async () => {
     mockUseAuthStore.mockImplementation((selector: any) =>
       selector({ user: null })
     );
-    const { toJSON } = render(<ProfileScreen />);
+    const { toJSON } = await render(<ProfileScreen />);
 
     expect(toJSON()).toBeNull();
   });
 
-  it('shows username validation hint', () => {
-    render(<ProfileScreen />);
+  it('shows username validation hint', async () => {
+    await render(<ProfileScreen />);
 
     expect(
       screen.getByText(

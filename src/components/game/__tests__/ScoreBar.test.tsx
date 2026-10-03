@@ -101,15 +101,17 @@ beforeEach(() => {
 });
 
 describe('ScoreBar', () => {
-  it('renders a chip for each player with "You" for self', () => {
+  it('renders a chip for each player with "You" for self', async () => {
     const game = createMockGame();
-    render(<ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />);
+    await render(
+      <ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />
+    );
 
     expect(screen.getByText('opponent')).toBeTruthy();
     expect(screen.getByText('You')).toBeTruthy();
   });
 
-  it('renders three chips for a 3-player game', () => {
+  it('renders three chips for a 3-player game', async () => {
     const game = createMockGame({
       maxPlayers: 3,
       players: [
@@ -134,14 +136,16 @@ describe('ScoreBar', () => {
         }),
       ],
     });
-    render(<ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />);
+    await render(
+      <ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />
+    );
 
     expect(screen.getByText('You')).toBeTruthy();
     expect(screen.getByText('Jess')).toBeTruthy();
     expect(screen.getByText('Tom')).toBeTruthy();
   });
 
-  it('shows a LEFT tag for a player who has left', () => {
+  it('shows a LEFT tag for a player who has left', async () => {
     const game = createMockGame({
       maxPlayers: 3,
       players: [
@@ -170,20 +174,24 @@ describe('ScoreBar', () => {
         }),
       ],
     });
-    render(<ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />);
+    await render(
+      <ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />
+    );
 
     expect(screen.getByText('LEFT')).toBeTruthy();
     expect(screen.getByText('Tom')).toBeTruthy();
   });
 
-  it('renders tiles in bag for an active game', () => {
+  it('renders tiles in bag for an active game', async () => {
     const game = createMockGame({ tilesRemaining: 50 });
-    render(<ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />);
+    await render(
+      <ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />
+    );
 
     expect(screen.getByText('in bag')).toBeTruthy();
   });
 
-  it('shows an invite seat when a pending game has an open seat', () => {
+  it('shows an invite seat when a pending game has an open seat', async () => {
     const game = createMockGame({
       status: 'pending',
       players: [
@@ -198,7 +206,7 @@ describe('ScoreBar', () => {
     });
     const onInvite = jest.fn();
 
-    render(
+    await render(
       <ScoreBar
         game={game}
         currentUserUlid="01hxyz000000000player01"
@@ -207,11 +215,11 @@ describe('ScoreBar', () => {
     );
 
     expect(screen.getByText('Invite')).toBeTruthy();
-    fireEvent(screen.getByText('+'), 'pressOut');
+    await fireEvent(screen.getByText('+'), 'pressOut');
     expect(onInvite).toHaveBeenCalledTimes(1);
   });
 
-  it('shows a PENDING tag for an invited but unjoined seat', () => {
+  it('shows a PENDING tag for an invited but unjoined seat', async () => {
     const game = createMockGame({
       status: 'pending',
       maxPlayers: 2,
@@ -237,13 +245,15 @@ describe('ScoreBar', () => {
       ],
     });
 
-    render(<ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />);
+    await render(
+      <ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />
+    );
 
     expect(screen.getByText('PENDING')).toBeTruthy();
     expect(screen.getByText('Invitee')).toBeTruthy();
   });
 
-  it('shows a pending seat for every outstanding invitation', () => {
+  it('shows a pending seat for every outstanding invitation', async () => {
     const game = createMockGame({
       status: 'pending',
       maxPlayers: 4,
@@ -278,7 +288,9 @@ describe('ScoreBar', () => {
       ],
     });
 
-    render(<ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />);
+    await render(
+      <ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />
+    );
 
     // Both invitees appear as pending seats, plus one remaining open "Invite" seat.
     expect(screen.getByText('marvin')).toBeTruthy();
@@ -287,7 +299,7 @@ describe('ScoreBar', () => {
     expect(screen.getByText('Invite')).toBeTruthy();
   });
 
-  it('does not show invite seats when the game is active', () => {
+  it('does not show invite seats when the game is active', async () => {
     const game = createMockGame({
       status: 'active',
       maxPlayers: 2,
@@ -302,12 +314,14 @@ describe('ScoreBar', () => {
       ],
     });
 
-    render(<ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />);
+    await render(
+      <ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />
+    );
 
     expect(screen.queryByText('Invite')).toBeNull();
   });
 
-  it('shows a confirmable start button labelled with the accepted player count', () => {
+  it('shows a confirmable start button labelled with the accepted player count', async () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
     const game = createMockGame({
@@ -330,12 +344,14 @@ describe('ScoreBar', () => {
       ],
     });
 
-    render(<ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />);
+    await render(
+      <ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />
+    );
 
     const startButton = screen.getByText('Start with 2 players');
     expect(startButton).toBeTruthy();
 
-    fireEvent.press(startButton);
+    await fireEvent.press(startButton);
 
     // The press opens a confirmation; nothing happens until the user confirms.
     expect(mockStartGame).not.toHaveBeenCalled();
@@ -351,7 +367,7 @@ describe('ScoreBar', () => {
     alertSpy.mockRestore();
   });
 
-  it('does not show the start button for a non-creator', () => {
+  it('does not show the start button for a non-creator', async () => {
     const game = createMockGame({
       status: 'pending',
       maxPlayers: 3,
@@ -372,29 +388,35 @@ describe('ScoreBar', () => {
       ],
     });
 
-    render(<ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />);
+    await render(
+      <ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />
+    );
 
     expect(screen.queryByText(/^Start with/)).toBeNull();
   });
 
-  it('shows Won chip when game is finished and current user won', () => {
+  it('shows Won chip when game is finished and current user won', async () => {
     const game = createMockGame({
       status: 'finished',
       winnerUlid: '01hxyz000000000player01',
     });
 
-    render(<ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />);
+    await render(
+      <ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />
+    );
 
     expect(screen.getByText('Won')).toBeTruthy();
   });
 
-  it('shows Lost chip when game is finished and current user lost', () => {
+  it('shows Lost chip when game is finished and current user lost', async () => {
     const game = createMockGame({
       status: 'finished',
       winnerUlid: '01hxyz00000000opponent',
     });
 
-    render(<ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />);
+    await render(
+      <ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />
+    );
 
     expect(screen.getByText('Lost')).toBeTruthy();
   });

@@ -30,8 +30,8 @@ describe('RegisterScreen', () => {
     jest.clearAllMocks();
   });
 
-  it('renders the registration form', () => {
-    render(<RegisterScreen />);
+  it('renders the registration form', async () => {
+    await render(<RegisterScreen />);
 
     // "Create Account" appears as title and button
     expect(screen.getAllByText('Create Account').length).toBe(2);
@@ -43,44 +43,47 @@ describe('RegisterScreen', () => {
     expect(screen.getByPlaceholderText('Password')).toBeTruthy();
   });
 
-  it('shows validation error when username is too short', () => {
-    render(<RegisterScreen />);
+  it('shows validation error when username is too short', async () => {
+    await render(<RegisterScreen />);
 
     const usernameInput = screen.getByPlaceholderText('Username');
-    fireEvent.changeText(usernameInput, 'ab');
+    await fireEvent.changeText(usernameInput, 'ab');
 
     expect(
       screen.getByText('3-20 characters, letters, numbers, underscore only')
     ).toBeTruthy();
   });
 
-  it('shows validation error for invalid email', () => {
-    render(<RegisterScreen />);
+  it('shows validation error for invalid email', async () => {
+    await render(<RegisterScreen />);
 
     const emailInput = screen.getByPlaceholderText('Email');
-    fireEvent.changeText(emailInput, 'invalid');
+    await fireEvent.changeText(emailInput, 'invalid');
 
     expect(screen.getByText('Enter a valid email')).toBeTruthy();
   });
 
-  it('shows validation error when password is too short', () => {
-    render(<RegisterScreen />);
+  it('shows validation error when password is too short', async () => {
+    await render(<RegisterScreen />);
 
     const passwordInput = screen.getByPlaceholderText('Password');
-    fireEvent.changeText(passwordInput, 'short');
+    await fireEvent.changeText(passwordInput, 'short');
 
     expect(screen.getByText('At least 8 characters')).toBeTruthy();
   });
 
-  it('enables submit button when all fields are valid', () => {
-    render(<RegisterScreen />);
+  it('enables submit button when all fields are valid', async () => {
+    await render(<RegisterScreen />);
 
-    fireEvent.changeText(screen.getByPlaceholderText('Username'), 'testuser');
-    fireEvent.changeText(
+    await fireEvent.changeText(
+      screen.getByPlaceholderText('Username'),
+      'testuser'
+    );
+    await fireEvent.changeText(
       screen.getByPlaceholderText('Email'),
       'test@example.com'
     );
-    fireEvent.changeText(
+    await fireEvent.changeText(
       screen.getByPlaceholderText('Password'),
       'password123'
     );
@@ -93,23 +96,24 @@ describe('RegisterScreen', () => {
     expect(screen.queryByText('At least 8 characters')).toBeNull();
   });
 
-  it('calls register mutation with correct data when form is submitted', () => {
-    render(<RegisterScreen />);
+  it('calls register mutation with correct data when form is submitted', async () => {
+    await render(<RegisterScreen />);
 
-    fireEvent.changeText(screen.getByPlaceholderText('Username'), 'testuser');
-    fireEvent.changeText(
+    await fireEvent.changeText(
+      screen.getByPlaceholderText('Username'),
+      'testuser'
+    );
+    await fireEvent.changeText(
       screen.getByPlaceholderText('Email'),
       'test@example.com'
     );
-    fireEvent.changeText(
+    await fireEvent.changeText(
       screen.getByPlaceholderText('Password'),
       'password123'
     );
 
-    // Find the button with the arrow icon (submit button has → icon)
-    const arrowIcon = screen.getByText('→');
-    // Press the parent TouchableOpacity
-    fireEvent.press(arrowIcon.parent!.parent!);
+    // Pressing the arrow icon bubbles up to the submit button
+    await fireEvent.press(screen.getByText('→'));
 
     expect(mockMutate).toHaveBeenCalledWith({
       username: 'testuser',
@@ -119,8 +123,8 @@ describe('RegisterScreen', () => {
     });
   });
 
-  it('shows sign in link', () => {
-    render(<RegisterScreen />);
+  it('shows sign in link', async () => {
+    await render(<RegisterScreen />);
 
     expect(screen.getByText('Already have an account?')).toBeTruthy();
     expect(screen.getByText('Sign In')).toBeTruthy();

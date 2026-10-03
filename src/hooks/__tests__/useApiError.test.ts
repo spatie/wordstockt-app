@@ -21,26 +21,26 @@ jest.mock('../../api/client', () => ({
 }));
 
 describe('useApiError', () => {
-  it('should have null errorMessage initially', () => {
-    const { result } = renderHook(() => useApiError());
+  it('should have null errorMessage initially', async () => {
+    const { result } = await renderHook(() => useApiError());
 
     expect(result.current.errorMessage).toBeNull();
   });
 
-  it('should set error message when setError is called with Error', () => {
-    const { result } = renderHook(() => useApiError());
+  it('should set error message when setError is called with Error', async () => {
+    const { result } = await renderHook(() => useApiError());
 
-    act(() => {
+    await act(() => {
       result.current.setError(new Error('Test error message'));
     });
 
     expect(result.current.errorMessage).toBe('Test error message');
   });
 
-  it('should set error message from axios-like error', () => {
-    const { result } = renderHook(() => useApiError());
+  it('should set error message from axios-like error', async () => {
+    const { result } = await renderHook(() => useApiError());
 
-    act(() => {
+    await act(() => {
       result.current.setError({
         response: {
           data: { message: 'Server validation failed' },
@@ -52,52 +52,52 @@ describe('useApiError', () => {
     expect(result.current.errorMessage).toBe('Server validation failed');
   });
 
-  it('should clear error message when clearError is called', () => {
-    const { result } = renderHook(() => useApiError());
+  it('should clear error message when clearError is called', async () => {
+    const { result } = await renderHook(() => useApiError());
 
-    act(() => {
+    await act(() => {
       result.current.setError(new Error('Some error'));
     });
     expect(result.current.errorMessage).toBe('Some error');
 
-    act(() => {
+    await act(() => {
       result.current.clearError();
     });
 
     expect(result.current.errorMessage).toBeNull();
   });
 
-  it('should handle unknown error types', () => {
-    const { result } = renderHook(() => useApiError());
+  it('should handle unknown error types', async () => {
+    const { result } = await renderHook(() => useApiError());
 
-    act(() => {
+    await act(() => {
       result.current.setError('string error');
     });
 
     expect(result.current.errorMessage).toBe('Unknown error');
   });
 
-  it('should allow setting multiple errors sequentially', () => {
-    const { result } = renderHook(() => useApiError());
+  it('should allow setting multiple errors sequentially', async () => {
+    const { result } = await renderHook(() => useApiError());
 
-    act(() => {
+    await act(() => {
       result.current.setError(new Error('First error'));
     });
     expect(result.current.errorMessage).toBe('First error');
 
-    act(() => {
+    await act(() => {
       result.current.setError(new Error('Second error'));
     });
     expect(result.current.errorMessage).toBe('Second error');
   });
 
-  it('should return stable function references', () => {
-    const { result, rerender } = renderHook(() => useApiError());
+  it('should return stable function references', async () => {
+    const { result, rerender } = await renderHook(() => useApiError());
 
     const firstSetError = result.current.setError;
     const firstClearError = result.current.clearError;
 
-    rerender({});
+    await rerender({});
 
     expect(result.current.setError).toBe(firstSetError);
     expect(result.current.clearError).toBe(firstClearError);

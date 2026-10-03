@@ -109,21 +109,21 @@ describe('GameCard', () => {
     jest.clearAllMocks();
   });
 
-  it('renders opponent name', () => {
-    renderCard(mockGame);
+  it('renders opponent name', async () => {
+    await renderCard(mockGame);
 
     // Multiple elements may contain the name (avatar + card), check at least one exists
     expect(screen.getAllByText('opponent_user').length).toBeGreaterThan(0);
   });
 
-  it('renders scores correctly', () => {
-    renderCard(mockGame);
+  it('renders scores correctly', async () => {
+    await renderCard(mockGame);
 
     expect(screen.getByText('120')).toBeTruthy();
     expect(screen.getByText('95')).toBeTruthy();
   });
 
-  it('shows all three scores for a 3-player game and marks the left player', () => {
+  it('shows all three scores for a 3-player game and marks the left player', async () => {
     const threePlayerGame: GameListItem = {
       ...mockGame,
       maxPlayers: 3,
@@ -145,7 +145,7 @@ describe('GameCard', () => {
       ],
     };
 
-    renderCard(threePlayerGame);
+    await renderCard(threePlayerGame);
 
     expect(screen.getByText('214')).toBeTruthy();
     expect(screen.getByText('289')).toBeTruthy();
@@ -162,60 +162,60 @@ describe('GameCard', () => {
     expect(screen.getAllByText('jess, tom').length).toBeGreaterThan(0);
   });
 
-  it('renders last move description', () => {
-    renderCard(mockGame);
+  it('renders last move description', async () => {
+    await renderCard(mockGame);
 
     expect(screen.getByText('played "HELLO" +12')).toBeTruthy();
   });
 
-  it('renders time ago', () => {
-    renderCard(mockGame);
+  it('renders time ago', async () => {
+    await renderCard(mockGame);
 
     expect(screen.getByText('2 hours ago')).toBeTruthy();
   });
 
-  it('calls onPress when card is pressed', () => {
-    renderCard(mockGame);
+  it('calls onPress when card is pressed', async () => {
+    await renderCard(mockGame);
 
     const playButton = screen.getByText('Play');
-    fireEvent.press(playButton);
+    await fireEvent.press(playButton);
 
     expect(mockOnPress).toHaveBeenCalled();
   });
 
-  it('shows Play button for active games when it is my turn', () => {
-    renderCard(mockGame);
+  it('shows Play button for active games when it is my turn', async () => {
+    await renderCard(mockGame);
 
     expect(screen.getByText('Play')).toBeTruthy();
   });
 
-  it('shows View button for active games when it is opponent turn', () => {
+  it('shows View button for active games when it is opponent turn', async () => {
     const opponentTurnGame: GameListItem = {
       ...mockGame,
       isMyTurn: false,
       lastMoveDescription: 'opponent_user played HELLO for 12 points',
     };
 
-    renderCard(opponentTurnGame);
+    await renderCard(opponentTurnGame);
 
     expect(screen.getByText('View')).toBeTruthy();
     expect(screen.getByText('You played "HELLO" +12')).toBeTruthy();
   });
 
-  it('shows Won badge and placement for finished games when user won', () => {
+  it('shows Won badge and placement for finished games when user won', async () => {
     const finishedGame: GameListItem = {
       ...mockGame,
       status: 'finished',
       winnerUlid: MY_ULID,
     };
 
-    renderCard(finishedGame);
+    await renderCard(finishedGame);
 
     expect(screen.getByText('Won')).toBeTruthy();
     expect(screen.getByText('1st of 2')).toBeTruthy();
   });
 
-  it('shows Lost badge for finished games when user lost', () => {
+  it('shows Lost badge for finished games when user lost', async () => {
     const finishedGame: GameListItem = {
       ...mockGame,
       status: 'finished',
@@ -235,13 +235,13 @@ describe('GameCard', () => {
       ],
     };
 
-    renderCard(finishedGame);
+    await renderCard(finishedGame);
 
     expect(screen.getByText('Lost')).toBeTruthy();
     expect(screen.getByText('2nd of 2')).toBeTruthy();
   });
 
-  it('shows invite text when no other players', () => {
+  it('shows invite text when no other players', async () => {
     const pendingGame: GameListItem = {
       ...mockGame,
       maxPlayers: 2,
@@ -259,13 +259,13 @@ describe('GameCard', () => {
       isPublic: false,
     };
 
-    renderCard(pendingGame);
+    await renderCard(pendingGame);
 
     expect(screen.getByText('Invite a player')).toBeTruthy();
     expect(screen.getByText('Tap to find an opponent')).toBeTruthy();
   });
 
-  it('shows Start now button for the creator of a pending game with 2+ players', () => {
+  it('shows Start now button for the creator of a pending game with 2+ players', async () => {
     const pendingGame: GameListItem = {
       ...mockGame,
       maxPlayers: 3,
@@ -282,59 +282,59 @@ describe('GameCard', () => {
       ],
     };
 
-    renderCard(pendingGame);
+    await renderCard(pendingGame);
 
     expect(screen.getByText('Start now')).toBeTruthy();
   });
 
-  it('shows "Game in progress" when no last move description', () => {
+  it('shows "Game in progress" when no last move description', async () => {
     const gameInProgress: GameListItem = {
       ...mockGame,
       lastMoveDescription: null,
     };
 
-    renderCard(gameInProgress);
+    await renderCard(gameInProgress);
 
     expect(screen.getByText('Game in progress')).toBeTruthy();
   });
 
-  it('shows turn timer when it is my turn and turnExpiresAt is set', () => {
+  it('shows turn timer when it is my turn and turnExpiresAt is set', async () => {
     const gameWithTimer: GameListItem = {
       ...mockGame,
       isMyTurn: true,
       turnExpiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
     };
 
-    renderCard(gameWithTimer);
+    await renderCard(gameWithTimer);
 
     expect(screen.getByTestId('turn-timer')).toBeTruthy();
   });
 
-  it('does not show turn timer when it is not my turn', () => {
+  it('does not show turn timer when it is not my turn', async () => {
     const gameNotMyTurn: GameListItem = {
       ...mockGame,
       isMyTurn: false,
       turnExpiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
     };
 
-    renderCard(gameNotMyTurn);
+    await renderCard(gameNotMyTurn);
 
     expect(screen.queryByTestId('turn-timer')).toBeNull();
   });
 
-  it('does not show turn timer when turnExpiresAt is null', () => {
+  it('does not show turn timer when turnExpiresAt is null', async () => {
     const gameNoExpiry: GameListItem = {
       ...mockGame,
       isMyTurn: true,
       turnExpiresAt: null,
     };
 
-    renderCard(gameNoExpiry);
+    await renderCard(gameNoExpiry);
 
     expect(screen.queryByTestId('turn-timer')).toBeNull();
   });
 
-  it('does not show turn timer for finished games', () => {
+  it('does not show turn timer for finished games', async () => {
     const finishedGame: GameListItem = {
       ...mockGame,
       status: 'finished',
@@ -342,7 +342,7 @@ describe('GameCard', () => {
       turnExpiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
     };
 
-    renderCard(finishedGame);
+    await renderCard(finishedGame);
 
     // Timer should not render even if turnExpiresAt is set because isMyTurn logic
     // won't apply for finished games in the card display

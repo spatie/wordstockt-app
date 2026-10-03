@@ -50,47 +50,49 @@ jest.mock('../../../utils/timeRemaining', () => ({
 }));
 
 describe('TurnTimer', () => {
-  it('renders nothing when expiresAt is null', () => {
-    const { toJSON } = render(<TurnTimer expiresAt={null} isMyTurn={true} />);
+  it('renders nothing when expiresAt is null', async () => {
+    const { toJSON } = await render(
+      <TurnTimer expiresAt={null} isMyTurn={true} />
+    );
 
     expect(toJSON()).toBeNull();
   });
 
-  it('renders with secondary color when not my turn', () => {
-    render(<TurnTimer expiresAt="normal" isMyTurn={false} />);
+  it('renders with secondary color when not my turn', async () => {
+    await render(<TurnTimer expiresAt="normal" isMyTurn={false} />);
 
     expect(screen.getByText('8h')).toBeTruthy();
   });
 
-  it('renders nothing when 10 or more hours remain', () => {
+  it('renders nothing when 10 or more hours remain', async () => {
     const futureDate = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString();
-    const { toJSON } = render(
+    const { toJSON } = await render(
       <TurnTimer expiresAt={futureDate} isMyTurn={true} />
     );
 
     expect(toJSON()).toBeNull();
   });
 
-  it('renders time remaining when less than 10 hours', () => {
-    render(<TurnTimer expiresAt="normal" isMyTurn={true} />);
+  it('renders time remaining when less than 10 hours', async () => {
+    await render(<TurnTimer expiresAt="normal" isMyTurn={true} />);
 
     expect(screen.getByText('8h')).toBeTruthy();
   });
 
-  it('renders urgent time', () => {
-    render(<TurnTimer expiresAt="urgent" isMyTurn={true} />);
+  it('renders urgent time', async () => {
+    await render(<TurnTimer expiresAt="urgent" isMyTurn={true} />);
 
     expect(screen.getByText('2h')).toBeTruthy();
   });
 
-  it('renders critical time', () => {
-    render(<TurnTimer expiresAt="critical" isMyTurn={true} />);
+  it('renders critical time', async () => {
+    await render(<TurnTimer expiresAt="critical" isMyTurn={true} />);
 
     expect(screen.getByText('30m')).toBeTruthy();
   });
 
-  it('renders 0h left when expired', () => {
-    render(<TurnTimer expiresAt="expired" isMyTurn={true} />);
+  it('renders 0h left when expired', async () => {
+    await render(<TurnTimer expiresAt="expired" isMyTurn={true} />);
 
     expect(screen.getByText('0h left')).toBeTruthy();
   });

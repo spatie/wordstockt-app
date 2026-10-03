@@ -43,7 +43,7 @@ export function createWrapper() {
 }
 
 // Custom render with providers
-export function renderWithProviders(
+export async function renderWithProviders(
   ui: ReactElement,
   options?: Omit<RenderOptions, 'wrapper'>
 ) {

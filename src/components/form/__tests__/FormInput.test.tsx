@@ -4,42 +4,42 @@ import { Text } from 'react-native';
 import { FormInput } from '../FormInput';
 
 describe('FormInput', () => {
-  it('renders with placeholder', () => {
-    render(<FormInput placeholder="Enter email" />);
+  it('renders with placeholder', async () => {
+    await render(<FormInput placeholder="Enter email" />);
 
     expect(screen.getByPlaceholderText('Enter email')).toBeTruthy();
   });
 
-  it('renders with value', () => {
-    render(<FormInput value="test@example.com" />);
+  it('renders with value', async () => {
+    await render(<FormInput value="test@example.com" />);
 
     expect(screen.getByDisplayValue('test@example.com')).toBeTruthy();
   });
 
-  it('calls onChangeText when text changes', () => {
+  it('calls onChangeText when text changes', async () => {
     const onChangeText = jest.fn();
-    render(<FormInput placeholder="Email" onChangeText={onChangeText} />);
+    await render(<FormInput placeholder="Email" onChangeText={onChangeText} />);
 
     const input = screen.getByPlaceholderText('Email');
-    fireEvent.changeText(input, 'new value');
+    await fireEvent.changeText(input, 'new value');
 
     expect(onChangeText).toHaveBeenCalledWith('new value');
   });
 
-  it('displays error message when error prop is provided', () => {
-    render(<FormInput error="Email is required" />);
+  it('displays error message when error prop is provided', async () => {
+    await render(<FormInput error="Email is required" />);
 
     expect(screen.getByText('Email is required')).toBeTruthy();
   });
 
-  it('does not display error when error prop is not provided', () => {
-    render(<FormInput placeholder="Email" />);
+  it('does not display error when error prop is not provided', async () => {
+    await render(<FormInput placeholder="Email" />);
 
     expect(screen.queryByText(/error/i)).toBeNull();
   });
 
-  it('renders right element when provided', () => {
-    render(
+  it('renders right element when provided', async () => {
+    await render(
       <FormInput
         placeholder="Password"
         rightElement={<Text testID="right-element">Show</Text>}
@@ -49,8 +49,8 @@ describe('FormInput', () => {
     expect(screen.getByTestId('right-element')).toBeTruthy();
   });
 
-  it('passes through additional TextInput props', () => {
-    render(
+  it('passes through additional TextInput props', async () => {
+    await render(
       <FormInput
         placeholder="Email"
         keyboardType="email-address"

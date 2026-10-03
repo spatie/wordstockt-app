@@ -79,24 +79,24 @@ describe('InvitePlayerModal', () => {
     mockApiClientGet.mockResolvedValue({ data: { data: [] } });
   });
 
-  it('renders the modal when visible', () => {
-    render(<InvitePlayerModal {...defaultProps} />);
+  it('renders the modal when visible', async () => {
+    await render(<InvitePlayerModal {...defaultProps} />);
 
     expect(screen.getByText('Invite Player')).toBeTruthy();
     expect(screen.getByPlaceholderText('Search by username')).toBeTruthy();
   });
 
-  it('does not render content when not visible', () => {
-    render(<InvitePlayerModal {...defaultProps} visible={false} />);
+  it('does not render content when not visible', async () => {
+    await render(<InvitePlayerModal {...defaultProps} visible={false} />);
 
     expect(screen.queryByText('Invite Player')).toBeNull();
   });
 
-  it('calls onClose when close button is pressed', () => {
+  it('calls onClose when close button is pressed', async () => {
     const onClose = jest.fn();
-    render(<InvitePlayerModal {...defaultProps} onClose={onClose} />);
+    await render(<InvitePlayerModal {...defaultProps} onClose={onClose} />);
 
-    fireEvent.press(screen.getByText('×'));
+    await fireEvent.press(screen.getByText('×'));
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -104,13 +104,13 @@ describe('InvitePlayerModal', () => {
   it('shows no users found message when search returns empty', async () => {
     mockApiClientGet.mockResolvedValue({ data: { data: [] } });
 
-    render(<InvitePlayerModal {...defaultProps} />);
+    await render(<InvitePlayerModal {...defaultProps} />);
 
     const searchInput = screen.getByPlaceholderText('Search by username');
-    fireEvent.changeText(searchInput, 'testuser');
+    await fireEvent.changeText(searchInput, 'testuser');
 
     // Press the Search button
-    fireEvent.press(screen.getByText('Search'));
+    await fireEvent.press(screen.getByText('Search'));
 
     await waitFor(() => {
       expect(screen.getByText('No users found')).toBeTruthy();
@@ -130,13 +130,13 @@ describe('InvitePlayerModal', () => {
       },
     });
 
-    render(<InvitePlayerModal {...defaultProps} />);
+    await render(<InvitePlayerModal {...defaultProps} />);
 
     const searchInput = screen.getByPlaceholderText('Search by username');
-    fireEvent.changeText(searchInput, 'testuser');
+    await fireEvent.changeText(searchInput, 'testuser');
 
     // Press the Search button
-    fireEvent.press(screen.getByText('Search'));
+    await fireEvent.press(screen.getByText('Search'));
 
     await waitFor(() => {
       expect(screen.getByText('testuser')).toBeTruthy();
@@ -157,20 +157,20 @@ describe('InvitePlayerModal', () => {
     });
     mockMutateAsync.mockResolvedValue({});
 
-    render(<InvitePlayerModal {...defaultProps} />);
+    await render(<InvitePlayerModal {...defaultProps} />);
 
     const searchInput = screen.getByPlaceholderText('Search by username');
-    fireEvent.changeText(searchInput, 'testuser');
+    await fireEvent.changeText(searchInput, 'testuser');
 
     // Press the Search button
-    fireEvent.press(screen.getByText('Search'));
+    await fireEvent.press(screen.getByText('Search'));
 
     await waitFor(() => {
       expect(screen.getByText('testuser')).toBeTruthy();
     });
 
     // Press the Invite button for the user
-    fireEvent.press(screen.getByText('Invite'));
+    await fireEvent.press(screen.getByText('Invite'));
 
     await waitFor(() => {
       expect(mockMutateAsync).toHaveBeenCalledWith({
@@ -197,7 +197,7 @@ describe('InvitePlayerModal', () => {
     });
     mockMutateAsync.mockResolvedValue({});
 
-    render(
+    await render(
       <InvitePlayerModal
         {...defaultProps}
         onSuccess={onSuccess}
@@ -206,17 +206,17 @@ describe('InvitePlayerModal', () => {
     );
 
     const searchInput = screen.getByPlaceholderText('Search by username');
-    fireEvent.changeText(searchInput, 'testuser');
+    await fireEvent.changeText(searchInput, 'testuser');
 
     // Press the Search button
-    fireEvent.press(screen.getByText('Search'));
+    await fireEvent.press(screen.getByText('Search'));
 
     await waitFor(() => {
       expect(screen.getByText('testuser')).toBeTruthy();
     });
 
     // Press the Invite button
-    fireEvent.press(screen.getByText('Invite'));
+    await fireEvent.press(screen.getByText('Invite'));
 
     await waitFor(() => {
       expect(onSuccess).toHaveBeenCalled();
@@ -224,14 +224,14 @@ describe('InvitePlayerModal', () => {
     });
   });
 
-  it('shows validation error when search query is too short', () => {
-    render(<InvitePlayerModal {...defaultProps} />);
+  it('shows validation error when search query is too short', async () => {
+    await render(<InvitePlayerModal {...defaultProps} />);
 
     const searchInput = screen.getByPlaceholderText('Search by username');
-    fireEvent.changeText(searchInput, 'a');
+    await fireEvent.changeText(searchInput, 'a');
 
     // Press the Search button
-    fireEvent.press(screen.getByText('Search'));
+    await fireEvent.press(screen.getByText('Search'));
 
     expect(
       screen.getByText('Username must be at least 2 characters')

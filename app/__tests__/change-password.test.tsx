@@ -31,18 +31,13 @@ jest.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-// Mock AppHeader
-jest.mock('../../src/components/ui/AppHeader', () => ({
-  AppHeader: () => null,
-}));
-
 describe('ChangePasswordScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('renders change password form', () => {
-    render(<ChangePasswordScreen />);
+  it('renders change password form', async () => {
+    await render(<ChangePasswordScreen />);
 
     // Title and button both say "Change Password", so use getAllByText
     expect(
@@ -53,38 +48,38 @@ describe('ChangePasswordScreen', () => {
     expect(screen.getByPlaceholderText('Confirm New Password')).toBeTruthy();
   });
 
-  it('shows validation error when new password is too short', () => {
-    render(<ChangePasswordScreen />);
+  it('shows validation error when new password is too short', async () => {
+    await render(<ChangePasswordScreen />);
 
     const newPasswordInput = screen.getByPlaceholderText('New Password');
-    fireEvent.changeText(newPasswordInput, 'short');
+    await fireEvent.changeText(newPasswordInput, 'short');
 
     expect(screen.getByText('At least 8 characters')).toBeTruthy();
   });
 
-  it('shows validation error when passwords do not match', () => {
-    render(<ChangePasswordScreen />);
+  it('shows validation error when passwords do not match', async () => {
+    await render(<ChangePasswordScreen />);
 
     const newPasswordInput = screen.getByPlaceholderText('New Password');
     const confirmPasswordInput = screen.getByPlaceholderText(
       'Confirm New Password'
     );
 
-    fireEvent.changeText(newPasswordInput, 'newpassword123');
-    fireEvent.changeText(confirmPasswordInput, 'differentpassword');
+    await fireEvent.changeText(newPasswordInput, 'newpassword123');
+    await fireEvent.changeText(confirmPasswordInput, 'differentpassword');
 
     expect(screen.getByText('Passwords do not match')).toBeTruthy();
   });
 
-  it('shows error when new password same as current', () => {
-    render(<ChangePasswordScreen />);
+  it('shows error when new password same as current', async () => {
+    await render(<ChangePasswordScreen />);
 
     const currentPasswordInput =
       screen.getByPlaceholderText('Current Password');
     const newPasswordInput = screen.getByPlaceholderText('New Password');
 
-    fireEvent.changeText(currentPasswordInput, 'samepassword');
-    fireEvent.changeText(newPasswordInput, 'samepassword');
+    await fireEvent.changeText(currentPasswordInput, 'samepassword');
+    await fireEvent.changeText(newPasswordInput, 'samepassword');
 
     expect(
       screen.getByText('Must be different from current password')
@@ -93,7 +88,7 @@ describe('ChangePasswordScreen', () => {
 
   it('submits form and navigates back on success', async () => {
     mockMutateAsync.mockResolvedValue({});
-    render(<ChangePasswordScreen />);
+    await render(<ChangePasswordScreen />);
 
     const currentPasswordInput =
       screen.getByPlaceholderText('Current Password');
@@ -102,14 +97,14 @@ describe('ChangePasswordScreen', () => {
       'Confirm New Password'
     );
 
-    fireEvent.changeText(currentPasswordInput, 'oldpassword123');
-    fireEvent.changeText(newPasswordInput, 'newpassword123');
-    fireEvent.changeText(confirmPasswordInput, 'newpassword123');
+    await fireEvent.changeText(currentPasswordInput, 'oldpassword123');
+    await fireEvent.changeText(newPasswordInput, 'newpassword123');
+    await fireEvent.changeText(confirmPasswordInput, 'newpassword123');
 
     // Find the button by its text and get the touchable parent
     const buttonText = screen.getAllByText('Change Password')[1]!; // Second one is the button text
     const submitButton = buttonText.parent;
-    fireEvent.press(submitButton!);
+    await fireEvent.press(submitButton!);
 
     await waitFor(() => {
       expect(mockMutateAsync).toHaveBeenCalledWith({
@@ -145,7 +140,7 @@ describe('ChangePasswordScreen', () => {
 
     mockMutateAsync.mockRejectedValue(axiosError);
 
-    render(<ChangePasswordScreen />);
+    await render(<ChangePasswordScreen />);
 
     const currentPasswordInput =
       screen.getByPlaceholderText('Current Password');
@@ -154,13 +149,13 @@ describe('ChangePasswordScreen', () => {
       'Confirm New Password'
     );
 
-    fireEvent.changeText(currentPasswordInput, 'wrongpassword');
-    fireEvent.changeText(newPasswordInput, 'newpassword123');
-    fireEvent.changeText(confirmPasswordInput, 'newpassword123');
+    await fireEvent.changeText(currentPasswordInput, 'wrongpassword');
+    await fireEvent.changeText(newPasswordInput, 'newpassword123');
+    await fireEvent.changeText(confirmPasswordInput, 'newpassword123');
 
     const buttonText = screen.getAllByText('Change Password')[1]!;
     const submitButton = buttonText.parent;
-    fireEvent.press(submitButton!);
+    await fireEvent.press(submitButton!);
 
     await waitFor(() => {
       expect(
@@ -169,22 +164,22 @@ describe('ChangePasswordScreen', () => {
     });
   });
 
-  it('clears validation hint when password is long enough', () => {
-    render(<ChangePasswordScreen />);
+  it('clears validation hint when password is long enough', async () => {
+    await render(<ChangePasswordScreen />);
 
     const newPasswordInput = screen.getByPlaceholderText('New Password');
 
     // First type a short password
-    fireEvent.changeText(newPasswordInput, 'short');
+    await fireEvent.changeText(newPasswordInput, 'short');
     expect(screen.getByText('At least 8 characters')).toBeTruthy();
 
     // Then type a valid password
-    fireEvent.changeText(newPasswordInput, 'validpassword123');
+    await fireEvent.changeText(newPasswordInput, 'validpassword123');
     expect(screen.queryByText('At least 8 characters')).toBeNull();
   });
 
-  it('clears password match error when passwords match', () => {
-    render(<ChangePasswordScreen />);
+  it('clears password match error when passwords match', async () => {
+    await render(<ChangePasswordScreen />);
 
     const newPasswordInput = screen.getByPlaceholderText('New Password');
     const confirmPasswordInput = screen.getByPlaceholderText(
@@ -192,12 +187,12 @@ describe('ChangePasswordScreen', () => {
     );
 
     // First enter mismatched passwords
-    fireEvent.changeText(newPasswordInput, 'newpassword123');
-    fireEvent.changeText(confirmPasswordInput, 'different');
+    await fireEvent.changeText(newPasswordInput, 'newpassword123');
+    await fireEvent.changeText(confirmPasswordInput, 'different');
     expect(screen.getByText('Passwords do not match')).toBeTruthy();
 
     // Then fix the confirmation
-    fireEvent.changeText(confirmPasswordInput, 'newpassword123');
+    await fireEvent.changeText(confirmPasswordInput, 'newpassword123');
     expect(screen.queryByText('Passwords do not match')).toBeNull();
   });
 });
