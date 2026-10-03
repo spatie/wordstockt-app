@@ -375,7 +375,6 @@ export default function MoveHistoryScreen() {
         contentContainerStyle={styles.content}
       >
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Move History</Text>
           <Text style={styles.headerSubtitle}>
             {game?.players.map((p) => p.username).join(' vs ') ?? 'Game'} •{' '}
             {totalMoves} moves
@@ -426,11 +425,6 @@ const createStyles = (colors: ThemeColors) =>
     },
     header: {
       marginBottom: SPACING.lg,
-    },
-    headerTitle: {
-      fontSize: 24,
-      fontWeight: '700',
-      color: colors.textPrimary,
     },
     headerSubtitle: {
       fontSize: 14,
@@ -614,7 +608,8 @@ const createStyles = (colors: ThemeColors) =>
       marginTop: SPACING.sm,
       paddingTop: SPACING.sm,
       borderTopWidth: 1,
-      borderTopColor: 'rgba(74, 144, 217, 0.15)',
+      // iOS only draws dashed borders when every side has the same color
+      borderColor: colors.border,
       borderStyle: 'dashed',
     },
     bonusRow: {
