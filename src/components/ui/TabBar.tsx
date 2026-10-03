@@ -1,20 +1,10 @@
-import type { ThemeColors } from '../../config/theme';
-import { useThemeBlurTint, useThemedStyles } from '../../hooks/useThemeColors';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import SegmentedControl from '@react-native-segmented-control/segmented-control';
 import {
-  View,
-  Pressable,
-  Text,
-  StyleSheet,
-  LayoutChangeEvent,
-} from 'react-native';
-import { BlurView } from 'expo-blur';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
+  useIsLightAppearance,
+  useThemeColors,
+} from '../../hooks/useThemeColors';
 import { SPACING } from '../../config/constants';
 
 export interface Tab<T extends string> {
@@ -22,113 +12,48 @@ export interface Tab<T extends string> {
   label: string;
 }
 
-interface TabLayout {
-  x: number;
-  width: number;
-}
-
 interface TabBarProps<T extends string> {
   tabs: Tab<T>[];
   value: T;
   onChange: (value: T) => void;
+  style?: StyleProp<ViewStyle>;
 }
 
+// A native segmented control (UISegmentedControl on iOS)
 export function TabBar<T extends string>({
   tabs,
   value,
   onChange,
+  style,
 }: TabBarProps<T>) {
-  const blurTint = useThemeBlurTint();
-  const styles = useThemedStyles(createStyles);
-  const [tabLayouts, setTabLayouts] = useState<Record<string, TabLayout>>({});
-  const indicatorX = useSharedValue(0);
-  const indicatorWidth = useSharedValue(0);
-
-  const handleTabLayout = (tabValue: string, event: LayoutChangeEvent) => {
-    const { x, width } = event.nativeEvent.layout;
-    setTabLayouts((prev) => ({ ...prev, [tabValue]: { x, width } }));
-  };
-
-  useEffect(() => {
-    const layout = tabLayouts[value];
-    if (layout) {
-      indicatorX.set(
-        withTiming(layout.x, {
-          duration: 200,
-          easing: Easing.out(Easing.cubic),
-        })
-      );
-      indicatorWidth.set(
-        withTiming(layout.width, {
-          duration: 200,
-          easing: Easing.out(Easing.cubic),
-        })
-      );
-    }
-  }, [value, tabLayouts, indicatorX, indicatorWidth]);
-
-  const indicatorStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: indicatorX.value }],
-    width: indicatorWidth.value,
-  }));
+  const colors = useThemeColors();
+  const isLight = useIsLightAppearance();
 
   return (
-    <BlurView intensity={40} tint={blurTint} style={styles.tabBarBlur}>
-      <View style={styles.tabBar}>
-        {tabs.map((tab) => (
-          <Pressable
-            key={tab.value}
-            style={({ pressed }) => [
-              styles.tab,
-              { opacity: pressed ? 0.7 : 1 },
-            ]}
-            onPress={() => onChange(tab.value)}
-            onLayout={(e) => handleTabLayout(tab.value, e)}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                value === tab.value && styles.tabTextActive,
-              ]}
-            >
-              {tab.label}
-            </Text>
-          </Pressable>
-        ))}
-        <Animated.View style={[styles.indicator, indicatorStyle]} />
-      </View>
-    </BlurView>
+    <View style={[styles.container, style]}>
+      <SegmentedControl
+        values={tabs.map((tab) => tab.label)}
+        selectedIndex={Math.max(
+          0,
+          tabs.findIndex((tab) => tab.value === value)
+        )}
+        onChange={(event) => {
+          const tab = tabs[event.nativeEvent.selectedSegmentIndex];
+          if (tab) {
+            onChange(tab.value);
+          }
+        }}
+        appearance={isLight ? 'light' : 'dark'}
+        fontStyle={{ color: colors.textSecondary }}
+        activeFontStyle={{ color: colors.textPrimary, fontWeight: '600' }}
+      />
+    </View>
   );
 }
 
-const createStyles = (colors: ThemeColors) =>
-  StyleSheet.create({
-    tabBarBlur: {
-      backgroundColor: colors.backgroundLight,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    tabBar: {
-      flexDirection: 'row',
-      paddingHorizontal: SPACING.xl,
-    },
-    tab: {
-      paddingVertical: SPACING.md,
-      paddingHorizontal: SPACING.lg,
-      marginRight: SPACING.sm,
-    },
-    tabText: {
-      fontSize: 16,
-      color: colors.textSecondary,
-    },
-    tabTextActive: {
-      color: colors.textPrimary,
-      fontWeight: '500',
-    },
-    indicator: {
-      position: 'absolute',
-      bottom: 0,
-      height: 2,
-      backgroundColor: colors.primary,
-    },
-  });
+const styles = StyleSheet.create({
+  container: {
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+  },
+});

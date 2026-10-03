@@ -4,13 +4,7 @@ import {
   useThemedStyles,
 } from '../../src/hooks/useThemeColors';
 import React, { memo, useState, useCallback } from 'react';
-import {
-  View,
-  StyleSheet,
-  RefreshControl,
-  Text,
-  Pressable,
-} from 'react-native';
+import { View, StyleSheet, RefreshControl, Text } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator } from 'react-native-paper';
@@ -108,63 +102,10 @@ const MAIN_TABS = [
   { value: 'elo' as const, label: 'ELO Rating' },
 ];
 
-const PILL_WIDTH = 56;
-
-function PeriodToggle({
-  value,
-  onChange,
-}: {
-  value: PeriodType;
-  onChange: (value: PeriodType) => void;
-}) {
-  const styles = useThemedStyles(createStyles);
-  const translateX = useSharedValue(value === 'monthly' ? 0 : PILL_WIDTH);
-
-  const animatedIndicatorStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
-  }));
-
-  const handlePress = (newValue: PeriodType) => {
-    translateX.set(
-      withTiming(newValue === 'monthly' ? 0 : PILL_WIDTH, {
-        duration: 200,
-      })
-    );
-    onChange(newValue);
-  };
-
-  return (
-    <View style={styles.periodToggle}>
-      <Animated.View style={[styles.periodIndicator, animatedIndicatorStyle]} />
-      <Pressable
-        style={styles.periodPill}
-        onPress={() => handlePress('monthly')}
-      >
-        <Text
-          style={[
-            styles.periodPillText,
-            value === 'monthly' && styles.periodPillTextActive,
-          ]}
-        >
-          Month
-        </Text>
-      </Pressable>
-      <Pressable
-        style={styles.periodPill}
-        onPress={() => handlePress('yearly')}
-      >
-        <Text
-          style={[
-            styles.periodPillText,
-            value === 'yearly' && styles.periodPillTextActive,
-          ]}
-        >
-          Year
-        </Text>
-      </Pressable>
-    </View>
-  );
-}
+const PERIOD_TABS = [
+  { value: 'monthly' as const, label: 'Month' },
+  { value: 'yearly' as const, label: 'Year' },
+];
 
 export default function LeaderboardScreen() {
   const colors = useThemeColors();
@@ -311,7 +252,12 @@ export default function LeaderboardScreen() {
         <View style={styles.titleRow}>
           <Text style={styles.title}>{data?.meta?.label ?? 'Leaderboard'}</Text>
           {mainType === 'wins' && (
-            <PeriodToggle value={period} onChange={handlePeriodChange} />
+            <TabBar
+              tabs={PERIOD_TABS}
+              value={period}
+              onChange={handlePeriodChange}
+              style={styles.periodTabs}
+            />
           )}
         </View>
 
@@ -344,6 +290,11 @@ export default function LeaderboardScreen() {
 
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
+    periodTabs: {
+      width: 150,
+      paddingHorizontal: 0,
+      paddingVertical: 0,
+    },
     container: {
       flex: 1,
       maxWidth: LAYOUT.contentMaxWidth,
@@ -371,37 +322,6 @@ const createStyles = (colors: ThemeColors) =>
       fontWeight: '600',
       color: colors.textSecondary,
       letterSpacing: 0.5,
-    },
-    periodToggle: {
-      flexDirection: 'row',
-      backgroundColor: colors.backgroundLight,
-      borderRadius: 8,
-      padding: 2,
-      position: 'relative',
-    },
-    periodIndicator: {
-      position: 'absolute',
-      top: 2,
-      left: 2,
-      width: PILL_WIDTH,
-      height: 28,
-      backgroundColor: colors.primary,
-      borderRadius: 6,
-    },
-    periodPill: {
-      width: PILL_WIDTH,
-      paddingVertical: 6,
-      borderRadius: 6,
-      alignItems: 'center',
-      zIndex: 1,
-    },
-    periodPillText: {
-      fontSize: 12,
-      fontWeight: '500',
-      color: colors.textSecondary,
-    },
-    periodPillTextActive: {
-      color: colors.textPrimary,
     },
     list: {
       padding: SPACING.lg,
