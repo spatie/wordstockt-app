@@ -1,7 +1,7 @@
 {
   "cli": {
     "version": ">= 3.0.0",
-    "appVersionSource": "remote"
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
@@ -37,7 +37,9 @@
         "serviceAccountKeyPath": "./google-service-account.json"
       },
       "ios": {
-        "appleId": "freek@spatie.be"
+        "appleId": "freek@spatie.be",
+        "ascAppId": "6757525145",
+        "appleTeamId": "97KRXCRMAY"
       }
     }
   }
