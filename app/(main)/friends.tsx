@@ -86,7 +86,6 @@ export default function FriendsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.headerSection}>
-        <Text style={styles.title}>Friends</Text>
         <Text style={styles.subtitle}>
           {friends?.length ?? 0} {friends?.length === 1 ? 'friend' : 'friends'}
         </Text>
@@ -152,15 +151,9 @@ const createStyles = (colors: ThemeColors) =>
       paddingTop: 8,
       paddingBottom: 16,
     },
-    title: {
-      fontSize: 28,
-      fontWeight: '700',
-      color: colors.textPrimary,
-    },
     subtitle: {
       fontSize: 14,
       color: colors.textSecondary,
-      marginTop: 4,
     },
     list: {
       padding: 16,

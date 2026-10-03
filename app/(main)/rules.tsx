@@ -83,7 +83,6 @@ export default function RulesScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.content}
       >
-        <Text style={styles.pageTitle}>Game Rules</Text>
         <Text style={styles.pageSubtitle}>
           WordStockt is a multiplayer word game where you compete to score the
           most points by forming words on a shared board.
@@ -334,12 +333,6 @@ const createStyles = (colors: ThemeColors) =>
     content: {
       padding: 20,
       paddingBottom: 40,
-    },
-    pageTitle: {
-      fontSize: 28,
-      fontWeight: '700',
-      color: colors.textPrimary,
-      marginBottom: 8,
     },
     pageSubtitle: {
       fontSize: 15,

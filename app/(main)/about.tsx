@@ -61,7 +61,6 @@ export default function AboutScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.content}
       >
-        <Text style={styles.pageTitle}>About</Text>
         <Text style={styles.pageSubtitle}>
           WordStockt is brought to you by Spatie, a web development agency from
           Antwerp, Belgium.
@@ -142,12 +141,6 @@ const createStyles = (colors: ThemeColors) =>
     content: {
       padding: 20,
       paddingBottom: 40,
-    },
-    pageTitle: {
-      fontSize: 28,
-      fontWeight: '700',
-      color: colors.textPrimary,
-      marginBottom: 8,
     },
     pageSubtitle: {
       fontSize: 15,

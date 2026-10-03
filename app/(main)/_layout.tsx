@@ -32,12 +32,12 @@ export default function MainLayout() {
         screenLayout={({ children }) => (
           <ScreenBackground>{children}</ScreenBackground>
         )}
-        // Titles are for VoiceOver and the back button's history menu;
-        // the logo is what's shown in the bar
+        // Screens show their title in the bar; the games list and the game
+        // board show the logo instead
         screenOptions={{
           headerTransparent: true,
           headerTintColor: colors.textPrimary,
-          headerTitle: () => <HeaderLogo />,
+          headerTitleStyle: { color: colors.textPrimary },
           headerRight: () => <HeaderMenu />,
           headerBackButtonDisplayMode: 'minimal',
           headerShadowVisible: false,
@@ -50,9 +50,16 @@ export default function MainLayout() {
       >
         <Stack.Screen
           name="index"
-          options={{ title: 'Games', headerBackVisible: false }}
+          options={{
+            title: 'Games',
+            headerTitle: () => <HeaderLogo />,
+            headerBackVisible: false,
+          }}
         />
-        <Stack.Screen name="game/[id]/index" options={{ title: 'Game' }} />
+        <Stack.Screen
+          name="game/[id]/index"
+          options={{ title: 'Game', headerTitle: () => <HeaderLogo /> }}
+        />
         <Stack.Screen
           name="game/[id]/history"
           options={{ title: 'Move history' }}
