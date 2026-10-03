@@ -1,5 +1,16 @@
 import { getTimeRemaining, formatTimeRemaining } from '../timeRemaining';
 
+// Freeze the clock so "12 hours from now" can't round down to 11h when a few
+// milliseconds pass between building the date and checking it
+beforeEach(() => {
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date('2026-01-01T12:00:00Z'));
+});
+
+afterEach(() => {
+  jest.useRealTimers();
+});
+
 describe('getTimeRemaining', () => {
   it('returns null for null input', () => {
     expect(getTimeRemaining(null)).toBeNull();
