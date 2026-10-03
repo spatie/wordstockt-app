@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { MenuView } from '@react-native-menu/menu';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -71,7 +72,7 @@ function SmallActionButton({
       >
         <Ionicons
           name={iconName}
-          size={16}
+          size={20}
           color={disabled ? colors.textMuted : colors.textPrimary}
         />
         <Text
@@ -141,48 +142,63 @@ export function ActionButtons({
 
   return (
     <View style={styles.container}>
-      {/* Grid of action buttons (3x2) */}
-      <View style={styles.grid}>
-        <View style={styles.gridRow}>
+      {/* Everyday actions up front; rarer ones in the More menu */}
+      <View style={styles.actionsRow}>
+        {hasPendingTiles ? (
           <SmallActionButton
             iconName="arrow-undo-outline"
             label="Recall"
             onPress={onRecall}
             disabled={recallDisabled}
           />
-          <SmallActionButton
-            iconName="swap-horizontal-outline"
-            label="Swap"
-            onPress={onSwap ?? (() => {})}
-            disabled={turnDisabled}
-          />
-          <SmallActionButton
-            iconName="play-skip-forward-outline"
-            label="Pass"
-            onPress={onPass}
-            disabled={turnDisabled}
-          />
-        </View>
-        <View style={styles.gridRow}>
+        ) : (
           <SmallActionButton
             iconName="shuffle-outline"
-            label="Mix"
+            label="Shuffle"
             onPress={onMix ?? (() => {})}
             disabled={disabled}
           />
-          <SmallActionButton
-            iconName="book-outline"
-            label="Dict"
-            onPress={onDictionary ?? (() => {})}
-            disabled={disabled}
-          />
-          <SmallActionButton
-            iconName="flag-outline"
-            label="Resign"
-            onPress={onResign ?? (() => {})}
-            disabled={disabled}
-          />
-        </View>
+        )}
+        <SmallActionButton
+          iconName="swap-horizontal-outline"
+          label="Swap"
+          onPress={onSwap ?? (() => {})}
+          disabled={turnDisabled}
+        />
+        <MenuView
+          testID="more-actions"
+          style={styles.smallActionButtonWrapper}
+          shouldOpenOnLongPress={false}
+          actions={[
+            {
+              id: 'pass',
+              title: 'Pass',
+              image: 'forward.end',
+              attributes: { disabled: turnDisabled },
+            },
+            { id: 'dictionary', title: 'Dictionary', image: 'book' },
+            {
+              id: 'resign',
+              title: 'Resign',
+              image: 'flag',
+              attributes: { destructive: true, disabled },
+            },
+          ]}
+          onPressAction={({ nativeEvent }) => {
+            if (nativeEvent.event === 'pass') onPass();
+            if (nativeEvent.event === 'dictionary') onDictionary?.();
+            if (nativeEvent.event === 'resign') onResign?.();
+          }}
+        >
+          <View style={styles.smallActionButton}>
+            <Ionicons
+              name="ellipsis-horizontal"
+              size={20}
+              color={colors.textPrimary}
+            />
+            <Text style={styles.smallActionLabel}>More</Text>
+          </View>
+        </MenuView>
       </View>
 
       {/* Round PLAY button */}
@@ -235,13 +251,10 @@ const createStyles = (colors: ThemeColors) =>
       width: '100%',
       alignSelf: 'center',
     },
-    grid: {
+    actionsRow: {
       flex: 1,
-      gap: 5,
-    },
-    gridRow: {
       flexDirection: 'row',
-      gap: 5,
+      gap: 8,
     },
     smallActionButtonWrapper: {
       flex: 1,
@@ -249,14 +262,14 @@ const createStyles = (colors: ThemeColors) =>
     smallActionButton: {
       alignItems: 'center',
       justifyContent: 'center',
-      paddingVertical: 5,
+      height: 56,
       backgroundColor: colors.backgroundLight,
-      borderRadius: 10,
+      borderRadius: 14,
     },
     smallActionLabel: {
-      fontSize: 10,
+      fontSize: 12,
       color: colors.textSecondary,
-      marginTop: 1,
+      marginTop: 3,
     },
     actionTextDisabled: {
       color: colors.textMuted,

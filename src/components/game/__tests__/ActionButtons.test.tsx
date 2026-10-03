@@ -8,49 +8,81 @@ describe('ActionButtons', () => {
     onPass: jest.fn(),
     onPlay: jest.fn(),
     onMix: jest.fn(),
+    onSwap: jest.fn(),
+    onResign: jest.fn(),
+    onDictionary: jest.fn(),
     canPlay: true,
     isLoading: false,
     disabled: false,
     isMyTurn: true,
     pendingScore: 0,
-    hasPendingTiles: true,
+    hasPendingTiles: false,
+  };
+
+  const chooseFromMore = async (event: string) => {
+    await fireEvent(screen.getByTestId('more-actions'), 'pressAction', {
+      nativeEvent: { event },
+    });
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('renders all action buttons', async () => {
+  it('shows Shuffle, Swap, More and Play', async () => {
     await render(<ActionButtons {...defaultProps} />);
 
-    expect(screen.getByText('Mix')).toBeTruthy();
-    expect(screen.getByText('Pass')).toBeTruthy();
-    expect(screen.getByText('Recall')).toBeTruthy();
+    expect(screen.getByText('Shuffle')).toBeTruthy();
+    expect(screen.getByText('Swap')).toBeTruthy();
+    expect(screen.getByText('More')).toBeTruthy();
     expect(screen.getByText('PLAY')).toBeTruthy();
   });
 
-  it('calls onMix when Mix button is pressed', async () => {
+  it('shows Recall instead of Shuffle once tiles are placed', async () => {
+    await render(<ActionButtons {...defaultProps} hasPendingTiles={true} />);
+
+    expect(screen.queryByText('Shuffle')).toBeNull();
+    await fireEvent.press(screen.getByText('Recall'));
+
+    expect(defaultProps.onRecall).toHaveBeenCalled();
+  });
+
+  it('calls onMix when Shuffle is pressed', async () => {
     await render(<ActionButtons {...defaultProps} />);
 
-    await fireEvent.press(screen.getByText('Mix'));
+    await fireEvent.press(screen.getByText('Shuffle'));
 
     expect(defaultProps.onMix).toHaveBeenCalled();
   });
 
-  it('calls onPass when Pass button is pressed', async () => {
+  it('calls onSwap when Swap is pressed', async () => {
     await render(<ActionButtons {...defaultProps} />);
 
-    await fireEvent.press(screen.getByText('Pass'));
+    await fireEvent.press(screen.getByText('Swap'));
 
-    expect(defaultProps.onPass).toHaveBeenCalled();
+    expect(defaultProps.onSwap).toHaveBeenCalled();
   });
 
-  it('calls onRecall when Recall button is pressed', async () => {
-    await render(<ActionButtons {...defaultProps} hasPendingTiles={true} />);
+  it('passes, opens the dictionary and resigns from the More menu', async () => {
+    await render(<ActionButtons {...defaultProps} />);
 
-    await fireEvent.press(screen.getByText('Recall'));
+    await chooseFromMore('pass');
+    await chooseFromMore('dictionary');
+    await chooseFromMore('resign');
 
-    expect(defaultProps.onRecall).toHaveBeenCalled();
+    expect(defaultProps.onPass).toHaveBeenCalled();
+    expect(defaultProps.onDictionary).toHaveBeenCalled();
+    expect(defaultProps.onResign).toHaveBeenCalled();
+  });
+
+  it('disables Pass in the More menu when it is not my turn', async () => {
+    await render(<ActionButtons {...defaultProps} isMyTurn={false} />);
+
+    const passAction = screen
+      .getByTestId('more-actions')
+      .props.actions.find((action: { id: string }) => action.id === 'pass');
+
+    expect(passAction.attributes.disabled).toBe(true);
   });
 
   it('calls onPlay when Play button is pressed', async () => {
@@ -61,15 +93,13 @@ describe('ActionButtons', () => {
     expect(defaultProps.onPlay).toHaveBeenCalled();
   });
 
-  it('disables all buttons when disabled prop is true', async () => {
+  it('disables buttons when disabled prop is true', async () => {
     await render(<ActionButtons {...defaultProps} disabled={true} />);
 
-    await fireEvent.press(screen.getByText('Mix'));
-    await fireEvent.press(screen.getByText('Recall'));
+    await fireEvent.press(screen.getByText('Shuffle'));
     await fireEvent.press(screen.getByText('PLAY'));
 
     expect(defaultProps.onMix).not.toHaveBeenCalled();
-    expect(defaultProps.onRecall).not.toHaveBeenCalled();
     expect(defaultProps.onPlay).not.toHaveBeenCalled();
   });
 
@@ -81,20 +111,12 @@ describe('ActionButtons', () => {
     expect(defaultProps.onPlay).not.toHaveBeenCalled();
   });
 
-  it('disables Pass button when not my turn', async () => {
+  it('disables Swap when not my turn', async () => {
     await render(<ActionButtons {...defaultProps} isMyTurn={false} />);
 
-    await fireEvent.press(screen.getByText('Pass'));
+    await fireEvent.press(screen.getByText('Swap'));
 
-    expect(defaultProps.onPass).not.toHaveBeenCalled();
-  });
-
-  it('disables Recall button when no pending tiles', async () => {
-    await render(<ActionButtons {...defaultProps} hasPendingTiles={false} />);
-
-    await fireEvent.press(screen.getByText('Recall'));
-
-    expect(defaultProps.onRecall).not.toHaveBeenCalled();
+    expect(defaultProps.onSwap).not.toHaveBeenCalled();
   });
 
   it('shows loading indicator when isLoading is true', async () => {
@@ -116,10 +138,10 @@ describe('ActionButtons', () => {
     expect(screen.queryByText('0')).toBeNull();
   });
 
-  it('Mix remains enabled when not my turn', async () => {
+  it('Shuffle remains enabled when not my turn', async () => {
     await render(<ActionButtons {...defaultProps} isMyTurn={false} />);
 
-    await fireEvent.press(screen.getByText('Mix'));
+    await fireEvent.press(screen.getByText('Shuffle'));
 
     expect(defaultProps.onMix).toHaveBeenCalled();
   });
