@@ -67,6 +67,7 @@
       "bundler": "metro"
     },
     "plugins": [
+      "./plugins/withSceneDelegate",
       "expo-router",
       "expo-updates",
       [
