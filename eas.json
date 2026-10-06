@@ -5,6 +5,7 @@
   },
   "build": {
     "development": {
+      "environment": "development",
       "distribution": "internal",
       "channel": "development",
       "env": {
@@ -15,6 +16,7 @@
       }
     },
     "production": {
+      "environment": "production",
       "channel": "production",
       "env": {
         "SENTRY_ALLOW_FAILURE": "true"

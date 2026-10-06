@@ -97,29 +97,15 @@ npm run format           # Format code with Prettier
 npm run format:check     # Check formatting
 ```
 
-## Deployment Workflow
+## Release workflow
 
-### First time setup
+1. Merge and verify the matching `wordstockt.com` API changes before releasing an app that uses new response fields.
+2. Keep `google-services.json` and `google-service-account.json` outside Git. The production and development EAS environments provide `GOOGLE_SERVICES_JSON` as a file variable for cloud builds. A local Android build uses `google-services.json` in the project root.
+3. Increment `version`, `ios.buildNumber`, and `android.versionCode` in `app.json`. Run `npx expo-doctor`, `npm test -- --runInBand`, `npx tsc --noEmit`, and `npm run lint`.
+4. Build both stores with `eas build --profile production --platform all`. Check the resulting build numbers and install the builds on test devices.
+5. Submit iOS with `eas submit --profile production --platform ios --latest`. Submit Android with `eas submit --profile production --platform android --latest`; the configured Android track is `internal` for testing before a public rollout.
 
-1. `npm run build` - Creates a development build (~15 min)
-2. Download from EAS or install via TestFlight
-3. Install on test devices
-
-### Pushing updates (JS changes only)
-
-```bash
-npm run update -- --message "Fixed login bug"
-```
-
-Takes ~30 seconds. Testers restart the app to get the update.
-
-### Native changes
-
-If you modify native code, add native dependencies, or change app.json:
-
-```bash
-npm run build            # Rebuild required
-```
+For JavaScript-only fixes to an existing runtime version, use `npm run update:prod -- --message "Describe the fix"` after testing the same update on a development build.
 
 ## Contributing
 
