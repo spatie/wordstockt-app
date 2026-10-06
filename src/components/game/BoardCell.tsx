@@ -1,5 +1,9 @@
 import type { ThemeColors } from '../../config/theme';
-import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
+import {
+  useMultiplierColors,
+  useThemeColors,
+  useThemedStyles,
+} from '../../hooks/useThemeColors';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, View, Text, StyleSheet, Platform } from 'react-native';
 import Animated, {
@@ -21,9 +25,9 @@ import {
 } from '../../context/DragDropContext';
 import { usePointerDrag } from '../../hooks/usePointerDrag';
 import {
-  MULTIPLIER_COLORS,
   MULTIPLIER_LABELS,
   HIGHLIGHT_COLORS,
+  palettes,
 } from '../../config/theme';
 import type { SquareType, PlacedTile } from '../../types';
 import type { DropTarget } from '../../context/DragDropContext';
@@ -56,6 +60,7 @@ function BoardCellComponent({
   cellSize,
 }: BoardCellProps) {
   const colors = useThemeColors();
+  const multiplierColors = useMultiplierColors();
   const styles = useThemedStyles(createStyles);
   // Stable per-cell press handler so we don't receive a fresh closure each render
   const onPress = useCallback(() => {
@@ -249,16 +254,30 @@ function BoardCellComponent({
   const backgroundColor = placedTile
     ? colors.cellBackground
     : squareType
-      ? MULTIPLIER_COLORS[squareType]
+      ? multiplierColors[squareType]
       : colors.cellBackground;
+  const monochromeBonusStyle =
+    colors === palettes.monochrome && squareType && !placedTile
+      ? {
+          borderWidth: squareType.startsWith('3') ? 2 : 1,
+          borderColor: '#FFFFFF',
+          borderStyle: squareType.endsWith('L')
+            ? ('dashed' as const)
+            : ('solid' as const),
+        }
+      : undefined;
 
   // Web: use pointer events for dragging pending tiles
   if (pendingTile && !disabled && Platform.OS === 'web') {
     return (
       <View style={styles.cellWrapper}>
         <View
-          // @ts-expect-error cursor is web-only CSS property
-          style={[styles.cell, { backgroundColor, cursor: 'grab' }]}
+          style={[
+            styles.cell,
+            // @ts-expect-error cursor is web-only CSS property
+            { backgroundColor, cursor: 'grab' },
+            monochromeBonusStyle,
+          ]}
           onPointerDown={handlePointerDown}
         >
           <CellContent
@@ -281,7 +300,7 @@ function BoardCellComponent({
   if (pendingTile && !disabled && Platform.OS !== 'web') {
     return (
       <View style={styles.cellWrapper}>
-        <View style={[styles.cell, { backgroundColor }]}>
+        <View style={[styles.cell, { backgroundColor }, monochromeBonusStyle]}>
           {/* Background layer: bonus text (always visible, never hidden) */}
           <BonusText
             squareType={squareType}
@@ -322,6 +341,7 @@ function BoardCellComponent({
         style={({ pressed }) => [
           styles.cell,
           { backgroundColor },
+          monochromeBonusStyle,
           { opacity: pressed && placedTile ? 0.7 : 1 },
         ]}
         onPress={handleCellPress}

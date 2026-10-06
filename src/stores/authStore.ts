@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { User } from '../types';
 import { UserSchema, transformUser } from '../schemas/user.schema';
+import { useNavigationStore } from './navigationStore';
 
 interface AuthSession {
   user: User;
@@ -65,14 +66,16 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       sessionRevision: 0,
       userRevision: 0,
 
-      setAuth: (user, token) =>
+      setAuth: (user, token) => {
+        useNavigationStore.getState().clearLastGameUlid();
         set((state) => ({
           ...sessionFields({ user, token }),
           isLoading: false,
           isLoggingOut: false,
           sessionRevision: state.sessionRevision + 1,
           userRevision: 0,
-        })),
+        }));
+      },
 
       setUser: (user, expectedSessionRevision, expectedUserRevision) => {
         let committed = false;
@@ -97,14 +100,16 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         return committed;
       },
 
-      logout: () =>
+      logout: () => {
+        useNavigationStore.getState().clearLastGameUlid();
         set((state) => ({
           ...sessionFields(null),
           isLoading: false,
           isLoggingOut: false,
           sessionRevision: state.sessionRevision + 1,
           userRevision: 0,
-        })),
+        }));
+      },
 
       setLoading: (isLoading) => set({ isLoading }),
       setLoggingOut: (isLoggingOut) => set({ isLoggingOut }),

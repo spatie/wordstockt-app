@@ -3,6 +3,7 @@ import { MOVE_REACTIONS } from '../config/reactions';
 import type {
   Game,
   GameListItem,
+  GameListLastMove,
   Player,
   Move,
   Tile,
@@ -53,7 +54,11 @@ const MoveSchema = z
     ulid: z.string(),
     user_ulid: z.string(),
     type: z.enum(['play', 'pass', 'swap', 'resign']),
-    words: z.array(z.string()).nullable(),
+    words: z
+      .array(
+        z.union([z.string(), z.object({ word: z.string(), score: z.number() })])
+      )
+      .nullable(),
     score: z.number(),
     tiles: z.array(MoveTileSchema).nullable(),
     created_at: z.string(),
@@ -80,6 +85,8 @@ const PendingInvitationSchema = z
 export const GameSchema = z
   .object({
     ulid: z.string(),
+    creator_ulid: z.string().nullable().optional(),
+    can_invite: z.boolean().optional(),
     language: z.string(),
     status: z.enum(['pending', 'active', 'finished']),
     max_players: z.number(),
@@ -153,7 +160,10 @@ function transformMove(data: z.infer<typeof MoveSchema>): Move {
     ulid: data.ulid,
     userUlid: data.user_ulid,
     type: data.type,
-    words: data.words,
+    words:
+      data.words?.map((word) =>
+        typeof word === 'string' ? word : word.word
+      ) ?? null,
     score: data.score,
     tiles: tilesWithPositions?.length ? tilesWithPositions : null,
     createdAt: data.created_at,
@@ -163,6 +173,8 @@ function transformMove(data: z.infer<typeof MoveSchema>): Move {
 export function transformGame(data: GameResponse): Game {
   return {
     ulid: data.ulid,
+    creatorUlid: data.creator_ulid ?? null,
+    canInvite: data.can_invite ?? false,
     language: data.language,
     status: data.status,
     maxPlayers: data.max_players,
@@ -192,6 +204,7 @@ export function transformGame(data: GameResponse): Game {
 export const GameListItemSchema = z
   .object({
     ulid: z.string(),
+    creator_ulid: z.string().nullable().optional(),
     language: z.string(),
     status: z.enum(['pending', 'active', 'finished']),
     max_players: z.number(),
@@ -214,6 +227,15 @@ export const GameListItemSchema = z
     winner_ulid: z.string().nullable(),
     updated_at: z.string(),
     last_move_description: z.string().nullable().optional(),
+    last_move: z
+      .object({
+        user_ulid: z.string().nullable(),
+        type: z.enum(['play', 'pass', 'swap', 'resign']),
+        word: z.string().nullable(),
+        score: z.number(),
+      })
+      .nullable()
+      .optional(),
     turn_expires_at: z.string().nullable().optional(),
     pending_invitation: PendingInvitationSchema.nullable().optional(),
     is_public: z.boolean().optional().default(false),
@@ -227,6 +249,7 @@ export function transformGameListItem(
 ): GameListItem {
   return {
     ulid: data.ulid,
+    creatorUlid: data.creator_ulid ?? null,
     language: data.language,
     status: data.status,
     maxPlayers: data.max_players,
@@ -245,6 +268,14 @@ export function transformGameListItem(
     winnerUlid: data.winner_ulid,
     updatedAt: data.updated_at,
     lastMoveDescription: data.last_move_description ?? null,
+    lastMove: data.last_move
+      ? ({
+          userUlid: data.last_move.user_ulid,
+          type: data.last_move.type,
+          word: data.last_move.word,
+          score: data.last_move.score,
+        } satisfies GameListLastMove)
+      : null,
     turnExpiresAt: data.turn_expires_at ?? null,
     pendingInvitation: data.pending_invitation
       ? {

@@ -32,7 +32,6 @@ import {
   Text,
   ScrollView,
   Pressable,
-  StatusBar,
 } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -235,6 +234,8 @@ const SETTLE_EASING = Easing.out(Easing.quad);
 const LIFT_SCALE = 1.1;
 const LIFT_SPRING = { damping: 18, stiffness: 320 };
 const LIFT_DURATION = 120;
+// Keep the board target visible above the finger on small Android screens.
+const BOARD_DRAG_LIFT = Platform.OS === 'android' ? 42 : 0;
 const RECALL_DURATION = 500;
 // No cooldown - allows immediate consecutive drags
 const DRAG_COOLDOWN_MS = 0;
@@ -1074,14 +1075,11 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
   // Measure container offset from screen (for converting absolute coordinates)
   const measureContainerOffset = useCallback(() => {
     containerRef.current?.measureInWindow((x, y) => {
-      // On Android, measureInWindow may not include status bar height, but touch events do
-      const statusBarOffset =
-        Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0;
-      containerOffsetRef.current = { x, y: y + statusBarOffset };
+      containerOffsetRef.current = { x, y };
       // Keep the worklet copy in step with every measurement, otherwise drop
       // animations aim at a stale position and the tile jumps when it lands
       containerOffsetX.value = x;
-      containerOffsetY.value = y + statusBarOffset;
+      containerOffsetY.value = y;
     });
   }, [containerOffsetX, containerOffsetY]);
 
@@ -1421,6 +1419,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       positionX.value = x - offset.x;
       positionY.value = y - offset.y;
       scale.value = 1;
+      grabOffsetY.value = withTiming(-BOARD_DRAG_LIFT, {
+        duration: LIFT_DURATION,
+      });
 
       // Show floating tile based on source type
       if (source.type === 'rack') {
@@ -1439,6 +1440,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       positionX,
       positionY,
       scale,
+      grabOffsetY,
       isDraggingShared,
       draggingRackIndexShared,
       setBoardFloatingTile,
@@ -1540,11 +1542,35 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         }
       };
 
+      // A finger over the rack still targets the rack even though the lifted
+      // tile may overlap the bottom edge of the board.
+      const rackLayout = rackLayoutRef.current;
+      const isOverRack =
+        rackLayout !== null &&
+        pos.x >= rackLayout.x - TOUCH_TOLERANCE_PX &&
+        pos.x <= rackLayout.x + rackLayout.width + TOUCH_TOLERANCE_PX &&
+        pos.y >= rackLayout.y - TOUCH_TOLERANCE_PX &&
+        pos.y <= rackLayout.y + rackLayout.height + TOUCH_TOLERANCE_PX;
+      let rackSlotIndex: number | null = null;
+      if (rackLayout && isOverRack) {
+        rackSlotIndex = getRackSlotFromPosition(
+          Math.max(
+            rackLayout.x,
+            Math.min(pos.x, rackLayout.x + rackLayout.width - 0.001)
+          ),
+          Math.max(
+            rackLayout.y,
+            Math.min(pos.y, rackLayout.y + rackLayout.height)
+          ),
+          rackLayout
+        );
+      }
+
       // Check board target
-      if (boardLayoutRef.current) {
+      if (boardLayoutRef.current && !isOverRack) {
         const cell = getBoardCellFromPosition(
           pos.x,
-          pos.y,
+          pos.y - BOARD_DRAG_LIFT,
           boardLayoutRef.current
         );
         // Always capture debug info for board drop attempts
@@ -1625,11 +1651,7 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
 
       // Check rack target
       if (rackLayoutRef.current) {
-        const slotIndex = getRackSlotFromPosition(
-          pos.x,
-          pos.y,
-          rackLayoutRef.current
-        );
+        const slotIndex = rackSlotIndex;
         if (slotIndex !== null) {
           const target: DropTarget = { type: 'rack', slotIndex };
 
@@ -2490,7 +2512,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       touchStartedOnRack.value = isOnRack;
 
       // Check if touch is below the rack (button area) - use original bounds for buttons
-      const isBelowRack = rackLayoutMeasured && touchY > rackBottomShared.value;
+      const isBelowRack =
+        rackLayoutMeasured &&
+        touchY > rackBottomShared.value + TOUCH_TOLERANCE_PX;
       touchStartedBelowRack.value = isBelowRack;
 
       // Check if touch starts near left edge (for iOS swipe-back)
@@ -2631,7 +2655,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         grabOffsetX.value = tileCenterX - screenX;
         grabOffsetY.value = tileCenterY - screenY;
         grabOffsetX.value = withTiming(0, { duration: LIFT_DURATION });
-        grabOffsetY.value = withTiming(0, { duration: LIFT_DURATION });
+        grabOffsetY.value = withTiming(-BOARD_DRAG_LIFT, {
+          duration: LIFT_DURATION,
+        });
         // Lift it straight away so the pickup is visible before any movement
         scale.value = 1;
         scale.value = withSpring(LIFT_SCALE, LIFT_SPRING);
@@ -2698,7 +2724,9 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
         grabOffsetX.value = cellCenterX - screenX;
         grabOffsetY.value = cellCenterY - screenY;
         grabOffsetX.value = withTiming(0, { duration: LIFT_DURATION });
-        grabOffsetY.value = withTiming(0, { duration: LIFT_DURATION });
+        grabOffsetY.value = withTiming(-BOARD_DRAG_LIFT, {
+          duration: LIFT_DURATION,
+        });
         scale.value = cellSize / TILE_SIZE;
         scale.value = withSpring(LIFT_SCALE, LIFT_SPRING);
         // Already a pending tile, so it keeps that look
@@ -2769,16 +2797,27 @@ export function DragDropProvider({ children }: { children: React.ReactNode }) {
       const cellSize = boardCellSizeShared.value;
       const boardSize = boardSizeShared.value;
 
-      if (cellSize > 0) {
+      const isOverRack =
+        screenX >= rackLeftShared.value - TOUCH_TOLERANCE_PX &&
+        screenX <=
+          rackLeftShared.value + rackWidthShared.value + TOUCH_TOLERANCE_PX &&
+        screenY >= rackTopShared.value - TOUCH_TOLERANCE_PX &&
+        screenY <= rackBottomShared.value + TOUCH_TOLERANCE_PX;
+
+      if (cellSize > 0 && !isOverRack) {
         const boardWidth = boardSize * cellSize;
         const boardHeight = boardSize * cellSize;
-        const cell = getBoardCellFromPosition(screenX, screenY, {
-          x: boardLeft,
-          y: boardTop,
-          width: boardWidth,
-          height: boardHeight,
-          cellSize,
-        });
+        const cell = getBoardCellFromPosition(
+          screenX,
+          screenY - BOARD_DRAG_LIFT,
+          {
+            x: boardLeft,
+            y: boardTop,
+            width: boardWidth,
+            height: boardHeight,
+            cellSize,
+          }
+        );
 
         if (cell) {
           const { x: cellX, y: cellY } = cell;

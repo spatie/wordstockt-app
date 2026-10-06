@@ -1,9 +1,13 @@
 import type { ThemeColors } from '../../config/theme';
-import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
+import {
+  useMultiplierColors,
+  useThemeColors,
+  useThemedStyles,
+} from '../../hooks/useThemeColors';
 import React, { memo } from 'react';
 import { StyleSheet, Pressable, Text } from 'react-native';
 import type { SquareType } from '../../types/game';
-import { MULTIPLIER_COLORS, MULTIPLIER_LABELS } from '../../config/theme';
+import { MULTIPLIER_LABELS } from '../../config/theme';
 
 interface BoardMakerCellProps {
   squareType: SquareType;
@@ -19,9 +23,10 @@ export const BoardMakerCell = memo(function BoardMakerCell({
   disabled = false,
 }: BoardMakerCellProps) {
   const colors = useThemeColors();
+  const multiplierColors = useMultiplierColors();
   const styles = useThemedStyles(createStyles);
   const backgroundColor = squareType
-    ? MULTIPLIER_COLORS[squareType]
+    ? multiplierColors[squareType]
     : colors.cellBackground;
 
   const fontSize = size * 0.28;

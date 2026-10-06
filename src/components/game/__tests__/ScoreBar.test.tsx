@@ -61,6 +61,8 @@ const makePlayer = (overrides: Partial<Player> = {}): Player => ({
 
 const createMockGame = (overrides: Partial<Game> = {}): Game => ({
   ulid: '01hxyz000000000game0001',
+  creatorUlid: '01hxyz000000000player01',
+  canInvite: true,
   language: 'en',
   status: 'active',
   maxPlayers: 2,
@@ -219,6 +221,37 @@ describe('ScoreBar', () => {
     expect(onInvite).toHaveBeenCalledTimes(1);
   });
 
+  it('shows a noninteractive open seat to a public game spectator', async () => {
+    const onInvite = jest.fn();
+    const game = createMockGame({
+      status: 'pending',
+      isPublic: true,
+      canJoin: true,
+      creatorUlid: 'creator-ulid',
+      canInvite: false,
+      players: [
+        makePlayer({
+          ulid: 'creator-ulid',
+          username: 'Creator',
+          turnOrder: 1,
+        }),
+      ],
+    });
+
+    await render(
+      <ScoreBar
+        game={game}
+        currentUserUlid="spectator-ulid"
+        onInvite={onInvite}
+      />
+    );
+
+    expect(screen.getByText('Open seat')).toBeTruthy();
+    expect(screen.queryByText('Invite')).toBeNull();
+    await fireEvent(screen.getByText('·'), 'pressOut');
+    expect(onInvite).not.toHaveBeenCalled();
+  });
+
   it('shows a PENDING tag for an invited but unjoined seat', async () => {
     const game = createMockGame({
       status: 'pending',
@@ -289,10 +322,14 @@ describe('ScoreBar', () => {
     });
 
     await render(
-      <ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />
+      <ScoreBar
+        game={game}
+        currentUserUlid="01hxyz000000000player01"
+        onInvite={jest.fn()}
+      />
     );
 
-    // Both invitees appear as pending seats, plus one remaining open "Invite" seat.
+    // Both invitees appear as pending seats, plus one remaining open invite seat.
     expect(screen.getByText('marvin')).toBeTruthy();
     expect(screen.getByText('jessica')).toBeTruthy();
     expect(screen.getAllByText('PENDING')).toHaveLength(2);
@@ -371,6 +408,8 @@ describe('ScoreBar', () => {
     const game = createMockGame({
       status: 'pending',
       maxPlayers: 3,
+      creatorUlid: 'creator-ulid',
+      canInvite: false,
       players: [
         makePlayer({
           ulid: 'creator-ulid',
@@ -388,11 +427,18 @@ describe('ScoreBar', () => {
       ],
     });
 
+    const onInvite = jest.fn();
     await render(
-      <ScoreBar game={game} currentUserUlid="01hxyz000000000player01" />
+      <ScoreBar
+        game={game}
+        currentUserUlid="01hxyz000000000player01"
+        onInvite={onInvite}
+      />
     );
 
     expect(screen.queryByText(/^Start with/)).toBeNull();
+    expect(screen.getByText('Open seat')).toBeTruthy();
+    expect(screen.queryByText('Invite')).toBeNull();
   });
 
   it('shows Won chip when game is finished and current user won', async () => {

@@ -2,9 +2,10 @@ name: Code Style
 
 on:
   push:
+  pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   prettier:
@@ -22,10 +23,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Fix code formatting
-        run: npm run format
-
-      - name: Commit changes
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: 'style: fix code formatting'
+      - name: Check code formatting
+        run: npm run format:check

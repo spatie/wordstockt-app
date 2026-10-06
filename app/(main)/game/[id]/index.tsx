@@ -60,6 +60,7 @@ import {
   type Celebration,
 } from '../../../../src/components/game/MoveCelebration';
 import { FeedbackModal } from '../../../../src/components/ui/FeedbackModal';
+import { WinCelebration } from '../../../../src/components/game/WinCelebration';
 import { AchievementModal } from '../../../../src/components/ui/AchievementModal';
 import { RematchModal } from '../../../../src/components/ui/RematchModal';
 import { Button } from '../../../../src/components/ui/Button';
@@ -768,14 +769,15 @@ function GameScreenContent() {
             onDismiss={() => setLastMoveWarningShown(true)}
           />
           <FeedbackModal
-            visible={showGameEndModal}
-            type={didWin ? 'success' : 'lost'}
-            title={didWin ? 'You Won!' : 'You Lost'}
-            message={
-              didWin
-                ? 'Congratulations! You played a great game.'
-                : 'Better luck next time!'
-            }
+            visible={showGameEndModal && !didWin}
+            type="lost"
+            title="You Lost"
+            message="Better luck next time!"
+            onDismiss={() => setGameEndModalDismissed(true)}
+          />
+          <WinCelebration
+            visible={showGameEndModal && didWin}
+            score={currentPlayer?.score ?? 0}
             onDismiss={() => setGameEndModalDismissed(true)}
           />
           <InvitePlayerModal

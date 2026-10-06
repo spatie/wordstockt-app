@@ -1,7 +1,7 @@
 import type { ThemeColors } from '../../config/theme';
 import { useThemedStyles } from '../../hooks/useThemeColors';
-import React from 'react';
-import { Text, StyleSheet, Animated } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { Text, StyleSheet, Animated, LayoutChangeEvent } from 'react-native';
 import { useScoreBubble } from '../../hooks/useScoreBubble';
 import { VALIDATION_COLORS } from '../../config/theme';
 
@@ -10,27 +10,64 @@ interface ScoreBubbleProps {
   x: number;
   y: number;
   cellSize: number;
+  boardSize: number;
 }
+
+const BOARD_BORDER = 1;
+const GRID_PADDING = 8;
+const BUBBLE_MARGIN = 4;
 
 /**
  * Animated score bubble that appears at the top-left of the first pending tile.
  * Shows the potential score for the current move with fade animations.
  */
-export function ScoreBubble({ score, x, y, cellSize }: ScoreBubbleProps) {
+export function ScoreBubble({
+  score,
+  x,
+  y,
+  cellSize,
+  boardSize,
+}: ScoreBubbleProps) {
   const styles = useThemedStyles(createStyles);
   const { isVisible, opacity, displayScore } = useScoreBubble({ score });
+  const [bubbleSize, setBubbleSize] = useState({ width: 40, height: 24 });
+  const handleLayout = useCallback((event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+    setBubbleSize((current) =>
+      current.width === width && current.height === height
+        ? current
+        : { width, height }
+    );
+  }, []);
 
   if (!isVisible || cellSize <= 0) {
     return null;
   }
 
+  const contentSize = boardSize - BOARD_BORDER * 2;
+  const left = Math.max(
+    BUBBLE_MARGIN,
+    Math.min(
+      GRID_PADDING + x * cellSize - BUBBLE_MARGIN,
+      contentSize - bubbleSize.width - BUBBLE_MARGIN
+    )
+  );
+  const top = Math.max(
+    BUBBLE_MARGIN,
+    Math.min(
+      GRID_PADDING + y * cellSize - BUBBLE_MARGIN,
+      contentSize - bubbleSize.height - BUBBLE_MARGIN
+    )
+  );
+
   return (
     <Animated.View
+      onLayout={handleLayout}
       style={[
         styles.bubble,
         {
-          left: x * cellSize,
-          top: y * cellSize,
+          left,
+          top,
           opacity,
         },
       ]}
@@ -57,7 +94,6 @@ const createStyles = (colors: ThemeColors) =>
       shadowOpacity: 0.25,
       shadowRadius: 3,
       elevation: 4,
-      transform: [{ translateX: -4 }, { translateY: -4 }],
     },
     text: {
       color: '#FFFFFF',

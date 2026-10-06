@@ -1,4 +1,6 @@
 import {
+  GameSchema,
+  GameListItemSchema,
   PublicGameSchema,
   transformGame,
   transformGameListItem,
@@ -60,55 +62,88 @@ it('transforms a multiplayer game list item with a players array', () => {
   expect(item.players.find((p) => p.isMe)?.ulid).toBe('u1');
 });
 
+it('parses structured last move and creator fields', () => {
+  const parsed = GameListItemSchema.parse({
+    ...baseListPayload,
+    creator_ulid: 'u1',
+    last_move: {
+      user_ulid: 'u2',
+      type: 'pass',
+      word: null,
+      score: 0,
+    },
+  });
+  const item = transformGameListItem(parsed);
+
+  expect(item.creatorUlid).toBe('u1');
+  expect(item.lastMove).toEqual({
+    userUlid: 'u2',
+    type: 'pass',
+    word: null,
+    score: 0,
+  });
+});
+
 it('transforms game detail players with left state and turn order', () => {
-  const game = transformGame({
-    ulid: 'g1',
-    language: 'en',
-    status: 'active',
-    max_players: 3,
-    board: [],
-    board_template: [],
-    players: [
-      {
-        ulid: 'u1',
-        username: 'You',
-        avatar: null,
-        avatar_color: null,
-        score: 0,
-        rack_count: 7,
-        is_current_turn: true,
-        turn_order: 1,
-        has_left: false,
-        left_reason: null,
+  const game = transformGame(
+    GameSchema.parse({
+      ulid: 'g1',
+      language: 'en',
+      status: 'active',
+      max_players: 3,
+      board: [],
+      board_template: [],
+      players: [
+        {
+          ulid: 'u1',
+          username: 'You',
+          avatar: null,
+          avatar_color: null,
+          score: 0,
+          rack_count: 7,
+          is_current_turn: true,
+          turn_order: 1,
+          has_left: false,
+          left_reason: null,
+        },
+        {
+          ulid: 'u2',
+          username: 'Tom',
+          avatar: null,
+          avatar_color: null,
+          score: 0,
+          rack_count: 0,
+          is_current_turn: false,
+          turn_order: 2,
+          has_left: true,
+          left_reason: 'removed',
+        },
+      ],
+      my_rack: [],
+      tiles_remaining: 50,
+      current_turn_user_ulid: 'u1',
+      winner_ulid: null,
+      is_last_move: false,
+      last_move: {
+        ulid: 'm1',
+        user_ulid: 'u2',
+        type: 'play',
+        words: [{ word: 'hello', score: 8 }],
+        score: 8,
+        tiles: null,
+        created_at: '2026-01-01T00:00:00Z',
       },
-      {
-        ulid: 'u2',
-        username: 'Tom',
-        avatar: null,
-        avatar_color: null,
-        score: 0,
-        rack_count: 0,
-        is_current_turn: false,
-        turn_order: 2,
-        has_left: true,
-        left_reason: 'removed',
-      },
-    ],
-    my_rack: [],
-    tiles_remaining: 50,
-    current_turn_user_ulid: 'u1',
-    winner_ulid: null,
-    is_last_move: false,
-    last_move: null,
-    turn_expires_at: null,
-    pending_invitation: null,
-    is_public: false,
-    can_join: false,
-  } as any);
+      turn_expires_at: null,
+      pending_invitation: null,
+      is_public: false,
+      can_join: false,
+    })
+  );
   expect(game.maxPlayers).toBe(3);
   expect(game.players[1]!.hasLeft).toBe(true);
   expect(game.players[1]!.leftReason).toBe('removed');
   expect(game.players[0]!.turnOrder).toBe(1);
+  expect(game.lastMove?.words).toEqual(['hello']);
 });
 
 describe('PublicGameSchema', () => {

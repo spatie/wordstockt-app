@@ -26,34 +26,57 @@ const AVATAR_OVERLAP = 20;
 const MAX_HEADER_AVATARS = 3;
 
 function formatLastMove(
-  description: string | null,
-  status: string,
-  isMyTurn: boolean
+  game: GameListItem,
+  userUlid: string | undefined
 ): string {
+  const move = game.lastMove;
+  if (move) {
+    const actor =
+      move.userUlid && move.userUlid === userUlid
+        ? 'You'
+        : (game.players.find((player) => player.ulid === move.userUlid)
+            ?.username ?? 'Opponent');
+
+    switch (move.type) {
+      case 'play': {
+        return move.word
+          ? `${actor} played "${move.word.toUpperCase()}" +${move.score}`
+          : `${actor} played for ${move.score} points`;
+      }
+      case 'pass':
+        return `${actor} passed`;
+      case 'swap':
+        return `${actor} swapped tiles`;
+      case 'resign':
+        return `${actor} resigned`;
+    }
+  }
+
+  const { lastMoveDescription: description, status } = game;
   if (!description) {
     return status === 'pending'
       ? 'Waiting for opponent...'
       : 'Game in progress';
   }
 
-  // For opponent's turn, start with "You" to show what the current player did
-  const prefix = !isMyTurn ? 'You ' : '';
-
-  // Convert "Played HELLO for 12 points" to "You played "HELLO" +12" (opponent's turn)
-  // Convert "jessica played 'WORD' for 6 points" or "Played HELLO for 12 points" to "Played "WORD" +6" (your turn)
+  // The next player is not necessarily the last player in a multiplayer game.
+  // Keep the actor supplied by the move description.
   const playedMatch = description.match(
-    /(?:.*\s+)?played '?([^']+)'? for (\d+) points?/i
+    /^(?:(.+?)\s+)?played\s+'?(.+?)'?\s+for\s+(\d+)\s+points?$/i
   );
   if (playedMatch) {
-    return `${prefix}played "${playedMatch[1]}" +${playedMatch[2]}`;
+    const actor = playedMatch[1] ? `${playedMatch[1]} ` : '';
+    return `${actor}played "${playedMatch[2]}" +${playedMatch[3]}`;
   }
-  // Convert "You swapped tiles" / "jessica swapped tiles" to appropriate format
-  if (description.toLowerCase().includes('swapped')) {
-    return `${prefix}swapped tiles`;
+  const swappedMatch = description.match(/^(.+?)\s+swapped tiles$/i);
+  if (swappedMatch) {
+    return `${swappedMatch[1]} swapped tiles`;
   }
-  // Convert "You passed" / "jessica passed" to appropriate format
-  if (description.toLowerCase().includes('passed')) {
-    return `${prefix}passed`;
+  const passedMatch = description.match(
+    /^(.+?)\s+(?:(?:has|have)\s+)?passed$/i
+  );
+  if (passedMatch) {
+    return `${passedMatch[1]} passed`;
   }
   return description;
 }
@@ -122,9 +145,7 @@ export const GameCard = memo(function GameCard({
     game.status === 'pending' && otherPlayers.length === 0;
   const hasPendingInvitation = isAwaitingPlayers && game.pendingInvitation;
 
-  // The creator is the first player in the roster. They can manually start a
-  // pending game once at least one other player has joined (>= 2 total).
-  const isCreator = game.players[0]?.ulid === userUlid;
+  const isCreator = game.creatorUlid === userUlid;
   const canStartNow =
     game.status === 'pending' && isCreator && game.players.length >= 2;
 
@@ -189,7 +210,7 @@ export const GameCard = memo(function GameCard({
       ? `Waiting for ${openSeats} player${openSeats > 1 ? 's' : ''}…`
       : isCompleted
         ? null
-        : formatLastMove(game.lastMoveDescription, game.status, game.isMyTurn);
+        : formatLastMove(game, userUlid);
 
   return (
     <Card onPress={handlePress} onPressIn={handlePressIn}>

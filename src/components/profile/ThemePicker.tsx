@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, Switch, Text, View } from 'react-native';
-import { appearances, palettes } from '../../config/theme';
+import { appearances, getMultiplierColors, palettes } from '../../config/theme';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import {
   APPEARANCE_NAMES,
@@ -61,6 +61,7 @@ export function ThemePicker() {
         {APPEARANCE_NAMES.map((name) => {
           const { label } = appearances[name];
           const preview = palettes[name];
+          const bonusColors = getMultiplierColors(name);
           const selected = !followSystem && appearance === name;
 
           return (
@@ -76,7 +77,7 @@ export function ThemePicker() {
                 style={{
                   height: 68,
                   borderRadius: 12,
-                  backgroundColor: preview.background,
+                  backgroundColor: preview.boardBackground,
                   borderWidth: selected ? 3 : 1,
                   borderColor: selected ? colors.primary : colors.border,
                   padding: 10,
@@ -92,19 +93,48 @@ export function ThemePicker() {
                   }}
                 />
                 <View style={{ flexDirection: 'row', gap: 4 }}>
-                  {[0, 1, 2].map((index) => (
-                    <View
-                      key={index}
+                  <View
+                    style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: 3,
+                      backgroundColor: preview.tileClassicBackground,
+                      borderWidth: 1,
+                      borderColor: preview.tileEdgeDark,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text
                       style={{
-                        width: 16,
-                        height: 16,
-                        borderRadius: 4,
-                        backgroundColor: preview.tileBackground,
-                        borderWidth: 1,
-                        borderColor: preview.tileBorder,
+                        color: '#1A1A1A',
+                        fontSize: 10,
+                        fontWeight: '800',
                       }}
-                    />
-                  ))}
+                    >
+                      A
+                    </Text>
+                  </View>
+                  <View
+                    style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: 3,
+                      backgroundColor: bonusColors['3W'],
+                      borderWidth: 1,
+                      borderColor: preview.gridLine,
+                    }}
+                  />
+                  <View
+                    style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: 3,
+                      backgroundColor: bonusColors['3L'],
+                      borderWidth: 1,
+                      borderColor: preview.tileBorder,
+                    }}
+                  />
                 </View>
               </View>
               <Text

@@ -41,11 +41,11 @@ export interface WordScore {
   word: string;
   baseScore: number;
   multipliedScore: number;
-  multipliers: Array<{
+  multipliers: {
     type: 'letter' | 'word';
     value: number;
     position: [number, number];
-  }>;
+  }[];
 }
 
 export interface Bonus {
@@ -94,6 +94,8 @@ export interface PendingInvitation {
 
 export interface Game {
   ulid: string;
+  creatorUlid?: string | null;
+  canInvite?: boolean;
   language: string;
   status: GameStatus;
   maxPlayers: number;
@@ -136,6 +138,7 @@ export interface GameListPlayer {
 
 export interface GameListItem {
   ulid: string;
+  creatorUlid?: string | null;
   language: string;
   status: GameStatus;
   maxPlayers: number;
@@ -145,9 +148,17 @@ export interface GameListItem {
   winnerUlid: string | null;
   updatedAt: string;
   lastMoveDescription: string | null;
+  lastMove?: GameListLastMove | null;
   turnExpiresAt: string | null;
   pendingInvitation: GameListPendingInvitation | null;
   isPublic: boolean;
+}
+
+export interface GameListLastMove {
+  userUlid: string | null;
+  type: MoveType;
+  word: string | null;
+  score: number;
 }
 
 export interface PublicGame {

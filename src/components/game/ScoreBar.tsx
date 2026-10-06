@@ -438,9 +438,10 @@ function PendingSeatChip({
     >
       <View style={styles.chip}>
         <Pressable
+          disabled={!onRevoke}
           style={({ pressed }) => [
             styles.pendingAvatarContainer,
-            pressed && { opacity: 0.7 },
+            pressed && onRevoke && { opacity: 0.7 },
           ]}
           onPressOut={() => onRevoke?.(invitation.ulid)}
         >
@@ -482,20 +483,21 @@ function InviteSeatChip({
   const styles = useThemedStyles(createStyles);
   return (
     <Pressable
+      disabled={!onInvite}
       style={({ pressed }) => [
         styles.playerSection,
         styles.inviteSeat,
         gridItem && styles.gridSection,
-        pressed && { opacity: 0.6 },
+        pressed && onInvite && { opacity: 0.6 },
       ]}
       onPressOut={onInvite}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
       <View style={styles.inviteButton}>
-        <Text style={styles.inviteText}>+</Text>
+        <Text style={styles.inviteText}>{onInvite ? '+' : '·'}</Text>
       </View>
       <Text style={styles.invitePrompt} numberOfLines={1}>
-        Invite
+        {onInvite ? 'Invite' : 'Open seat'}
       </Text>
     </Pressable>
   );
@@ -640,10 +642,7 @@ export function ScoreBar({
   const myPlayer = game.players.find((p) => p.ulid === currentUserUlid);
   const isMyTurn = myPlayer?.isCurrentTurn ?? false;
 
-  // The creator is the player with the lowest turn order (turn_order === 1).
-  // Only they can manually start a pending game.
-  const creator = orderedPlayers[0];
-  const isCreator = creator?.ulid === currentUserUlid;
+  const isCreator = game.creatorUlid === currentUserUlid;
   const canStartNow = isPending && isCreator && game.players.length >= 2;
 
   // Open seats are the slots not yet filled and not awaiting a pending invite.
@@ -729,7 +728,7 @@ export function ScoreBar({
               <PendingSeatChip
                 key={invitation.ulid}
                 invitation={invitation}
-                onRevoke={onRevokeInvitation}
+                onRevoke={isCreator ? onRevokeInvitation : undefined}
                 gridItem={isMultiplayer}
               />
             ))}
@@ -737,7 +736,7 @@ export function ScoreBar({
           {Array.from({ length: openSeats }).map((_, index) => (
             <InviteSeatChip
               key={`invite-seat-${index}`}
-              onInvite={onInvite}
+              onInvite={game.canInvite ? onInvite : undefined}
               gridItem={isMultiplayer}
             />
           ))}

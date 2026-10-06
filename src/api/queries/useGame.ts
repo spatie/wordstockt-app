@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { isAxiosError } from 'axios';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../client';
 import {
@@ -32,6 +33,19 @@ export function isWaitingOnOthers(
   return game.status === 'active' && game.currentTurnUserUlid !== userUlid;
 }
 
+export function shouldRetryGameRequest(
+  failureCount: number,
+  error: unknown
+): boolean {
+  const status = isAxiosError(error) ? error.response?.status : undefined;
+
+  if (status === 401 || status === 403 || status === 404) {
+    return false;
+  }
+
+  return failureCount < 2;
+}
+
 function gameQueryOptions(gameUlid: string) {
   return {
     queryKey: gameKeys.detail(gameUlid),
@@ -41,6 +55,7 @@ function gameQueryOptions(gameUlid: string) {
       return transformGame(validated);
     },
     staleTime: 30_000,
+    retry: shouldRetryGameRequest,
   };
 }
 

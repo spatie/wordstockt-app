@@ -9,6 +9,12 @@ export const APPEARANCE_NAMES = [
   'paper',
   'sky',
   'sage',
+  'library',
+  'arcade',
+  'terracotta',
+  'monochrome',
+  'classic',
+  'ember',
 ] as const;
 
 export type AppearanceName = (typeof APPEARANCE_NAMES)[number];

@@ -1,9 +1,12 @@
 import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ThemePicker } from '../ThemePicker';
 import { palettes } from '../../../config/theme';
-import { useAppearanceStore } from '../../../stores/appearanceStore';
+import {
+  APPEARANCE_NAMES,
+  useAppearanceStore,
+} from '../../../stores/appearanceStore';
 
 jest.unmock('zustand/middleware');
 
@@ -36,9 +39,11 @@ it('changes the visible palette and restores the saved choice', async () => {
     expect(savedAppearance).toContain('paper');
   });
 
-  useAppearanceStore.setState({ appearance: 'navy' });
-  await AsyncStorage.setItem('appearance-storage', savedAppearance);
-  await useAppearanceStore.persist.rehydrate();
+  await act(async () => {
+    useAppearanceStore.setState({ appearance: 'navy' });
+    await AsyncStorage.setItem('appearance-storage', savedAppearance);
+    await useAppearanceStore.persist.rehydrate();
+  });
   expect(useAppearanceStore.getState().appearance).toBe('paper');
 });
 
@@ -61,4 +66,18 @@ it('follows the system appearance until a theme is picked', async () => {
 
   expect(useAppearanceStore.getState().followSystem).toBe(false);
   expect(useAppearanceStore.getState().appearance).toBe('forest');
+});
+
+it('shows all twelve themes and persists a new theme choice', async () => {
+  const view = await render(<ThemePicker />);
+
+  expect(view.getAllByRole('radio')).toHaveLength(APPEARANCE_NAMES.length);
+  await fireEvent.press(view.getByRole('radio', { name: 'Arcade theme' }));
+
+  expect(useAppearanceStore.getState().appearance).toBe('arcade');
+  await waitFor(async () => {
+    expect(await AsyncStorage.getItem('appearance-storage')).toContain(
+      'arcade'
+    );
+  });
 });
