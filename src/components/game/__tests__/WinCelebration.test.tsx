@@ -1,5 +1,10 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react-native';
 import { WinCelebration } from '../WinCelebration';
 import { haptics } from '../../../utils/haptics';
 
@@ -14,9 +19,7 @@ describe('WinCelebration', () => {
 
   it('shows the final score and celebrates when a win becomes visible', async () => {
     const onDismiss = jest.fn();
-    await render(
-      <WinCelebration visible score={362} onDismiss={onDismiss} />
-    );
+    await render(<WinCelebration visible score={362} onDismiss={onDismiss} />);
 
     expect(screen.getByText('You won!')).toBeTruthy();
     expect(screen.getByText('362')).toBeTruthy();
