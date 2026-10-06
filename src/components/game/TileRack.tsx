@@ -7,13 +7,7 @@ import React, {
   useLayoutEffect,
   useState,
 } from 'react';
-import {
-  View,
-  StyleSheet,
-  LayoutChangeEvent,
-  Platform,
-  StatusBar,
-} from 'react-native';
+import { View, StyleSheet, LayoutChangeEvent } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -299,10 +293,7 @@ export function TileRack({ tiles, disabled, onTileDrop }: TileRackProps) {
       const startX = x + (width - TOTAL_SLOTS_WIDTH) / 2;
       // Tiles are vertically centered within the rack container
       // Calculate the Y offset to get the actual tile position
-      // On Android, measureInWindow may not include status bar height, but touch events do
-      const statusBarOffset =
-        Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0;
-      const tileY = y + statusBarOffset + (height - TILE_SIZE) / 2;
+      const tileY = y + (height - TILE_SIZE) / 2;
       const layout: RackLayout = {
         x: startX,
         y: tileY,

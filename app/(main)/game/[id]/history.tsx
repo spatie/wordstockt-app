@@ -1,5 +1,6 @@
 import type { ThemeColors } from '../../../../src/config/theme';
 import {
+  useMultiplierColors,
   useThemeColors,
   useThemedStyles,
 } from '../../../../src/hooks/useThemeColors';
@@ -18,7 +19,6 @@ import {
 } from '../../../../src/config/reactions';
 import { LoadingView } from '../../../../src/components/ui/LoadingView';
 import { Avatar } from '../../../../src/components/ui/Avatar';
-import { MULTIPLIER_COLORS } from '../../../../src/config/theme';
 import { SPACING, RADIUS } from '../../../../src/config/constants';
 import type { MoveHistoryItem, Bonus, Player } from '../../../../src/types';
 
@@ -61,10 +61,11 @@ function formatRelativeTime(dateString: string): string {
 
 function MultiplierBadge({ type }: { type: string }) {
   const colors = useThemeColors();
+  const multiplierColors = useMultiplierColors();
   const styles = useThemedStyles(createStyles);
   const normalizedType = type.toUpperCase();
   const bgColor =
-    MULTIPLIER_COLORS[normalizedType as keyof typeof MULTIPLIER_COLORS] ??
+    multiplierColors[normalizedType as keyof typeof multiplierColors] ??
     colors.primary;
 
   return (

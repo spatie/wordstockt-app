@@ -1,6 +1,11 @@
 import { useMemo } from 'react';
 import { StyleSheet, useColorScheme } from 'react-native';
-import { isLightAppearance, palettes, type ThemeColors } from '../config/theme';
+import {
+  getMultiplierColors,
+  isLightAppearance,
+  palettes,
+  type ThemeColors,
+} from '../config/theme';
 import {
   useAppearanceStore,
   type AppearanceName,
@@ -47,6 +52,10 @@ export function useAppearance(): AppearanceName {
 
 export function useThemeColors(): ThemeColors {
   return palettes[useAppearance()];
+}
+
+export function useMultiplierColors() {
+  return getMultiplierColors(useAppearance());
 }
 
 export function useIsLightAppearance(): boolean {

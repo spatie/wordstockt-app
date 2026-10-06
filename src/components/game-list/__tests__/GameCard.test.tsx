@@ -68,6 +68,7 @@ const mockPlayer = (
 
 const mockGame: GameListItem = {
   ulid: '01hxyz000000000game0001',
+  creatorUlid: MY_ULID,
   language: 'en',
   status: 'active',
   maxPlayers: 2,
@@ -199,7 +200,62 @@ describe('GameCard', () => {
     await renderCard(opponentTurnGame);
 
     expect(screen.getByText('View')).toBeTruthy();
-    expect(screen.getByText('You played "HELLO" +12')).toBeTruthy();
+    expect(screen.getByText('opponent_user played "HELLO" +12')).toBeTruthy();
+  });
+
+  it('names the player who passed even when it is another opponent’s turn', async () => {
+    await renderCard({
+      ...mockGame,
+      maxPlayers: 3,
+      isMyTurn: false,
+      lastMoveDescription: 'opponent_user has passed',
+    });
+
+    expect(screen.getByText('opponent_user passed')).toBeTruthy();
+    expect(screen.queryByText('You passed')).toBeNull();
+  });
+
+  it('uses You only when the last move description identifies me', async () => {
+    await renderCard({
+      ...mockGame,
+      isMyTurn: false,
+      lastMoveDescription: 'You have passed',
+    });
+
+    expect(screen.getByText('You passed')).toBeTruthy();
+  });
+
+  it('uses the last move player ID when the legacy description is wrong', async () => {
+    await renderCard({
+      ...mockGame,
+      isMyTurn: false,
+      lastMoveDescription: 'You have passed',
+      lastMove: {
+        userUlid: OPPONENT_ULID,
+        type: 'pass',
+        word: null,
+        score: 0,
+      },
+    });
+
+    expect(screen.getByText('opponent_user passed')).toBeTruthy();
+    expect(screen.queryByText('You passed')).toBeNull();
+  });
+
+  it('formats the structured played word even when the turn indicator differs', async () => {
+    await renderCard({
+      ...mockGame,
+      isMyTurn: true,
+      lastMoveDescription: 'You played OTHER for 1 points',
+      lastMove: {
+        userUlid: OPPONENT_ULID,
+        type: 'play',
+        word: 'majesty',
+        score: 19,
+      },
+    });
+
+    expect(screen.getByText('opponent_user played "MAJESTY" +19')).toBeTruthy();
   });
 
   it('shows Won badge and placement for finished games when user won', async () => {
@@ -285,6 +341,17 @@ describe('GameCard', () => {
     await renderCard(pendingGame);
 
     expect(screen.getByText('Start now')).toBeTruthy();
+  });
+
+  it('does not infer the creator from roster order', async () => {
+    await renderCard({
+      ...mockGame,
+      status: 'pending',
+      maxPlayers: 3,
+      creatorUlid: OPPONENT_ULID,
+    });
+
+    expect(screen.queryByText('Start now')).toBeNull();
   });
 
   it('shows "Game in progress" when no last move description', async () => {

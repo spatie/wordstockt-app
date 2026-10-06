@@ -1,5 +1,9 @@
 import type { ThemeColors } from '../../config/theme';
-import { useThemeColors, useThemedStyles } from '../../hooks/useThemeColors';
+import {
+  useMultiplierColors,
+  useThemeColors,
+  useThemedStyles,
+} from '../../hooks/useThemeColors';
 import React, { useMemo, useRef, useCallback, useState } from 'react';
 import {
   View,
@@ -19,7 +23,6 @@ import {
   getBoardTemplateCounts,
   randomizeBoardTemplate,
 } from '../../utils/boardMaker';
-import { MULTIPLIER_COLORS } from '../../config/theme';
 import { BOARD_SIZE, SPACING } from '../../config/constants';
 import type { SquareType } from '../../types/game';
 
@@ -37,6 +40,7 @@ export function BoardMaker({
   onCancel,
 }: BoardMakerProps) {
   const colors = useThemeColors();
+  const multiplierColors = useMultiplierColors();
   const styles = useThemedStyles(createStyles);
   const { width: windowWidth } = useWindowDimensions();
   const [template, setTemplate] = useState(() =>
@@ -123,7 +127,7 @@ export function BoardMaker({
             <View
               style={[
                 styles.countDot,
-                { backgroundColor: MULTIPLIER_COLORS[type] },
+                { backgroundColor: multiplierColors[type] },
               ]}
             />
             <Text style={styles.countText}>

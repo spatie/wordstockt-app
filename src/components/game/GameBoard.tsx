@@ -17,8 +17,6 @@ import {
   LayoutChangeEvent,
   Animated,
   ActivityIndicator,
-  Platform,
-  StatusBar,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { BoardCell } from './BoardCell';
@@ -131,12 +129,9 @@ export function GameBoard({
 
   const measureBoard = useCallback(() => {
     gridRef.current?.measureInWindow((x, y, width) => {
-      // On Android, measureInWindow may not include status bar height, but touch events do
-      const statusBarOffset =
-        Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0;
       setBoardLayout({
         x,
-        y: y + statusBarOffset,
+        y,
         width,
         height: width, // Board is square
         cellSize: width / BOARD_SIZE,
@@ -262,6 +257,7 @@ export function GameBoard({
                     x={lastScoreBubblePosition.current.x}
                     y={lastScoreBubblePosition.current.y}
                     cellSize={cellSize}
+                    boardSize={boardSize}
                   />
                 )}
               </View>

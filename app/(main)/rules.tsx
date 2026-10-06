@@ -1,8 +1,10 @@
 import type { ThemeColors } from '../../src/config/theme';
-import { useThemedStyles } from '../../src/hooks/useThemeColors';
+import {
+  useMultiplierColors,
+  useThemedStyles,
+} from '../../src/hooks/useThemeColors';
 import React from 'react';
 import { View, StyleSheet, ScrollView, Text } from 'react-native';
-import { MULTIPLIER_COLORS } from '../../src/config/theme';
 import { Card } from '../../src/components/ui/Card';
 import { withAlpha } from '../../src/utils/color';
 
@@ -54,7 +56,8 @@ function MultiplierBadge({
   label: string;
 }) {
   const styles = useThemedStyles(createStyles);
-  const bgColor = MULTIPLIER_COLORS[type];
+  const multiplierColors = useMultiplierColors();
+  const bgColor = multiplierColors[type];
   return (
     <View style={styles.multiplierRow}>
       <View style={[styles.multiplierBadge, { backgroundColor: bgColor }]}>
