@@ -1,6 +1,7 @@
 import { useAuthStore } from '../authStore';
 import { mockUser } from '../../__tests__/utils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigationStore } from '../navigationStore';
 
 jest.unmock('zustand/middleware');
 
@@ -34,6 +35,14 @@ describe('authStore', () => {
       const state = useAuthStore.getState();
       expect(state.user?.username).toBe('user2');
       expect(state.token).toBe('token2');
+    });
+
+    it('clears the previous account’s resume game', () => {
+      useNavigationStore.getState().setLastGameUlid('old-game');
+
+      useAuthStore.getState().setAuth(mockUser(), 'new-token');
+
+      expect(useNavigationStore.getState().lastGameUlid).toBeNull();
     });
   });
 
@@ -100,6 +109,14 @@ describe('authStore', () => {
       expect(state.user).toBeNull();
       expect(state.token).toBeNull();
       expect(state.isAuthenticated).toBe(false);
+    });
+
+    it('clears the resume game on logout', () => {
+      useNavigationStore.getState().setLastGameUlid('old-game');
+
+      useAuthStore.getState().logout();
+
+      expect(useNavigationStore.getState().lastGameUlid).toBeNull();
     });
   });
 
