@@ -104,11 +104,10 @@ export default function RootLayout() {
     }
   }, [isAppReady]);
 
-  // Native UI (menus, alerts, keyboard) follows the app's theme. When the
-  // app follows the system, hand the color scheme back to the system so it
-  // can be observed.
+  // iOS native UI follows the app's theme. Changing Android's native color
+  // scheme reloads app resources and can block the UI during startup.
   useEffect(() => {
-    if (Platform.OS === 'web') {
+    if (Platform.OS !== 'ios') {
       return;
     }
 
