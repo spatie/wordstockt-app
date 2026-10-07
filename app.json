@@ -2,7 +2,7 @@
   "expo": {
     "name": "WordStockt",
     "slug": "wordstockt",
-    "version": "1.12.0",
+    "version": "1.13.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -18,7 +18,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.wordstockt.app",
       "backgroundColor": "#0D1B2A",
-      "buildNumber": "88",
+      "buildNumber": "89",
       "associatedDomains": [
         "webcredentials:wordstockt.com",
         "applinks:wordstockt.com"
@@ -38,7 +38,7 @@
       }
     },
     "android": {
-      "versionCode": 74,
+      "versionCode": 75,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1B2838"

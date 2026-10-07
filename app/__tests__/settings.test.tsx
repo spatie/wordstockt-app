@@ -7,11 +7,14 @@ import {
 } from '@testing-library/react-native';
 import SettingsScreen from '../(main)/settings';
 import { useAuthStore } from '../../src/stores/authStore';
+import { ROUTES } from '../../src/config/routes';
+
+const mockPush = jest.fn();
 
 // Mock expo-router
 jest.mock('expo-router', () => ({
   useRouter: () => ({
-    push: jest.fn(),
+    push: mockPush,
   }),
   Link: ({ children }: { children: React.ReactNode }) => children,
   useFocusEffect: (callback: () => void) => {
@@ -126,6 +129,19 @@ describe('SettingsScreen', () => {
     // Email is in a TextInput, so use getByDisplayValue
     expect(screen.getByDisplayValue('test@example.com')).toBeTruthy();
     expect(screen.getByDisplayValue('testuser')).toBeTruthy();
+    expect(screen.queryByRole('radio')).toBeNull();
+    await fireEvent.press(screen.getByText('Appearance'));
+    expect(mockPush).toHaveBeenCalledWith(ROUTES.APPEARANCE);
+  });
+
+  it('lets guests open appearance settings', async () => {
+    mockUseAuthStore.mockImplementation((selector: any) =>
+      selector({ user: mockUser, isGuest: true })
+    );
+    await render(<SettingsScreen />);
+
+    await fireEvent.press(screen.getByText('Appearance'));
+    expect(mockPush).toHaveBeenCalledWith(ROUTES.APPEARANCE);
   });
 
   it('save button is initially disabled when username is unchanged', async () => {

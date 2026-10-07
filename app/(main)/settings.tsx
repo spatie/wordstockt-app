@@ -23,7 +23,6 @@ import {
   useThemeColors,
   useThemedStyles,
 } from '../../src/hooks/useThemeColors';
-import { ThemePicker } from '../../src/components/profile/ThemePicker';
 import { LAYOUT } from '../../src/config/constants';
 import { AvatarColorPicker } from '../../src/components/ui/AvatarColorPicker';
 import { AnimatedSaveButton } from '../../src/components/ui/AnimatedSaveButton';
@@ -109,6 +108,25 @@ export default function SettingsScreen() {
     }
   };
 
+  const appearanceRow = (
+    <View style={[styles.rowGroup, styles.appearanceSection]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Appearance"
+        onPress={() => router.push(ROUTES.APPEARANCE)}
+        style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+      >
+        <Ionicons
+          name="color-palette-outline"
+          size={20}
+          color={colors.textPrimary}
+        />
+        <Text style={styles.rowLabel}>Appearance</Text>
+        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+      </Pressable>
+    </View>
+  );
+
   if (isGuest) {
     return (
       <View style={styles.container}>
@@ -132,7 +150,7 @@ export default function SettingsScreen() {
             </View>
           )}
 
-          <ThemePicker />
+          {appearanceRow}
         </ScrollView>
       </View>
     );
@@ -231,7 +249,7 @@ export default function SettingsScreen() {
           />
         </View>
 
-        <ThemePicker />
+        {appearanceRow}
 
         <View style={styles.rowGroup}>
           <Pressable
@@ -373,6 +391,9 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: colors.backgroundLight,
       borderRadius: 12,
       overflow: 'hidden',
+    },
+    appearanceSection: {
+      marginBottom: 12,
     },
     row: {
       flexDirection: 'row',
