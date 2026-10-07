@@ -1,12 +1,15 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import ProfileScreen from '../(main)/profile';
 import { useAuthStore } from '../../src/stores/authStore';
+import { ROUTES } from '../../src/config/routes';
+
+const mockPush = jest.fn();
 
 // Mock expo-router
 jest.mock('expo-router', () => ({
   useRouter: () => ({
-    push: jest.fn(),
+    push: mockPush,
   }),
   Link: ({ children }: { children: React.ReactNode }) => children,
   useFocusEffect: (callback: () => void) => {
@@ -121,6 +124,18 @@ describe('ProfileScreen', () => {
     expect(screen.getByText('TE')).toBeTruthy(); // Avatar initials
     expect(screen.getByText('testuser')).toBeTruthy();
     expect(screen.getByText('Edit profile')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Appearance'));
+    expect(mockPush).toHaveBeenCalledWith(ROUTES.APPEARANCE);
+  });
+
+  it('lets guests open the appearance page', async () => {
+    mockUseAuthStore.mockImplementation((selector: any) =>
+      selector({ user: mockUser, isGuest: true })
+    );
+    await render(<ProfileScreen />);
+
+    await fireEvent.press(screen.getByText('Appearance'));
+    expect(mockPush).toHaveBeenCalledWith(ROUTES.APPEARANCE);
   });
 
   it('displays user statistics', async () => {

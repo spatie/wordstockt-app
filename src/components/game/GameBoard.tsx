@@ -221,6 +221,16 @@ export function GameBoard({
     });
   }, [pendingTiles]);
 
+  const occupiedTiles = useMemo(() => {
+    const tiles = pendingTiles.map(({ x, y }) => ({ x, y }));
+    game.board.forEach((row, y) =>
+      row.forEach((tile, x) => {
+        if (tile) tiles.push({ x, y });
+      })
+    );
+    return tiles;
+  }, [game.board, pendingTiles]);
+
   // Track last known position for score bubble so it can animate out
   const lastScoreBubblePosition = useRef<{ x: number; y: number } | null>(null);
   if (topLeftTile) {
@@ -249,7 +259,7 @@ export function GameBoard({
                   ))}
                   <BoardGrid />
                 </View>
-                {/* Score bubble positioned at top-left of the top-left pending tile */}
+                {/* Position the score bubble near the first pending tile */}
                 {/* Always render if we have a position so fade-out animation can complete */}
                 {lastScoreBubblePosition.current && (
                   <ScoreBubble
@@ -258,6 +268,8 @@ export function GameBoard({
                     y={lastScoreBubblePosition.current.y}
                     cellSize={cellSize}
                     boardSize={boardSize}
+                    occupiedTiles={occupiedTiles}
+                    pendingTiles={pendingTiles}
                   />
                 )}
               </View>

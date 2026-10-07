@@ -26,8 +26,7 @@ import { LAYOUT } from '../../src/config/constants';
 import { Avatar } from '../../src/components/ui/Avatar';
 import { EditableAvatar } from '../../src/components/profile/EditableAvatar';
 
-// Who you are and how you play. Account details and appearance live in
-// Settings.
+// Who you are and how you play. Account details and appearance have their own screens.
 export default function ProfileScreen() {
   const colors = useThemeColors();
   const styles = useThemedStyles(createStyles);
@@ -61,6 +60,21 @@ export default function ProfileScreen() {
             <View style={styles.guestBadge}>
               <Text style={styles.guestBadgeText}>Guest Account</Text>
             </View>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push(ROUTES.APPEARANCE)}
+              style={({ pressed }) => [
+                styles.editButton,
+                { opacity: pressed ? 0.7 : 1 },
+              ]}
+            >
+              <Ionicons
+                name="color-palette-outline"
+                size={16}
+                color={colors.textPrimary}
+              />
+              <Text style={styles.editButtonText}>Appearance</Text>
+            </Pressable>
           </View>
 
           {/* Create Account Prompt */}
@@ -152,20 +166,38 @@ export default function ProfileScreen() {
         <View style={styles.header}>
           <EditableAvatar user={user} size={80} />
           <Text style={styles.username}>{user.username}</Text>
-          <Pressable
-            onPress={() => router.push(ROUTES.SETTINGS)}
-            style={({ pressed }) => [
-              styles.editButton,
-              { opacity: pressed ? 0.7 : 1 },
-            ]}
-          >
-            <Ionicons
-              name="settings-outline"
-              size={16}
-              color={colors.textPrimary}
-            />
-            <Text style={styles.editButtonText}>Edit profile</Text>
-          </Pressable>
+          <View style={styles.profileActions}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push(ROUTES.SETTINGS)}
+              style={({ pressed }) => [
+                styles.editButton,
+                { opacity: pressed ? 0.7 : 1 },
+              ]}
+            >
+              <Ionicons
+                name="settings-outline"
+                size={16}
+                color={colors.textPrimary}
+              />
+              <Text style={styles.editButtonText}>Edit profile</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push(ROUTES.APPEARANCE)}
+              style={({ pressed }) => [
+                styles.editButton,
+                { opacity: pressed ? 0.7 : 1 },
+              ]}
+            >
+              <Ionicons
+                name="color-palette-outline"
+                size={16}
+                color={colors.textPrimary}
+              />
+              <Text style={styles.editButtonText}>Appearance</Text>
+            </Pressable>
+          </View>
         </View>
 
         {/* Statistics Section */}
@@ -325,6 +357,12 @@ const createStyles = (colors: ThemeColors) =>
       paddingVertical: 7,
       borderRadius: 999,
       backgroundColor: colors.backgroundLight,
+    },
+    profileActions: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: 8,
     },
     editButtonText: {
       fontSize: 14,

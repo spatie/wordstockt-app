@@ -7,7 +7,7 @@ import {
   useAppearanceStore,
 } from '../../stores/appearanceStore';
 
-export function ThemePicker() {
+export function ThemePicker({ showHeading = true }: { showHeading?: boolean }) {
   const appearance = useAppearanceStore((state) => state.appearance);
   const setAppearance = useAppearanceStore((state) => state.setAppearance);
   const followSystem = useAppearanceStore((state) => state.followSystem);
@@ -16,11 +16,13 @@ export function ThemePicker() {
 
   return (
     <View style={{ gap: 12, marginBottom: 28 }}>
-      <Text
-        style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}
-      >
-        Appearance
-      </Text>
+      {showHeading && (
+        <Text
+          style={{ color: colors.textPrimary, fontSize: 18, fontWeight: '700' }}
+        >
+          Appearance
+        </Text>
+      )}
       <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
         Choose how the app looks on this device.
       </Text>
